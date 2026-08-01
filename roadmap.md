@@ -517,12 +517,12 @@ class BatchExporter:
 - [x] `app/widgets/waveform_view.py` — Waveform visualization using `pyqtgraph`
 - [x] `app/widgets/playback_controls.py` — Play/Pause/Stop/Seek controls
 - [x] `app/services/playback_service.py` — Audio playback orchestration
-- [ ] Synchronized playback of multiple tracks (vocals / instrumental)
-- [ ] Seek slider with position indicator and time display
-- [ ] Independent volume control per track
-- [ ] Gapless playback support
-- [ ] Playback state persistence across separation sessions
-- [ ] Unit tests for playback controller and waveform widget
+- [x] Synchronized playback of multiple tracks (vocals / instrumental)
+- [x] Seek slider with position indicator and time display
+- [x] Independent volume control per track
+- [x] Gapless playback support
+- [x] Playback state persistence across separation sessions
+- [x] Unit tests for playback controller and waveform widget
 
 ### Skills Applied
 
@@ -541,22 +541,18 @@ class BatchExporter:
 
 ### Phase 7 Review Notes
 
-**Status:** ⚠️ **Partially Complete** — Core playback and waveform exist; advanced features and tests are missing.
+**Status:** ✅ **Complete** — Playback rewritten on an in-memory mixer with `QAudioSink`, delivering synchronized gapless multi-track playback, seek with time display, per-track volume/mute, and state persistence.
 
 **Implemented:**
 
-- `PlaybackService` using `QMediaPlayer`
-- `PlaybackController` with state machine
-- `WaveformView` widget with basic rendering
-- `PlaybackControls` widget with play/pause/stop
-
-**Missing:**
-
-- Per-track volume control
-- Seek slider with time display
-- Gapless playback
-- Playback state persistence
-- Unit tests for playback controller and waveform widget
+- `PlaybackService` rewritten on `AudioMixer` (in-memory, `QAudioSink`, lazy sink creation) — `QMediaPlayer`/`QAudioOutput` removed
+- `AudioMixer` in `app/audio/` — single continuous stream mixing numpy stems, sample-accurate sync, real gapless playback
+- `PlaybackController` — multi-track state machine, per-track volume/mute, active stems, debounced persistence
+- `PlaybackStateStore` — persists volumes, mutes, active stems and last file to `~/.descombinator/playback_state.json`
+- `WaveformView` — playback position line synced to the mixer position
+- `PlaybackControls` — seek slider with live drag seeking and `m:ss` time display
+- `TrackMixerWidget` — per-track volume sliders and mute toggles
+- 72 unit tests for mixer, controller, and widgets (headless-safe with a fake sink)
 
 ---
 
@@ -730,7 +726,7 @@ tests/
 | Separation Engine | 4 | ✅ Complete |
 | Export Pipeline | 5 | ✅ Complete |
 | Desktop UI | 6 | ✅ Complete |
-| Playback & Visualization | 7 | ⚠️ Partial |
+| Playback & Visualization | 7 | ✅ Complete |
 | Performance Optimization | 8 | ❌ Not Started |
 | Testing & QA | 9 | ⚠️ Partial |
 | Packaging & Distribution | 10 | ❌ Not Started |

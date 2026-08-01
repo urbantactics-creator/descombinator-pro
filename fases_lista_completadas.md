@@ -1,6 +1,6 @@
 # Fases — Lista de Tareas Completadas
 
-## Estado General: 60% completado
+## Estado General: 75% completado
 
 | Fase |               Nombre             |     Estado         | Completado |
 |------|----------------------------------|--------------------|------------|
@@ -10,7 +10,7 @@
 |  4   | Separation Engine Core           | ✅ Completa        | 10/10      |
 |  5   | Export Pipeline                  | ✅ Completa        | 7/7        |
 |  6   | PySide6 UI Development           | ✅ Completa        | 24/25      |
-|  7   | Media Playback & Visualization   | ⚠️ Parcial         | 4/9        |
+|  7   | Media Playback & Visualization   | ✅ Completa        | 10/10      |
 |  8   | Performance Optimization         | ❌ No iniciada     | 0/11       |
 |  9   | Testing & Quality Assurance      | ⚠️ Parcial         | 13/14      |
 |  10  | Packaging & Distribution         | ❌ No iniciada     | 0/10       |
@@ -128,18 +128,18 @@
 - [x] `AudioLoadWorker` para carga de waveform en background
 - [x] `ProcessingDialog` conectado a señales de separación
 
-## Fase 7: Media Playback & Visualization ⚠️
+## Fase 7: Media Playback & Visualization ✅
 
 - [x] `app/controllers/playback_controller.py`
 - [x] `app/widgets/waveform_view.py`
 - [x] `app/widgets/playback_controls.py`
 - [x] `app/services/playback_service.py`
-- [ ] Sincronized playback (básico)
-- [ ] Seek slider con time display
-- [ ] Volume control per track
-- [ ] Gapless playback
-- [ ] Playback state persistence
-- [ ] Unit tests
+- [x] Playback sincronizado multi-track (mixer en memoria con `QAudioSink`)
+- [x] Seek slider con time display
+- [x] Volume control per track (`TrackMixerWidget`)
+- [x] Gapless playback (stream único)
+- [x] Playback state persistence (`PlaybackStateStore`)
+- [x] Unit tests (mixer, controller, widgets)
 
 ## Fase 8: Performance Optimization ❌
 
