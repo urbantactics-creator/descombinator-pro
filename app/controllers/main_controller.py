@@ -13,6 +13,7 @@ from app.models.app_state import AppState
 from app.models.processing_state import ProcessingState
 from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
+from engine.demucs.config import SeparationConfig
 
 
 class SeparationWorkerSignals(QObject):
@@ -71,13 +72,14 @@ class MainController(QObject):
     separation_started = Signal()
     separation_completed = Signal(dict)  # stems dict
     separation_failed = Signal(str)  # error message
+    separation_progress = Signal(int, str)  # percent, message
     export_completed = Signal(dict)  # stem_name -> file_path
     export_failed = Signal(str)  # error message
 
     def __init__(self) -> None:
         super().__init__()
         self._app_state = AppState()
-        self._separation_service = SeparationService()
+        self._separation_service = SeparationService(SeparationConfig())
         self._export_service = ExportService()
         self._thread_pool = QThreadPool.globalInstance()
         self._current_worker: SeparationWorker | None = None
@@ -86,11 +88,6 @@ class MainController(QObject):
     def app_state(self) -> AppState:
         """Get the current application state."""
         return self._app_state
-
-    def initialize_services(self) -> None:
-        """Initialize all services."""
-        # Initialize separation service
-        asyncio.create_task(self._separation_service.initialize())
 
     def handle_file_dropped(self, file_path: str) -> None:
         """Handle a file being dropped on the UI.

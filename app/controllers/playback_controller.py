@@ -56,10 +56,7 @@ class PlaybackController(QObject):
             file_path: Path to the audio file
         """
         path = Path(file_path)
-        # Use asyncio to run the async load_file method
-        import asyncio
-
-        asyncio.create_task(self._playback_service.load_file(path))
+        self._playback_service.load_file(path)
 
     @Slot(int)
     def set_position(self, position_ms: int) -> None:

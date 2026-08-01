@@ -1,10 +1,14 @@
 """Descombinator Pro — Audio source separation and processing engine."""
 
-import asyncio
 import os
 import sys
 
 from loguru import logger
+
+from app.controllers.main_controller import MainController
+from app.controllers.playback_controller import PlaybackController
+from app.controllers.settings_controller import SettingsController
+from app.ui.main_window import MainWindow
 
 
 def configure_loguru() -> None:
@@ -38,26 +42,30 @@ def configure_loguru() -> None:
         )
 
 
-async def main() -> None:
-    """Entry point for the descombinator audio processing engine."""
+def main() -> None:
+    """Entry point for the Descombinator Pro desktop application."""
+    from PySide6.QtWidgets import QApplication
+
     configure_loguru()
-    logger.info("Descombinator engine starting...")
+    logger.info("Descombinator Pro starting...")
 
-    # TODO(phase-2): implement pipeline
-    # from app.services.pipeline import PipelineService
-    # from engine.audio.loader import AudioLoader
-    # from engine.demucs.separator import DemucsSeparator
-    # from engine.export.writer import ExportWriter
-    #
-    # loader = AudioLoader()
-    # separator = DemucsSeparator()
-    # writer = ExportWriter()
-    #
-    # pipeline = PipelineService(loader, separator, writer)
-    # await pipeline.run()
+    app = QApplication(sys.argv)
+    app.setApplicationName("Descombinator Pro")
+    app.setOrganizationName("Descombinator")
+    app.setApplicationVersion("0.1.0")
 
-    logger.info("Descombinator engine finished.")
+    settings_ctrl = SettingsController()
+    settings_ctrl.load_settings()
+
+    main_ctrl = MainController()
+    playback_ctrl = PlaybackController()
+
+    window = MainWindow(main_ctrl, playback_ctrl, settings_ctrl)
+    window.show()
+
+    logger.info("Application window displayed")
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

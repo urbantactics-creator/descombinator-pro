@@ -22,6 +22,7 @@ class SettingsController(QObject):
         super().__init__()
         self._settings_file = Path.home() / ".descombinator" / "settings.json"
         self._settings_file.parent.mkdir(parents=True, exist_ok=True)
+        self._settings: SettingsModel = SettingsModel()
 
     def load_settings(self) -> SettingsModel:
         """Load settings from file.
@@ -33,17 +34,17 @@ class SettingsController(QObject):
             if self._settings_file.exists():
                 with open(self._settings_file) as f:
                     data = json.load(f)
-                settings = SettingsModel(**data)
+                self._settings = SettingsModel(**data)
                 logger.info(f"Loaded settings from {self._settings_file}")
             else:
-                settings = SettingsModel()
+                self._settings = SettingsModel()
                 logger.info("Using default settings")
         except Exception as e:
             logger.warning(f"Failed to load settings: {e}")
-            settings = SettingsModel()
+            self._settings = SettingsModel()
 
         self.settings_loaded.emit(True)
-        return settings
+        return self._settings
 
     def save_settings(self, settings: SettingsModel) -> bool:
         """Save settings to file.

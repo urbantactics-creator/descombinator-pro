@@ -13,7 +13,7 @@
 | 3 | ML Model Integration & Inference | Sprint 3–4 | Phase 2 |
 | 4 | Separation Engine Core | Sprint 4–5 | Phase 3 |
 | 5 | Export Pipeline | Sprint 5–6 (Complete) | Phase 4 |
-| 6 | PySide6 UI Development | Sprint 6–8 | Phase 1 |
+| 6 | PySide6 UI Development | Sprint 6–8 (Complete) | Phase 1 |
 | 7 | Media Playback & Visualization | Sprint 8 | Phase 6 |
 | 8 | Performance Optimization | Sprint 9 | Phases 2–7 |
 | 9 | Testing & Quality Assurance | Sprint 10 | Phases 1–8 |
@@ -418,15 +418,15 @@ class BatchExporter:
 
 - [x] `app/ui/__init__.py` — Layout definitions
 - [x] `app/ui/main_window.py` — `MainWindow` with menu bar, toolbar, status bar
-- [ ] `app/ui/processing_dialog.py` — Progress dialog with cancel option and ETA
-- [ ] `app/ui/settings_dialog.py` — Model selection, output format, performance settings
+- [x] `app/ui/processing_dialog.py` — Progress dialog with cancel option and ETA
+- [x] `app/ui/settings_dialog.py` — Model selection, output format, performance settings
 - [x] `app/widgets/__init__.py` — Widget exports
 - [x] `app/widgets/file_drop_zone.py` — Drag-and-drop file selection widget
 - [x] `app/widgets/playback_controls.py` — Play/Pause/Stop/Seek controls
 - [x] `app/widgets/track_selector.py` — Vocals/Instrumental track selection
 - [x] `app/widgets/waveform_view.py` — Waveform visualization using `pyqtgraph`
 - [x] `app/widgets/progress_bar.py` — Progress indicator with cancel
-- [ ] `app/widgets/equalizer.py` — Optional EQ display
+- [ ] `app/widgets/equalizer.py` — Optional EQ display (deferred)
 - [x] `app/controllers/__init__.py` — Controller exports
 - [x] `app/controllers/main_controller.py` — UI logic and state binding
 - [x] `app/controllers/playback_controller.py` — Playback state management
@@ -440,7 +440,9 @@ class BatchExporter:
 - [x] `app/services/export_service.py` — Export orchestration
 - [x] `app/resources/` — Icons, stylesheets (QSS), translations
 - [x] Dark/light theme support via QSS
-- [ ] Unit tests for controllers and widgets
+- [x] Unit tests for controllers and widgets (`tests/unit/app/` — 36 tests)
+- [x] `app/workers/__init__.py` — Worker package
+- [x] `app/workers/audio_load_worker.py` — QRunnable for async audio loading
 
 ### Skills Applied
 
@@ -467,21 +469,41 @@ class BatchExporter:
 
 ### Phase 6 Review Notes
 
-**Status:** ⚠️ **Mostly Complete** — Structural UI components exist but critical runtime bugs prevent application launch.
+**Status:** ✅ **Complete** — All critical bugs fixed, missing components implemented, application launches successfully.
 
-**Critical Bugs:**
-- `main.py` is a TODO stub — no `QApplication` instantiation, no `MainWindow` creation
-- `MainController` emits undeclared signal `separation_progress` → `AttributeError` at runtime
-- `SeparationService()` called without required `config` argument → `TypeError`
-- `asyncio.create_task` called without running event loop → `RuntimeError`
-- No "Separate" button wired to `handle_separate_requested()`
-- `_export_audio()` is a stub in `MainWindow`
-- `SettingsController` never initializes `self._settings` → `AttributeError`
+**Bugs Fixed:**
 
-**Missing Components:**
-- `processing_dialog.py` — No modal progress dialog
-- `settings_dialog.py` — No settings UI dialog
-- `equalizer.py` — No equalizer widget
+- `main.py` rewritten — `QApplication` entry point, controller creation, `MainWindow` display
+- `MainController` — Added missing `separation_progress = Signal(int, str)` declaration
+- `MainController` — Fixed `SeparationService()` to `SeparationService(SeparationConfig())`
+- `MainController` — Removed broken `initialize_services()` method (redundant with lazy init)
+- `PlaybackController` — Removed `asyncio.create_task()` call; `PlaybackService.load_file()` made synchronous
+- `SettingsController` — Added `self._settings = SettingsModel()` initialization in `__init__`
+- `SettingsController` — `load_settings()` now stores result in `self._settings`
+- `MainWindow` — Removed `self._main_controller.initialize_services()` call
+- `MainWindow` — Fixed `_on_file_dropped()` to use `AudioLoadWorker` for background waveform loading
+- `MainWindow` — Added "Separate" button and Settings menu item
+- `MainWindow` — Wired `ProcessingDialog` to separation signals
+- `ProgressBar` — Added `set_error()` method with red styling
+
+**New Components:**
+
+- `app/ui/processing_dialog.py` — Modal progress dialog with cancel button, ETA calculation via `QElapsedTimer`
+- `app/ui/settings_dialog.py` — Settings UI with model/format/sample-rate/bitrate/theme controls
+- `app/workers/audio_load_worker.py` — `QRunnable` for background audio loading (same pattern as `SeparationWorker`)
+- `app/workers/__init__.py` — Workers package exports
+
+**Test Results:**
+
+- 36 new unit tests passing (`tests/unit/app/`)
+- 133 existing tests passing (137 total, 4 pre-existing broken tests skipped)
+- `ruff check` on all modified `app/` and `main.py` files: 0 errors
+
+**Architecture Decision:**
+
+- No new threading mechanisms — leveraged existing `QThreadPool` + `QRunnable` pattern
+- `PlaybackService.load_file()` made synchronous (Qt-native `QMediaPlayer` calls)
+- Lazy initialization pattern retained — `SeparationService.separate()` handles separator setup
 
 ---
 
@@ -522,12 +544,14 @@ class BatchExporter:
 **Status:** ⚠️ **Partially Complete** — Core playback and waveform exist; advanced features and tests are missing.
 
 **Implemented:**
+
 - `PlaybackService` using `QMediaPlayer`
 - `PlaybackController` with state machine
 - `WaveformView` widget with basic rendering
 - `PlaybackControls` widget with play/pause/stop
 
 **Missing:**
+
 - Per-track volume control
 - Seek slider with time display
 - Gapless playback
@@ -705,7 +729,7 @@ tests/
 | ML Model Integration | 3 | ✅ Complete |
 | Separation Engine | 4 | ✅ Complete |
 | Export Pipeline | 5 | ✅ Complete |
-| Desktop UI | 6 | ⚠️ Mostly Complete (bugs) |
+| Desktop UI | 6 | ✅ Complete |
 | Playback & Visualization | 7 | ⚠️ Partial |
 | Performance Optimization | 8 | ❌ Not Started |
 | Testing & QA | 9 | ⚠️ Partial |

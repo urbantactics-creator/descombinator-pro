@@ -71,7 +71,7 @@ class PlaybackService(QObject):
         logger.error(f"Playback error: {error} - {error_string}")
         self.error_occurred.emit(f"{error}: {error_string}")
 
-    async def load_file(self, file_path: Path) -> bool:
+    def load_file(self, file_path: Path) -> bool:
         """Load an audio file for playback.
 
         Args:

@@ -35,7 +35,16 @@ class ProgressBar(QWidget):
 
     def reset(self) -> None:
         self._bar.setValue(0)
+        self._bar.setFormat("%p%")
+        self._bar.setStyleSheet("")
         self._message.setText("Ready")
+
+    def set_error(self, message: str) -> None:
+        """Display error state with message."""
+        self._bar.setValue(0)
+        self._bar.setFormat(f"Error: {message}")
+        self._bar.setStyleSheet("QProgressBar::chunk { background-color: #EF4444; }")
+        self._message.setText(message)
 
     @property
     def value(self) -> int:
