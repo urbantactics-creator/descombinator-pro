@@ -6,6 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from loguru import logger
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
 
@@ -13,7 +14,7 @@ from app.models.app_state import AppState
 from app.models.processing_state import ProcessingState
 from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
-from engine.demucs.config import SeparationConfig
+from engine.demucs.config import ModelName, SeparationConfig
 
 
 class SeparationWorkerSignals(QObject):
@@ -32,11 +33,15 @@ class SeparationWorker(QRunnable):
         separation_service: SeparationService,
         file_path: Path,
         progress_callback: callable,
+        audio: np.ndarray | None = None,
+        sample_rate: int = 44_100,
     ) -> None:
         super().__init__()
         self._separation_service = separation_service
         self._file_path = file_path
         self._progress_callback = progress_callback
+        self._audio = audio
+        self._sample_rate = sample_rate
         self.signals = SeparationWorkerSignals()
         self._result: dict[str, Any] | None = None
         self._exception: Exception | None = None
@@ -48,12 +53,21 @@ class SeparationWorker(QRunnable):
         asyncio.set_event_loop(loop)
 
         try:
-            # Run the separation
-            result = loop.run_until_complete(
-                self._separation_service.separate(
-                    self._file_path, progress_callback=self._progress_callback
+            # Reuse pre-decoded audio to avoid a second decode when available.
+            if self._audio is not None:
+                result = loop.run_until_complete(
+                    self._separation_service.separate_loaded(
+                        self._audio,
+                        self._sample_rate,
+                        progress_callback=self._progress_callback,
+                    )
                 )
-            )
+            else:
+                result = loop.run_until_complete(
+                    self._separation_service.separate(
+                        self._file_path, progress_callback=self._progress_callback
+                    )
+                )
             self._result = result
             self.signals.finished.emit(self._result)
         except Exception as e:
@@ -79,15 +93,27 @@ class MainController(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._app_state = AppState()
-        self._separation_service = SeparationService(SeparationConfig())
+        self._separation_service = SeparationService(self._build_separation_config())
         self._export_service = ExportService()
         self._thread_pool = QThreadPool.globalInstance()
         self._current_worker: SeparationWorker | None = None
+        self._loaded_audio: np.ndarray | None = None
+        self._loaded_sample_rate: int = 44_100
 
     @property
     def app_state(self) -> AppState:
         """Get the current application state."""
         return self._app_state
+
+    def _build_separation_config(self) -> SeparationConfig:
+        """Build a SeparationConfig from the current app settings."""
+        settings = self._app_state.settings
+        return SeparationConfig(
+            model_name=ModelName(str(settings.default_model)),
+            segment=settings.segment,
+            mixed_precision=settings.mixed_precision,
+            pin_memory=settings.pin_memory,
+        )
 
     def handle_file_dropped(self, file_path: str) -> None:
         """Handle a file being dropped on the UI.
@@ -98,10 +124,23 @@ class MainController(QObject):
         path = Path(file_path)
         self._app_state.current_file = path
         self._app_state.processing_status = ProcessingState.IDLE
+        self._loaded_audio = None
         self.state_changed.emit(self._app_state)
 
         # Enable the separate button in the UI
         # This would be handled by the main window connecting to state_changed
+
+    def set_loaded_audio(self, audio: np.ndarray, sample_rate: int) -> None:
+        """Store audio already decoded for the waveform display.
+
+        ``separate_loaded`` reuses it so a large file is decoded only once.
+
+        Args:
+            audio: Decoded audio as float32 numpy array.
+            sample_rate: Sample rate of the audio.
+        """
+        self._loaded_audio = audio
+        self._loaded_sample_rate = sample_rate
 
     def handle_separate_requested(self) -> None:
         """Handle the user requesting to start separation."""
@@ -124,7 +163,11 @@ class MainController(QObject):
             self.separation_progress.emit(percent, message)
 
         self._current_worker = SeparationWorker(
-            self._separation_service, self._app_state.current_file, progress_callback
+            self._separation_service,
+            self._app_state.current_file,
+            progress_callback,
+            audio=self._loaded_audio,
+            sample_rate=self._loaded_sample_rate,
         )
 
         # Connect worker signals
@@ -214,4 +257,11 @@ class MainController(QObject):
         for key, value in settings.items():
             if hasattr(self._app_state.settings, key):
                 setattr(self._app_state.settings, key, value)
+
+        # Rebuild the separation service so new engine settings take effect.
+        # Skip while a worker is running: it holds a reference to the old service.
+        if self._current_worker is None:
+            self._separation_service = SeparationService(
+                self._build_separation_config()
+            )
         self.state_changed.emit(self._app_state)
