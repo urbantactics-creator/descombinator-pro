@@ -9,3 +9,24 @@ dist/
 build/
 *.spec
 .DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Coverage
+htmlcov/
+coverage.xml
+.coverage
+.coverage.*
+
+# OS
+Thumbs.db

@@ -1,0 +1,1 @@
+"""Icons, translations, static assets."""

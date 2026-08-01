@@ -2,7 +2,7 @@
 name = "descombinator"
 version = "0.1.0"
 description = "Audio source separation and processing engine"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "demucs>=4.0.0",
     "torch>=2.0.0",
@@ -17,5 +17,66 @@ dependencies = [
 [project.scripts]
 descombinator = "main:main"
 
-[tool.setuptools]
-packages = ["app", "engine"]
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = [".kilo", "docs", "assets"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "torchaudio.*",
+    "demucs.*",
+    "PySide6.*",
+    "librosa.*",
+    "soundfile.*",
+    "loguru.*",
+    "aiofiles.*",
+    "pydantic.*",
+    "numpy.*",
+    "scipy.*",
+    "pyqtgraph.*",
+    "mutagen.*",
+    "rich.*",
+    "psutil.*",
+    "tqdm.*",
+    "resampy.*",
+    "audioread.*",
+    "openunmix.*",
+    "onnxruntime.*",
+    "python_dotenv.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+qt_api = "pyside6"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "ui: UI tests",
+    "slow: Slow tests",
+]
+
+[tool.coverage.run]
+source = ["app", "engine"]
+
+[tool.coverage.report]
+fail_under = 85

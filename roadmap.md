@@ -7,7 +7,7 @@
 ## Overview
 
 | Phase | Name | Duration (est.) | Dependencies |
-|-------|------|-----------------|--------------|
+| ------- | ------ | ----------------- | -------------- |
 | 1 | Project Foundation | Sprint 1 | — |
 | 2 | Audio I/O & DSP Pipeline | Sprint 2 | Phase 1 |
 | 3 | ML Model Integration & Inference | Sprint 3–4 | Phase 2 |
@@ -125,7 +125,9 @@ class InferencePipeline:
     def __init__(self, model_manager: ModelManager):
         self._model_manager = model_manager
 
-    async def run(self, audio: np.ndarray, model_name: str = "htdemucs_ft") -> SeparationResult:
+    async def run(
+        self, audio: np.ndarray, model_name: str = "htdemucs_ft"
+    ) -> SeparationResult:
         model = await self._model_manager.get_model(model_name)
         with torch.inference_mode():
             return model(audio)
@@ -134,7 +136,7 @@ class InferencePipeline:
 ### Model Stack
 
 | Model | Purpose | Backend | Size |
-|-------|---------|---------|------|
+| ------- | --------- | --------- | ------ |
 | Demucs v4 (`htdemucs_ft`) | Primary separation | PyTorch | ~120 MB |
 | Demucs v4 (`mdx_extra`) | High-quality alternative | PyTorch | ~200 MB |
 | Open-Unmix (`umxhq`) | Secondary/alternative | PyTorch | ~50 MB |
@@ -180,7 +182,7 @@ class SeparationService:
 ### Quality Metrics
 
 | Metric | Target |
-|--------|--------|
+| -------- | -------- |
 | SDR (Signal-to-Distortion Ratio) | > 5 dB |
 | SIR (Signal-to-Interference Ratio) | > 10 dB |
 | SAR (Signal-to-Artifact Ratio) | > 10 dB |
@@ -212,7 +214,7 @@ class SeparationService:
 ### Supported Formats
 
 | Format | Quality | Use Case |
-|--------|---------|----------|
+| -------- | --------- | ---------- |
 | WAV | Lossless, 16/24-bit PCM | Professional use |
 | FLAC | Lossless, compression level 5 | Archiving |
 | MP3 | Lossy, 192–320 kbps VBR | Sharing |
@@ -261,7 +263,7 @@ class SeparationService:
 ### UI Screens
 
 | Screen | Purpose |
-|--------|---------|
+| -------- | --------- |
 | Welcome | File selection, drag-and-drop, recent files |
 | Processing | Progress bar, cancel button, estimated time |
 | Results | Play separated tracks, export options |
@@ -293,7 +295,7 @@ class SeparationService:
 ### Playback Stack
 
 | Library | Purpose |
-|---------|---------|
+| --------- | --------- |
 | `PySide6.QtMultimedia` | Qt audio playback |
 | `sounddevice` | Low-latency audio output |
 | `numpy` | Audio buffer manipulation |
@@ -328,7 +330,7 @@ class SeparationService:
 ### Performance Targets
 
 | Metric | Target |
-|--------|--------|
+| -------- | -------- |
 | Separation time (3-min song, CPU) | < 30 seconds |
 | Separation time (3-min song, GPU) | < 10 seconds |
 | Memory usage | < 4 GB peak |
@@ -367,7 +369,7 @@ class SeparationService:
 
 ### Test Structure
 
-```
+```text
 tests/
 ├── unit/
 │   ├── engine/
@@ -419,7 +421,7 @@ tests/
 ### Supported Platforms
 
 | Platform | Version | Architecture |
-|----------|---------|-------------|
+| ---------- | --------- | ------------- |
 | Windows | 10, 11 | x64 |
 | macOS | 12+ | ARM64, x64 |
 | Linux | Ubuntu 22.04+, Fedora 38+ | x64, ARM64 |
@@ -464,7 +466,7 @@ tests/
 ## Milestone Summary
 
 | Milestone | Phases | Status |
-|-----------|--------|--------|
+| ----------- | -------- | -------- |
 | Environment & Foundation | 1 | ✅ Complete |
 | Audio I/O & DSP Pipeline | 2 | 🔲 Planned |
 | ML Model Integration | 3–4 | 🔲 Planned |
@@ -481,7 +483,7 @@ tests/
 
 ## Dependency Graph
 
-```
+```text
 Phase 1 (Foundation)
  ├── Phase 2 (Audio I/O & DSP)
  │    └── Phase 3 (ML Model Integration)
