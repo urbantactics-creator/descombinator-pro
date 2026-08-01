@@ -1,0 +1,60 @@
+"""Sample rate conversion and channel handling."""
+
+from __future__ import annotations
+
+import asyncio
+
+import numpy as np
+import resampy
+from loguru import logger
+
+from engine.audio.errors import ResampleError
+
+
+class AudioResampler:
+    """Resample audio and convert between mono/stereo."""
+
+    DEFAULT_TARGET_SR: int = 44_100
+
+    async def resample(
+        self,
+        audio: np.ndarray,
+        orig_sr: int,
+        target_sr: int = 44_100,
+    ) -> np.ndarray:
+        """Resample with kaiser_best quality. Skips if already at target."""
+        if orig_sr == target_sr:
+            logger.debug(f"Already at {target_sr} Hz, returning copy")
+            return audio.copy()
+
+        try:
+            resampled = await asyncio.to_thread(
+                resampy.resample, audio, orig_sr, target_sr, filter="kaiser_best"
+            )
+            duration = len(resampled) / target_sr
+            logger.info(
+                f"Resampled {orig_sr}→{target_sr} Hz: "
+                f"samples={len(resampled)}, duration={duration:.2f}s"
+            )
+            return resampled
+        except Exception as e:
+            logger.error(f"Resample failed {orig_sr}→{target_sr}: {e}")
+            raise ResampleError(f"Cannot resample {orig_sr}→{target_sr}: {e}") from e
+
+    async def to_mono(self, audio: np.ndarray) -> np.ndarray:
+        """Convert stereo to mono by averaging channels. No-op if already mono."""
+        if audio.ndim == 1:
+            return audio.copy()
+        mono = np.mean(audio, axis=0).astype(np.float32)
+        logger.debug(f"Converted stereo→mono: shape {audio.shape} → {mono.shape}")
+        return mono
+
+    async def ensure_mono(
+        self,
+        audio: np.ndarray,
+        sr: int,
+        target_sr: int = 44_100,
+    ) -> np.ndarray:
+        """Combined: mono conversion + resample."""
+        mono = await self.to_mono(audio)
+        return await self.resample(mono, sr, target_sr)
