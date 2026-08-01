@@ -64,8 +64,14 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["benchmarks.*", "scripts.*"]
+disallow_untyped_defs = false
+disallow_any_generics = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py", "bench_*.py"]
 asyncio_mode = "auto"
 qt_api = "pyside6"
 markers = [
