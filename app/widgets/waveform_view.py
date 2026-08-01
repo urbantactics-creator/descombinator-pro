@@ -12,9 +12,9 @@ class WaveformView(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self._setup_ui()
         self._audio_data: np.ndarray | None = None
         self._position_line = None
+        self._setup_ui()
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
