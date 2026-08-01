@@ -30,15 +30,21 @@
 
 - [x] Virtual environment with Python 3.12+ and all dependencies installed
 - [x] `requirements.txt` with pinned dependencies
-- [x] `pyproject.toml` with project metadata and tool configuration
+- [x] `requirements-dev.txt` with dev tools (ruff, mypy, pytest, pre-commit)
+- [x] `pyproject.toml` with project metadata, build config, and tool configuration (ruff, mypy, pytest, coverage)
 - [x] `.envrc` and `activate.sh` for environment auto-activation
-- [x] `main.py` async entry point
-- [ ] Ruff linting and formatting configuration
-- [ ] Pre-commit hooks (ruff, mypy)
-- [ ] GitHub Actions CI workflow (lint + typecheck on push)
-- [ ] Git branching strategy documented (`develop` → `feature/*`, `bugfix/*`, `hotfix/*`)
-- [ ] Commit convention enforced (`type(scope): subject`)
-- [ ] `.gitignore` with venv, cache, and build artifacts
+- [x] `main.py` async entry point with loguru configuration
+- [x] Ruff linting (`ruff check`) and formatting (`ruff format`) configuration
+- [x] Pre-commit hooks (ruff, ruff-format, trailing-whitespace, end-of-file, check-yaml, check-toml, check-merge-conflict, large-files)
+- [x] GitHub Actions CI workflow (lint, format, test, mypy with `continue-on-error`)
+- [x] Git branching strategy: `master` + `develop` branches created and pushed
+- [x] Commit convention enforced (`type(scope): subject`)
+- [x] `.gitignore` with venv, cache, build artifacts, logs, coverage, env files
+- [x] 13 `__init__.py` files with module-level docstrings
+- [x] `tests/conftest.py` with shared fixtures and markers
+- [x] `tests/fixtures/` directory for test data
+- [x] `docs/` structure (architecture, guides, development, troubleshooting)
+- [x] `assets/` structure (icons, styles, i18n)
 
 ### Skills Applied
 
@@ -52,6 +58,21 @@
 - **State management:** Pydantic models + `enum.Enum` for FSM state machines
 - **Logging:** `loguru` exclusively, no `logging.basicConfig()`
 - **Async-first:** All I/O operations use `async def`
+- **Build backend:** `setuptools.build_meta` (modern, not legacy)
+- **CI strictness:** mypy strict mode enabled from day one, CI runs with `continue-on-error` until Phase 2 adds typed code
+- **Pre-commit:** ruff (lint + format) + standard hooks, no mypy hook (too noisy on empty packages)
+
+### Phase 1 Fixes (Review)
+
+- Fixed `build-backend` from deprecated `setuptools.backends._legacy:_Backend` to `setuptools.build_meta`
+- Updated pre-commit ruff version from `v0.5.0` to `v0.16.1` (matches installed version)
+- Updated pre-commit-hooks from `v4.6.0` to `v5.0.0` (fixes deprecated stage names)
+- Added `check-merge-conflict` and `check-toml` hooks
+- Added CI `concurrency` group to cancel in-progress runs
+- Added CI `permissions: contents: read` for security
+- Added CI `fail-fast: false` so all matrix jobs run
+- Added CI pip caching via `actions/setup-python@v5` cache
+- Removed redundant marker definitions from `conftest.py` (already in `pyproject.toml`)
 
 ---
 
