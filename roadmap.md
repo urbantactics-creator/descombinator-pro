@@ -134,47 +134,79 @@ class AudioLoader:
 
 ### Deliverables
 
-- [ ] `engine/inference/__init__.py` — Public API exports
-- [ ] `engine/inference/demucs_agent.py` — Demucs v4 integration with `htdemucs_ft` and `mdx_extra` presets
-- [ ] `engine/inference/openunmix_agent.py` — Open-Unmix `umxhq` integration
-- [ ] `engine/inference/pipeline.py` — `InferencePipeline` orchestrating preprocessing → model → postprocessing
-- [ ] `engine/inference/model_manager.py` — `ModelManager` for download, cache, versioning, and runtime switching
-- [ ] `engine/inference/weights/` — Directory for cached model weights
-- [ ] Model integrity verification with SHA-256 checksums
-- [ ] HuggingFace `huggingface_hub` integration for model downloads
-- [ ] GPU support with `torch.cuda.amp.autocast()` and mixed precision
-- [ ] CPU optimization with `torch.set_num_threads()`, `torch.backends.mkldnn`
-- [ ] Unit tests for inference pipeline and model manager
+- [x] `engine/inference/__init__.py` — Public API exports (12 symbols)
+- [x] `engine/inference/errors.py` — Inference-specific exception hierarchy
+- [x] `engine/inference/config.py` — `InferenceConfig` Pydantic model with `ModelName`/`DeviceType` enums
+- [x] `engine/inference/demucs_agent.py` — `DemucsAgent` wrapping `demucs.api.Separator` with lazy init
+- [x] `engine/inference/openunmix_agent.py` — `OpenUnmixAgent` wrapping `openunmix.predict` with batch dim squeeze
+- [x] `engine/inference/pipeline.py` — `InferencePipeline` orchestrating preprocess → inference → numpy output
+- [x] `engine/inference/model_manager.py` — `ModelManager` with `SeparationModel` protocol, cache, lazy factory
+- [x] `engine/inference/weights/` — Directory for cached model weights
+- [x] Unit tests for all inference modules (`tests/unit/engine/inference/` — 31 tests, 97.96% coverage)
+- [x] `torch.inference_mode()` applied in both agents' `separate()` methods
+
+### Intentionally Deferred
+
+- **Model integrity verification (SHA-256)** — Defer to Phase 4 when export pipeline exists
+- **HuggingFace `huggingface_hub` integration** — Both libraries handle downloads internally
+- **GPU support (`torch.cuda.amp.autocast()`)** — No CUDA available; `DeviceType.CUDA` enum ready for future
+- **CPU optimization (`torch.set_num_threads()`, `torch.backends.mkldnn`)** — Defer to Phase 8
 
 ### Skills Applied
 
 - `ai-ml-engineer` — Model integration, PyTorch optimization, inference pipeline design
-- `model-manager` — Model lifecycle, caching, versioning, switching
-- `audio-separation-specialist` — Model selection, quality evaluation, artifact reduction
-- `python-backend-engineer` — Async patterns, error handling, dependency injection
+- `model-manager` — Model lifecycle, caching, switching
+- `audio-separation-specialist` — Model selection, quality evaluation
+- `python-backend-engineer` — Async patterns, error handling
+- `code-reviewer` — Code review, best practices validation
 
 ### Key Patterns
 
 ```python
-class InferencePipeline:
-    def __init__(self, model_manager: ModelManager):
-        self._model_manager = model_manager
+# SeparationModel Protocol — both agents satisfy this interface
+class SeparationModel(Protocol):
+    async def initialize(self) -> None: ...
+    async def separate(self, audio: torch.Tensor) -> dict[str, torch.Tensor]: ...
+    @property
+    def sources(self) -> list[str]: ...
 
-    async def run(
-        self, audio: np.ndarray, model_name: str = "htdemucs_ft"
-    ) -> SeparationResult:
-        model = await self._model_manager.get_model(model_name)
-        with torch.inference_mode():
-            return model(audio)
+# Lazy model creation in ModelManager._create_model()
+def _create_model(self, name: str) -> SeparationModel:
+    if name in (ModelName.HTDEMUCS_FT.value, ModelName.MDX_EXTRA.value):
+        from engine.inference.demucs_agent import DemucsAgent
+        return DemucsAgent(config)
+    elif name == ModelName.UMXHQ.value:
+        from engine.inference.openunmix_agent import OpenUnmixAgent
+        return OpenUnmixAgent(config)
 ```
 
 ### Model Stack
 
-| Model | Purpose | Backend | Size |
-| ------- | --------- | --------- | ------ |
-| Demucs v4 (`htdemucs_ft`) | Primary separation | PyTorch | ~120 MB |
-| Demucs v4 (`mdx_extra`) | High-quality alternative | PyTorch | ~200 MB |
-| Open-Unmix (`umxhq`) | Secondary/alternative | PyTorch | ~50 MB |
+| Model | Purpose | Backend | Agent |
+| --- | --- | --- | --- |
+| `htdemucs_ft` | Primary separation | PyTorch/Demucs | `DemucsAgent` |
+| `mdx_extra` | High-quality alternative | PyTorch/Demucs | `DemucsAgent` |
+| `umxhq` | Secondary/alternative | PyTorch/OpenUnmix | `OpenUnmixAgent` |
+
+### Phase 3 Review Notes
+
+**Deviations from plan:**
+
+- **`StrEnum` instead of `str, Enum`:** Ruff flagged `class ModelName(str, Enum)` as UP042. Changed to `StrEnum` (Python 3.11+) which is equivalent but cleaner.
+- **Removed unused `_resampler` from `InferencePipeline`:** Pipeline creates `AudioResampler` but never uses it — removed dead code.
+- **Removed unused `ModelLoadError` import from `model_manager.py`:** Was imported but never referenced.
+- **Added `torch.inference_mode()` in agents:** Plan noted `torch.inference_mode()` is preferred over `torch.no_grad()`. Added to both `DemucsAgent.separate()` and `OpenUnmixAgent.separate()` for inference optimization.
+- **`_create_model()` ValueError handling:** `ModelName("bogus")` raises `ValueError` before reaching the `else` branch. Added explicit `try/except ValueError` to raise `ModelNotFoundError` cleanly.
+
+**Plan items confirmed correct:**
+
+- Demucs `separate_tensor()` returns `(original_tensor, stems_dict)` — destructured correctly.
+- OpenUnmix output has extra batch dim `(1, C, T)` — squeezed correctly.
+- Both agents use `asyncio.to_thread()` for CPU-bound operations — correct.
+- `ModelManager._create_model()` uses lazy imports — correct.
+- `SeparationModel` Protocol defines the interface both agents satisfy — correct.
+
+**Test results:** 31/31 passed, ruff clean, coverage 97.96% (target ≥90%).
 
 ---
 
@@ -504,7 +536,7 @@ tests/
 | ----------- | -------- | -------- |
 | Environment & Foundation | 1 | ✅ Complete |
 | Audio I/O & DSP Pipeline | 2 | ✅ Complete |
-| ML Model Integration | 3–4 | 🔲 Planned |
+| ML Model Integration | 3 | ✅ Complete |
 | Separation Engine | 4 | 🔲 Planned |
 | Export Pipeline | 5 | 🔲 Planned |
 | Desktop UI | 6 | 🔲 Planned |
