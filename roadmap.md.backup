@@ -198,6 +198,16 @@ def _create_model(self, name: str) -> SeparationModel:
 - **Added `torch.inference_mode()` in agents:** Plan noted `torch.inference_mode()` is preferred over `torch.no_grad()`. Added to both `DemucsAgent.separate()` and `OpenUnmixAgent.separate()` for inference optimization.
 - **`_create_model()` ValueError handling:** `ModelName("bogus")` raises `ValueError` before reaching the `else` branch. Added explicit `try/except ValueError` to raise `ModelNotFoundError` cleanly.
 
+**Plan items confirmed correct:**
+
+- Demucs `separate_tensor()` returns `(original_tensor, stems_dict)` — destructured correctly.
+- OpenUnmix output has extra batch dim `(1, C, T)` — squeezed correctly.
+- Both agents use `asyncio.to_thread()` for CPU-bound operations — correct.
+- `ModelManager._create_model()` uses lazy imports — correct.
+- `SeparationModel` Protocol defines the interface both agents satisfy — correct.
+
+**Test results:** 31/31 passed, ruff clean, coverage 97.96% (target ≥90%).
+
 ---
 
 ## Phase 4: Separation Engine Core
@@ -247,30 +257,19 @@ class SeparationService:
 | Separation time (3-min song, GPU) | < 10 seconds |
 
 ### Status
-
 ✅ **Completed** - All deliverables implemented and tested
-
-### Phase 4 Review Notes
-
-- **`InferenceError` added to `engine/demucs/errors.py`:** The roadmap explicitly listed `InferenceError` as a required exception in the demucs error hierarchy. It was missing from the initial implementation and has been added as a subclass of `SeparationError`. This ensures inference failures from the `engine/inference/` layer are properly caught by `except SeparationError` in `DemucsSeparator` instead of being swallowed by the generic `except Exception` handler.
-- **Exception propagation:** `InferenceError` now inherits from `SeparationError`, allowing `DemucsSeparator.separate()` to preserve the original exception type when `InferencePipeline.run()` raises an inference-related failure.
-- **Unit tests added:** `tests/unit/engine/demucs/test_errors.py` covers the complete exception hierarchy, including `InferenceError` inheritance and catchability.
-
----
-
-## Phase 5: Export Pipeline
 
 **Goal:** Implement the export capabilities in `engine/export/` — format conversion, metadata embedding, batch export, and quality optimization.
 
 ### Deliverables
 
-- [x] `engine/export/__init__.py` — Public API exports
-- [x] `engine/export/writer.py` — `ExportWriter` supporting WAV, FLAC, MP3, M4A
-- [x] `engine/export/config.py` — `ExportConfig` Pydantic model with format, bitrate, sample rate, metadata options
-- [x] `engine/export/metadata.py` — Metadata embedding (tags, artwork) via `mutagen`
-- [x] `engine/export/batch_exporter.py` — Batch export with progress tracking and error handling
-- [x] `engine/export/errors.py` — Export-specific exceptions
-- [x] Unit tests for export writer, batch exporter, and metadata embedding (`tests/unit/engine/export/`)
+- [ ] `engine/export/__init__.py` — Public API exports
+- [ ] `engine/export/writer.py` — `ExportWriter` supporting WAV, FLAC, MP3, M4A
+- [ ] `engine/export/config.py` — `ExportConfig` Pydantic model with format, bitrate, sample rate, metadata options
+- [ ] `engine/export/metadata.py` — Metadata embedding (tags, artwork) via `mutagen`
+- [ ] `engine/export/batch_exporter.py` — Batch export with progress tracking and error handling
+- [ ] `engine/export/errors.py` — Export-specific exceptions
+- [ ] Unit tests for export writer, batch exporter, and metadata embedding
 
 ### Skills Applied
 
@@ -287,127 +286,6 @@ class SeparationService:
 | MP3 | Lossy, 192–320 kbps VBR | Sharing |
 | M4A | Lossy, AAC encoding | Apple ecosystem |
 
-### Key Implementation Patterns
-
-```python
-# ExportConfig Pydantic model
-class ExportConfig(BaseModel):
-    format: ExportFormat = ExportFormat.WAV
-    sample_rate: int = Field(default=44100, ge=8000, le=192000)
-    bit_depth: int = Field(default=16, ge=8, le=32)
-    bitrate: int = Field(default=192000, ge=32000, le=320000)
-    normalize: bool = True
-    fade_in: float = Field(default=0.0, ge=0.0, le=10.0)
-    fade_out: float = Field(default=0.0, ge=0.0, le=10.0)
-    metadata: ExportMetadata | None = None
-```
-
-```python
-# ExportWriter with format-specific handlers
-class ExportWriter:
-    async def _write_stem(self, audio: np.ndarray, path: Path, sample_rate: int) -> None:
-        suffix = path.suffix.lower()
-        if suffix == ".wav":
-            await self._write_wav(audio, path, sample_rate)
-        elif suffix == ".flac":
-            await self._write_flac(audio, path, sample_rate)
-        elif suffix == ".mp3":
-            await self._write_mp3(audio, path, sample_rate)
-        elif suffix in (".m4a", ".mp4"):
-            await self._write_m4a(audio, path, sample_rate)
-        else:
-            raise UnsupportedFormatError(f"Unsupported format: {suffix}")
-```
-
-```python
-# BatchExporter with progress tracking and error handling
-class BatchExporter:
-    async def export_all(
-        self,
-        stems: dict[str, np.ndarray],
-        output_dir: Path,
-        sample_rate: int = 44_100,
-    ) -> list[Path]:
-        """Export all stems to files in output_dir with progress tracking."""
-        output_dir.mkdir(parents=True, exist_ok=True)
-        results: list[Path] = []
-        total = len(stems)
-
-        for i, (stem_name, audio) in enumerate(stems.items(), 1):
-            ext = self._config.format.value
-            filename = f"{stem_name}.{ext}"
-            output_path = output_dir / filename
-
-            try:
-                await self._writer.write_stem(stem_name, audio, output_path, sample_rate)
-                results.append(output_path)
-                logger.info(f"Exported {stem_name} to {output_path}")
-            except (WriteError, ExportError) as e:
-                logger.error(f"Failed to export {stem_name}: {e}")
-                continue
-            except Exception as e:
-                logger.error(f"Unexpected error exporting {stem_name}: {e}")
-                continue
-
-            if self._progress_callback:
-                self._progress_callback(i, total)
-
-        return results
-```
-
-### Phase 5 Review Notes
-
-**Implementation Highlights:**
-
-- **Multi-format support:** Complete implementation for WAV, FLAC, MP3, and M4A formats
-- **Metadata embedding:** Full support for ID3 tags (MP3), Vorbis comments (FLAC), MP4 atoms (M4A), and INFO chunk (WAV)
-- **Async-first design:** All I/O operations use `async def` with `asyncio.to_thread()` for blocking operations
-- **Error handling:** Robust error handling with continue-on-failure for batch operations
-- **Progress tracking:** Progress callbacks for long-running export operations
-- **Quality optimization:** Audio clipping, fade-in/fade-out effects, and configurable quality settings
-
-**Technical Decisions:**
-
-- **Format-specific handlers:** Separate methods for each format (`_write_wav`, `_write_flac`, `_write_mp3`, `_write_m4a`) for maintainability
-- **Pydantic configuration:** Strong typing and validation for export configuration
-- **Async file I/O:** Uses `asyncio.to_thread()` for blocking file operations to maintain UI responsiveness
-- **FFmpeg integration:** Uses FFmpeg for M4A encoding when soundfile doesn't support it
-- **Lameenc for MP3:** Uses `lameenc` library for MP3 encoding with configurable bitrate and quality
-
-**Test Results:**
-
-- **Unit tests:** 20/20 tests passing
-  - `test_writer.py`: 10/10 tests (WAV, FLAC, MP3, M4A writing, batch export, audio clipping, fade effects, metadata embedding, unsupported format handling)
-  - `test_batch_exporter.py`: 5/5 tests (sequential export, parallel export, progress callbacks, error handling, concurrent limits)
-  - `test_metadata.py`: 5/5 tests (WAV, FLAC, MP3, M4A metadata embedding, empty and partial metadata)
-
-- **Code quality:** All linting issues resolved, imports organized, line lengths within limits
-- **Coverage:** Comprehensive test coverage for all export pipeline components
-
-### Integration Points
-
-**Phase 4 (Separation Engine) → Phase 5 (Export Pipeline):**
-
-- **Input:** Phase 4 produces `dict[str, np.ndarray]` containing separated stems (vocals, other, bass, drums, etc.)
-- **Output:** Phase 5 exports stems to disk in the requested formats with metadata
-- **Workflow:** Separation → Postprocessing → Export (Phase 4 → Phase 5)
-
-**Phase 6 (PySide6 UI) → Phase 5 (Export Pipeline):**
-
-- **UI integration:** Phase 6 provides the user interface for selecting export formats, settings, and output directories
-- **Service layer:** Phase 5 provides the backend service for actual file export operations
-- **Progress reporting:** Phase 6 displays progress information from Phase 5's progress callbacks
-
-### Quality Metrics
-
-| Metric | Target | Actual |
-| -------- | -------- | -------- |
-| Test coverage | ≥90% | 100% (20/20 tests passing) |
-| Format support | 4 formats | 4 formats (WAV, FLAC, MP3, M4A) |
-| Metadata support | All formats | All formats (ID3, Vorbis, MP4, INFO) |
-| Error handling | Continue on failure | Continue on failure |
-| Performance | < 100ms per file | < 100ms per file |
-
 ---
 
 ## Phase 6: PySide6 UI Development
@@ -416,31 +294,23 @@ class BatchExporter:
 
 ### Deliverables
 
-- [x] `app/ui/__init__.py` — Layout definitions
-- [x] `app/ui/main_window.py` — `MainWindow` with menu bar, toolbar, status bar
+- [ ] `app/ui/__init__.py` — Layout definitions
+- [ ] `app/ui/main_window.py` — `MainWindow` with menu bar, toolbar, status bar
 - [ ] `app/ui/processing_dialog.py` — Progress dialog with cancel option and ETA
 - [ ] `app/ui/settings_dialog.py` — Model selection, output format, performance settings
-- [x] `app/widgets/__init__.py` — Widget exports
-- [x] `app/widgets/file_drop_zone.py` — Drag-and-drop file selection widget
-- [x] `app/widgets/playback_controls.py` — Play/Pause/Stop/Seek controls
-- [x] `app/widgets/track_selector.py` — Vocals/Instrumental track selection
-- [x] `app/widgets/waveform_view.py` — Waveform visualization using `pyqtgraph`
-- [x] `app/widgets/progress_bar.py` — Progress indicator with cancel
-- [ ] `app/widgets/equalizer.py` — Optional EQ display
-- [x] `app/controllers/__init__.py` — Controller exports
-- [x] `app/controllers/main_controller.py` — UI logic and state binding
-- [x] `app/controllers/playback_controller.py` — Playback state management
-- [x] `app/controllers/settings_controller.py` — Settings management
-- [x] `app/models/__init__.py` — Data model exports
-- [x] `app/models/app_state.py` — Application state model
-- [x] `app/models/settings_model.py` — Settings model
-- [x] `app/services/__init__.py` — Service exports
-- [x] `app/services/separation_service.py` — Separation orchestration
-- [x] `app/services/playback_service.py` — Playback orchestration
-- [x] `app/services/export_service.py` — Export orchestration
-- [x] `app/resources/` — Icons, stylesheets (QSS), translations
-- [x] Dark/light theme support via QSS
-- [ ] Unit tests for controllers and widgets
+- [ ] `app/widgets/__init__.py` — Widget exports
+- [ ] `app/widgets/file_drop_zone.py` — Drag-and-drop file selection widget
+- [ ] `app/widgets/playback_controls.py` — Play/Pause/Stop/Seek controls
+- [ ] `app/widgets/track_selector.py` — Vocals/Instrumental track selection
+- [ ] `app/widgets/progress_bar.py` — Progress indicator with cancel
+- [ ] `app/controllers/__init__.py` — Controller exports
+- [ ] `app/controllers/main_controller.py` — UI logic and state binding
+- [ ] `app/controllers/playback_controller.py` — Playback state management
+- [ ] `app/models/__init__.py` — Data model exports
+- [ ] `app/models/separation.py` — Pydantic models for separation state and results
+- [ ] `app/resources/` — Icons, stylesheets (QSS), translations
+- [ ] Dark/light theme support via QSS
+- [ ] Responsive layout with `QSplitter`, `QStackedWidget`
 
 ### Skills Applied
 
@@ -465,24 +335,6 @@ class BatchExporter:
 | Results | Play separated tracks, export options |
 | Settings | Model selection, output format, performance |
 
-### Phase 6 Review Notes
-
-**Status:** ⚠️ **Mostly Complete** — Structural UI components exist but critical runtime bugs prevent application launch.
-
-**Critical Bugs:**
-- `main.py` is a TODO stub — no `QApplication` instantiation, no `MainWindow` creation
-- `MainController` emits undeclared signal `separation_progress` → `AttributeError` at runtime
-- `SeparationService()` called without required `config` argument → `TypeError`
-- `asyncio.create_task` called without running event loop → `RuntimeError`
-- No "Separate" button wired to `handle_separate_requested()`
-- `_export_audio()` is a stub in `MainWindow`
-- `SettingsController` never initializes `self._settings` → `AttributeError`
-
-**Missing Components:**
-- `processing_dialog.py` — No modal progress dialog
-- `settings_dialog.py` — No settings UI dialog
-- `equalizer.py` — No equalizer widget
-
 ---
 
 ## Phase 7: Media Playback & Visualization
@@ -491,13 +343,11 @@ class BatchExporter:
 
 ### Deliverables
 
-- [x] `app/controllers/playback_controller.py` — Playback state machine (stopped, playing, paused, loading, error)
-- [x] `app/widgets/waveform_view.py` — Waveform visualization using `pyqtgraph`
-- [x] `app/widgets/playback_controls.py` — Play/Pause/Stop/Seek controls
-- [x] `app/services/playback_service.py` — Audio playback orchestration
-- [ ] Synchronized playback of multiple tracks (vocals / instrumental)
+- [ ] `app/widgets/waveform_view.py` — Waveform visualization using `pyqtgraph`
+- [ ] `app/widgets/equalizer.py` — Optional EQ display
+- [ ] `app/controllers/playback_controller.py` — Playback state machine (stopped, playing, paused, loading, error)
+- [ ] Independent volume control per track (vocals / instrumental)
 - [ ] Seek slider with position indicator and time display
-- [ ] Independent volume control per track
 - [ ] Gapless playback support
 - [ ] Playback state persistence across separation sessions
 - [ ] Unit tests for playback controller and waveform widget
@@ -516,23 +366,6 @@ class BatchExporter:
 | `sounddevice` | Low-latency audio output |
 | `numpy` | Audio buffer manipulation |
 | `pyqtgraph` | Real-time waveform rendering |
-
-### Phase 7 Review Notes
-
-**Status:** ⚠️ **Partially Complete** — Core playback and waveform exist; advanced features and tests are missing.
-
-**Implemented:**
-- `PlaybackService` using `QMediaPlayer`
-- `PlaybackController` with state machine
-- `WaveformView` widget with basic rendering
-- `PlaybackControls` widget with play/pause/stop
-
-**Missing:**
-- Per-track volume control
-- Seek slider with time display
-- Gapless playback
-- Playback state persistence
-- Unit tests for playback controller and waveform widget
 
 ---
 
@@ -579,18 +412,18 @@ class BatchExporter:
 
 ### Deliverables
 
-- [x] `tests/conftest.py` — Shared fixtures, mock setup
-- [x] `tests/unit/engine/audio/` — Audio loader, resampler, preprocessor tests
-- [x] `tests/unit/engine/inference/` — Model manager, inference pipeline tests
-- [x] `tests/unit/engine/demucs/` — Separator, config, error handling tests
-- [x] `tests/unit/engine/export/` — Export writer, batch exporter, metadata tests
+- [ ] `tests/conftest.py` — Shared fixtures, mock setup
+- [ ] `tests/unit/engine/audio/` — Audio loader, resampler, preprocessor tests
+- [ ] `tests/unit/engine/inference/` — Model manager, inference pipeline tests
+- [ ] `tests/unit/engine/demucs/` — Separator, config, error handling tests
+- [ ] `tests/unit/engine/export/` — Export writer, batch exporter, metadata tests
 - [ ] `tests/unit/app/services/` — Separation service tests
 - [ ] `tests/unit/app/controllers/` — Controller logic tests
 - [ ] `tests/unit/app/widgets/` — Widget unit tests
-- [x] `tests/integration/` — Full pipeline integration tests
-- [x] `tests/ui/` — UI behavior tests with `pytest-qt`
-- [x] `tests/fixtures/` — Small audio files (< 1 MB), synthetic audio for edge cases
-- [x] Mock external dependencies (file system, network, HuggingFace)
+- [ ] `tests/integration/` — Full pipeline integration tests
+- [ ] `tests/ui/` — UI behavior tests with `pytest-qt`
+- [ ] `tests/fixtures/` — Small audio files (< 1 MB), synthetic audio for edge cases
+- [ ] Mock external dependencies (file system, network, HuggingFace)
 - [ ] Coverage report generation with `pytest-cov`
 - [ ] Coverage gates: engine ≥ 90%, app ≥ 85%, UI ≥ 70%, overall ≥ 85%
 
@@ -705,12 +538,12 @@ tests/
 | ML Model Integration | 3 | ✅ Complete |
 | Separation Engine | 4 | ✅ Complete |
 | Export Pipeline | 5 | ✅ Complete |
-| Desktop UI | 6 | ⚠️ Mostly Complete (bugs) |
-| Playback & Visualization | 7 | ⚠️ Partial |
-| Performance Optimization | 8 | ❌ Not Started |
-| Testing & QA | 9 | ⚠️ Partial |
-| Packaging & Distribution | 10 | ❌ Not Started |
-| Documentation & Release | 11 | ❌ Not Started |
+| Desktop UI | 6 | 🔲 Planned |
+| Playback & Visualization | 7 | 🔲 Planned |
+| Performance Optimization | 8 | 🔲 Planned |
+| Testing & QA | 9 | 🔲 Planned |
+| Packaging & Distribution | 10 | 🔲 Planned |
+| Documentation & Release | 11 | 🔲 Planned |
 
 ---
 

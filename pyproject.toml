@@ -77,6 +77,27 @@ markers = [
 
 [tool.coverage.run]
 source = ["app", "engine"]
+branch = true
 
 [tool.coverage.report]
 fail_under = 85
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@\\w+.*\\s+\\.\\.\\.",
+]
+
+[tool.coverage.overrides]
+# Per-module coverage thresholds
+# engine: 85% minimum
+# app: 70% minimum
+# tests: 80% minimum (for test helper code)
+engine_fail_under = 85
+app_fail_under = 70
+tests_fail_under = 80
