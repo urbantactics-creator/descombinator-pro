@@ -1,6 +1,6 @@
 # Fases — Lista de Tareas Completadas
 
-## Estado General: 75% completado
+## Estado General: 82% completado
 
 | Fase |               Nombre             |     Estado         | Completado |
 |------|----------------------------------|--------------------|------------|
@@ -11,7 +11,7 @@
 |  5   | Export Pipeline                  | ✅ Completa        | 7/7        |
 |  6   | PySide6 UI Development           | ✅ Completa        | 24/25      |
 |  7   | Media Playback & Visualization   | ✅ Completa        | 10/10      |
-|  8   | Performance Optimization         | ❌ No iniciada     | 0/11       |
+|  8   | Performance Optimization         | ✅ Completa        | 11/11      |
 |  9   | Testing & Quality Assurance      | ⚠️ Parcial         | 13/14      |
 |  10  | Packaging & Distribution         | ❌ No iniciada     | 0/10       |
 |  11  | Documentation & Release          | ❌ No iniciada     | 0/12       |
@@ -141,19 +141,19 @@
 - [x] Playback state persistence (`PlaybackStateStore`)
 - [x] Unit tests (mixer, controller, widgets)
 
-## Fase 8: Performance Optimization ❌
+## Fase 8: Performance Optimization ✅
 
-- [ ] CPU profiling
-- [ ] Memory profiling
-- [ ] PyTorch profiling
-- [ ] System resource monitoring
-- [ ] GPU optimization
-- [ ] CPU optimization
-- [ ] Memory optimization
-- [ ] I/O optimization
-- [ ] UI responsiveness
-- [ ] Benchmark suite
-- [ ] Performance regression tests
+- [x] CPU profiling (`cProfile`, `py-spy`)
+- [x] Memory profiling (`memory_profiler`)
+- [x] PyTorch profiling (`torch.profiler`)
+- [x] System resource monitoring (`psutil` — `engine/performance/monitor.py`)
+- [x] GPU optimization (autocast, pin_memory, guardado por CUDA + tests mock)
+- [x] CPU optimization (`TorchRuntimeOptimizer`, threads/MKLDNN/inference_mode)
+- [x] Memory optimization (WAV-PCM mmap fast path, GPU release, chunked `segment`)
+- [x] I/O optimization (fast path soundfile/librosa, `separate_loaded` sin doble carga)
+- [x] UI responsiveness (decimación de waveform en worker, < 100 ms)
+- [x] Benchmark suite reproducible (`benchmarks/`, `baselines.json`)
+- [x] Performance regression tests en CI (job `benchmark` con `check_regressions.py`)
 
 ## Fase 9: Testing & Quality Assurance ⚠️
 

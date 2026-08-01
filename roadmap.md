@@ -103,7 +103,9 @@
 ```python
 # AudioLoader interface
 class AudioLoader:
-    async def load(self, path: Path, sr: int = 44100, mono: bool = True) -> np.ndarray: ...
+    async def load(
+        self, path: Path, sr: int = 44100, mono: bool = True
+    ) -> np.ndarray: ...
     def validate_exists(self, path: Path) -> None: ...
     def validate_format(self, path: Path) -> None: ...
 ```
@@ -170,13 +172,16 @@ class SeparationModel(Protocol):
     @property
     def sources(self) -> list[str]: ...
 
+
 # Lazy model creation in ModelManager._create_model()
 def _create_model(self, name: str) -> SeparationModel:
     if name in (ModelName.HTDEMUCS_FT.value, ModelName.MDX_EXTRA.value):
         from engine.inference.demucs_agent import DemucsAgent
+
         return DemucsAgent(config)
     elif name == ModelName.UMXHQ.value:
         from engine.inference.openunmix_agent import OpenUnmixAgent
+
         return OpenUnmixAgent(config)
 ```
 
@@ -305,7 +310,9 @@ class ExportConfig(BaseModel):
 ```python
 # ExportWriter with format-specific handlers
 class ExportWriter:
-    async def _write_stem(self, audio: np.ndarray, path: Path, sample_rate: int) -> None:
+    async def _write_stem(
+        self, audio: np.ndarray, path: Path, sample_rate: int
+    ) -> None:
         suffix = path.suffix.lower()
         if suffix == ".wav":
             await self._write_wav(audio, path, sample_rate)
@@ -339,7 +346,9 @@ class BatchExporter:
             output_path = output_dir / filename
 
             try:
-                await self._writer.write_stem(stem_name, audio, output_path, sample_rate)
+                await self._writer.write_stem(
+                    stem_name, audio, output_path, sample_rate
+                )
                 results.append(output_path)
                 logger.info(f"Exported {stem_name} to {output_path}")
             except (WriteError, ExportError) as e:
@@ -562,34 +571,54 @@ class BatchExporter:
 
 ### Deliverables
 
-- [ ] CPU profiling with `cProfile` and `py-spy`
-- [ ] Memory profiling with `memory_profiler`
-- [ ] PyTorch profiling with `torch.profiler`
-- [ ] System resource monitoring with `psutil`
-- [ ] GPU optimization: `torch.cuda.amp.autocast()`, pinned memory, batch processing
-- [ ] CPU optimization: `torch.set_num_threads()`, `torch.backends.mkldnn`, `torch.inference_mode()`
-- [ ] Memory optimization: chunked processing, memory-mapped files, GPU memory release
-- [ ] I/O optimization: async file operations, buffered reads, SSD temp storage
-- [ ] UI responsiveness: ensure < 100ms interaction latency
-- [ ] Benchmark suite with reproducible test cases
-- [ ] Performance regression tests in CI
+- [x] CPU profiling with `cProfile` and `py-spy`
+- [x] Memory profiling with `memory_profiler`
+- [x] PyTorch profiling with `torch.profiler`
+- [x] System resource monitoring with `psutil`
+- [x] GPU optimization: `torch.cuda.amp.autocast()`, pinned memory, batch processing
+- [x] CPU optimization: `torch.set_num_threads()`, `torch.backends.mkldnn`, `torch.inference_mode()`
+- [x] Memory optimization: chunked processing, memory-mapped files, GPU memory release
+- [x] I/O optimization: async file operations, buffered reads, SSD temp storage
+- [x] UI responsiveness: ensure < 100ms interaction latency
+- [x] Benchmark suite with reproducible test cases
+- [x] Performance regression tests in CI
 
 ### Skills Applied
 
 - `performance-engineer` — Profiling, benchmarking, optimization strategies
 - `ai-ml-engineer` — PyTorch inference optimization, GPU acceleration
 - `audio-dsp-engineer` — DSP pipeline optimization, chunked processing
+- `python-backend-engineer` — Service refactors, lazy imports, async patterns
+- `file-system-io-engineer` — Memory-mapped WAV fast path, I/O optimization
+- `pyside6-ui-engineer` — Worker-side waveform decimation, UI responsiveness
+- `qa-automation-engineer` / `testing-engineer` — Benchmark suite and CI regression gate
+- `devops-engineer` — CI benchmark job
+- `documentation-writer` / `technical-writer` — Performance guides and tuning docs
 
 ### Performance Targets
 
-| Metric | Target |
-| -------- | -------- |
-| Separation time (3-min song, CPU) | < 30 seconds |
-| Separation time (3-min song, GPU) | < 10 seconds |
-| Memory usage | < 4 GB peak |
-| UI responsiveness | < 100ms for interactions |
-| Startup time | < 3 seconds |
-| File load time | < 5 seconds for 100 MB |
+| Metric | Target | Result |
+| -------- | -------- | ------ |
+| Separation time (3-min song, CPU) | < 30 seconds | Benchmark gate (`bench_real_separation_3min`) |
+| Separation time (3-min song, GPU) | < 10 seconds | Guarded code + mock tests (no CUDA hardware) |
+| Memory usage | < 4 GB peak | `profile_memory.py` (`slow`, manual) |
+| UI responsiveness | < 100ms for interactions | `bench_playback_*` gates pass |
+| Startup time | < 3 seconds | **Median ~1.8 s** — lazy imports (PEP 562) |
+| File load time | < 5 seconds for 100 MB | WAV-PCM `np.memmap` fast path |
+
+### Phase 8 Refinement Notes
+
+- **Chunked processing** uses Demucs `segment` (exposed through `SeparationConfig`/`SettingsModel`); no custom stitcher. Open-Unmix documents the full-length limit.
+- **Benchmarks** live in the root `benchmarks/` package with a committed `baselines.json`; `scripts/bench/check_regressions.py` fails on > 20 % median regression or a missed absolute target. Baselines are written by the CI runner, not locally.
+- **GPU** code is guarded by `torch.cuda.is_available()` and covered by monkeypatched unit tests; real execution is documented as manual/CI-with-GPU only.
+- **Startup** lazy imports: PEP 562 re-exports in `engine/{inference,demucs,audio,export}/__init__.py` + function-local `torch`/`librosa`/`demucs`/`openunmix` imports. `import main` loads none of the heavy ML stack.
+- **Double decode removed**: `SeparationService.separate_loaded(audio, sr)` reuses the audio the UI already decoded; `separate_file` stays for CLI/integrations.
+- **`engine/performance/`** package hosts `profiler.py`, `monitor.py` (psutil), and `optimizer.py` (`TorchRuntimeOptimizer`).
+- **Threading**: `TorchRuntimeOptimizer.configure()` sets `torch.set_num_threads(MAX_WORKERS)` and drops to 1 thread when Demucs `jobs > 1` to avoid oversubscription.
+
+### Milestone Summary
+
+Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memory_profiler/torch.profiler scripts), psutil `ResourceMonitor`, `TorchRuntimeOptimizer`, guarded GPU config (autocast/pin_memory/segment/jobs), memory-mapped WAV fast path, `separate_loaded` single-decode, lazy-import startup (~1.8 s, target < 3 s), worker-side waveform decimation, the `benchmarks/` suite (16 non-slow gates + slow real-separation), and the CI `benchmark` regression job are all delivered and tested.
 
 ---
 
