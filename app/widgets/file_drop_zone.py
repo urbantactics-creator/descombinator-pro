@@ -51,6 +51,7 @@ class FileDropZone(QWidget):
                 self.file_dropped.emit(file_path)
             else:
                 self._label.setText("Unsupported file format")
+        event.acceptProposedAction()
 
     def _has_valid_urls(self, event: QDragEnterEvent) -> bool:
         urls = event.mimeData().urls()

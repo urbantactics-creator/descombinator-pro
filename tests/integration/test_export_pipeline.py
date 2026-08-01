@@ -71,8 +71,8 @@ class TestBatchExporter:
     ) -> None:
         output = await batch_exporter.export_batch(batch_results, tmp_path)
 
-        for filename, stems in output.items():
-            for stem_name, path in stems.items():
+        for _filename, stems in output.items():
+            for _stem_name, path in stems.items():
                 assert path.exists()
                 assert path.stat().st_size > 0
 
@@ -85,7 +85,7 @@ class TestBatchExporter:
     ) -> None:
         output = await batch_exporter.export_batch(batch_results, tmp_path)
 
-        for filename, stems in output.items():
+        for _filename, stems in output.items():
             for stem_name, path in stems.items():
                 assert path.stem == stem_name
 
@@ -101,8 +101,8 @@ class TestBatchExporter:
 
         output = await exporter.export_batch(batch_results, tmp_path)
 
-        for filename, stems in output.items():
-            for stem_name, path in stems.items():
+        for _filename, stems in output.items():
+            for _stem_name, path in stems.items():
                 assert path.suffix == ".flac"
                 assert path.exists()
 
@@ -118,8 +118,8 @@ class TestBatchExporter:
 
         output = await exporter.export_batch(batch_results, tmp_path)
 
-        for filename, stems in output.items():
-            for stem_name, path in stems.items():
+        for _filename, stems in output.items():
+            for _stem_name, path in stems.items():
                 assert path.suffix == ".mp3"
                 assert path.exists()
 
@@ -155,8 +155,8 @@ class TestBatchExporter:
     ) -> None:
         output = await batch_exporter.export_batch(batch_results, tmp_path)
 
-        for filename, stems in output.items():
-            for stem_name, path in stems.items():
+        for _filename, stems in output.items():
+            for _stem_name, path in stems.items():
                 audio, sr = sf.read(str(path))
                 assert sr == 44100
                 assert len(audio) > 0
@@ -172,6 +172,6 @@ class TestBatchExporter:
         output = await batch_exporter.export_batch(batch_results, nested)
 
         assert nested.is_dir()
-        for filename, stems in output.items():
+        for _filename, stems in output.items():
             for path in stems.values():
                 assert path.exists()
