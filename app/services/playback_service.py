@@ -1,148 +1,154 @@
-"""Playback service for audio playback."""
+"""Playback service orchestrating the in-memory audio mixer."""
 
 from __future__ import annotations
 
-from enum import Enum
-from pathlib import Path
+import numpy as np
+import resampy
+from PySide6.QtCore import QObject, Signal
 
-from loguru import logger
-from PySide6.QtCore import QObject, QUrl, Signal, Slot
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from app.audio.mixer import AudioMixer, MixerTrack, PlaybackState
 
-
-class PlaybackState(Enum):
-    """Playback states."""
-
-    STOPPED = "stopped"
-    PLAYING = "playing"
-    PAUSED = "paused"
+__all__ = ["PlaybackState"]
 
 
 class PlaybackService(QObject):
-    """Service for audio playback using Qt Multimedia."""
+    """Multi-track playback backed by an in-memory :class:`AudioMixer`.
 
-    # Signals
+    Stems are numpy arrays already loaded in memory; the service converts
+    them to mono mixer tracks (resampling to 44.1 kHz only when needed) and
+    bridges the mixer's signals to its own for the controller layer.
+    """
+
     state_changed = Signal(PlaybackState)
     position_changed = Signal(int)  # Position in milliseconds
     duration_changed = Signal(int)  # Duration in milliseconds
     error_occurred = Signal(str)  # Error message
 
-    def __init__(self) -> None:
+    def __init__(self, mixer: AudioMixer | None = None) -> None:
         super().__init__()
-        self._setup_player()
-        self._current_file: Path | None = None
+        self._mixer = mixer if mixer is not None else AudioMixer()
+        self._mixer.state_changed.connect(self.state_changed.emit)
+        self._mixer.position_changed.connect(self.position_changed.emit)
+        self._mixer.duration_changed.connect(self.duration_changed.emit)
+        self._mixer.error_occurred.connect(self.error_occurred.emit)
 
-    def _setup_player(self) -> None:
-        """Initialize the media player and audio output."""
-        self._player = QMediaPlayer()
-        self._audio_output = QAudioOutput()
-        self._player.setAudioOutput(self._audio_output)
+    def set_source(self, audio: np.ndarray, sample_rate: int) -> None:
+        """Replace all tracks with a single source track (original audio)."""
+        self.state_changed.emit(PlaybackState.LOADING)
+        self._mixer.set_tracks(
+            [
+                MixerTrack(
+                    name="source",
+                    data=self._as_mono(audio),
+                    sample_rate=sample_rate,
+                )
+            ]
+        )
+        self.state_changed.emit(PlaybackState.STOPPED)
 
-        # Connect signals
-        self._player.playbackStateChanged.connect(self._on_playback_state_changed)
-        self._player.positionChanged.connect(self._on_position_changed)
-        self._player.durationChanged.connect(self._on_duration_changed)
-        self._player.errorOccurred.connect(self._on_error_occurred)
+    def set_stems(
+        self, stems: dict[str, np.ndarray], sample_rate: int = 44_100
+    ) -> None:
+        """Replace all tracks with separated stems (removing ``source``)."""
+        tracks: list[MixerTrack] = []
+        for name, data in stems.items():
+            mono = self._as_mono(data)
+            if sample_rate != AudioMixer.SAMPLE_RATE:
+                mono = resampy.resample(
+                    mono,
+                    sample_rate,
+                    AudioMixer.SAMPLE_RATE,
+                    filter="kaiser_best",
+                )
+            tracks.append(
+                MixerTrack(name=name, data=mono, sample_rate=AudioMixer.SAMPLE_RATE)
+            )
+        self._mixer.set_tracks(tracks)
 
-    @Slot()
-    def _on_playback_state_changed(self, state) -> None:
-        """Handle playback state changes."""
-        state_map = {
-            QMediaPlayer.PlaybackState.PlayingState: PlaybackState.PLAYING,
-            QMediaPlayer.PlaybackState.PausedState: PlaybackState.PAUSED,
-            QMediaPlayer.PlaybackState.StoppedState: PlaybackState.STOPPED,
-        }
-        new_state = state_map.get(state, PlaybackState.STOPPED)
-        self.state_changed.emit(new_state)
-
-    @Slot(int)
-    def _on_position_changed(self, position: int) -> None:
-        """Handle position changes."""
-        self.position_changed.emit(position)
-
-    @Slot(int)
-    def _on_duration_changed(self, duration: int) -> None:
-        """Handle duration changes."""
-        self.duration_changed.emit(duration)
-
-    @Slot(str, str)
-    def _on_error_occurred(self, error: str, error_string: str) -> None:
-        """Handle errors."""
-        logger.error(f"Playback error: {error} - {error_string}")
-        self.error_occurred.emit(f"{error}: {error_string}")
-
-    def load_file(self, file_path: Path) -> bool:
-        """Load an audio file for playback.
-
-        Args:
-            file_path: Path to the audio file
-
-        Returns:
-            True if file was loaded successfully, False otherwise
-        """
-        try:
-            self._current_file = file_path
-            url = QUrl.fromLocalFile(str(file_path))
-            self._player.setSource(url)
-
-            # Wait for the media to load
-            # In a real implementation, we might want to wait for the loaded signal
-            # For now, we'll return True and let the signals handle updates
-            logger.info(f"Loaded audio file: {file_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to load audio file {file_path}: {e}")
-            self.error_occurred.emit(f"Failed to load file: {e}")
-            return False
+    def clear(self) -> None:
+        """Remove all tracks and reset the mixer."""
+        self._mixer.set_tracks([])
 
     def play(self) -> None:
         """Start or resume playback."""
-        if self._player.source().isEmpty():
-            logger.warning("No media loaded for playback")
-            return
-        self._player.play()
+        self._mixer.play()
 
     def pause(self) -> None:
         """Pause playback."""
-        self._player.pause()
+        self._mixer.pause()
 
     def stop(self) -> None:
         """Stop playback."""
-        self._player.stop()
+        self._mixer.stop()
 
-    def set_position(self, position_ms: int) -> None:
-        """Set playback position.
+    def seek_ms(self, ms: int) -> None:
+        """Seek to the given millisecond position."""
+        self._mixer.seek_ms(ms)
 
-        Args:
-            position_ms: Position in milliseconds
-        """
-        self._player.setPosition(position_ms)
+    def set_position(self, ms: int) -> None:
+        """Alias for :meth:`seek_ms` kept for backwards compatibility."""
+        self.seek_ms(ms)
+
+    def set_master_volume(self, volume: float) -> None:
+        """Set the master output volume (0.0-1.0)."""
+        self._mixer.set_master_volume(volume)
 
     def set_volume(self, volume: float) -> None:
-        """Set playback volume.
+        """Alias for :meth:`set_master_volume`."""
+        self.set_master_volume(volume)
 
-        Args:
-            volume: Volume level (0.0 to 1.0)
-        """
-        self._audio_output.setVolume(volume)
+    def set_track_volume(self, name: str, volume: float) -> None:
+        """Set the volume of a single track (0.0-1.0)."""
+        self._mixer.set_track_gain(name, volume)
+
+    def set_track_muted(self, name: str, muted: bool) -> None:
+        """Mute or unmute a single track."""
+        self._mixer.set_track_muted(name, muted)
+
+    def set_active_stems(self, names: list[str]) -> None:
+        """Enable only the given stems in the mix."""
+        self._mixer.set_active(names)
 
     def get_state(self) -> PlaybackState:
-        """Get current playback state."""
-        state_map = {
-            QMediaPlayer.PlaybackState.PlayingState: PlaybackState.PLAYING,
-            QMediaPlayer.PlaybackState.PausedState: PlaybackState.PAUSED,
-            QMediaPlayer.PlaybackState.StoppedState: PlaybackState.STOPPED,
-        }
-        return state_map.get(self._player.playbackState(), PlaybackState.STOPPED)
+        """Current playback state."""
+        return self._mixer.state
 
     def get_position(self) -> int:
-        """Get current playback position in milliseconds."""
-        return self._player.position()
+        """Current position in milliseconds."""
+        return self._mixer.position_ms()
 
     def get_duration(self) -> int:
-        """Get media duration in milliseconds."""
-        return self._player.duration()
+        """Current stream duration in milliseconds."""
+        return self._mixer.duration_ms()
 
-    def is_available(self) -> bool:
-        """Check if media playback is available."""
-        return self._player.isAvailable()
+    def has_tracks(self) -> bool:
+        """True when any track is loaded."""
+        return self._mixer.has_tracks
+
+    def track_names(self) -> list[str]:
+        """Names of all loaded tracks."""
+        return self._mixer.track_names()
+
+    def track_volumes(self) -> dict[str, float]:
+        """Mapping of track name to current volume."""
+        return self._mixer.track_gains()
+
+    def muted_map(self) -> dict[str, bool]:
+        """Mapping of track name to current mute flag."""
+        return self._mixer.track_muted_map()
+
+    def active_stems(self) -> list[str]:
+        """Names of enabled stems."""
+        return self._mixer.active_stems()
+
+    def has_stems(self) -> bool:
+        """True when separated stems are loaded (beyond the raw source)."""
+        names = self._mixer.track_names()
+        return bool(names) and names != ["source"]
+
+    @staticmethod
+    def _as_mono(audio: np.ndarray) -> np.ndarray:
+        """Reduce multi-channel audio to mono, reusing 1D float32 buffers."""
+        mono = np.mean(audio, axis=0) if audio.ndim == 2 else audio
+        # numpy stubs type astype() as Any; the cast is verified by tests.
+        return mono.astype(np.float32, copy=False)  # type: ignore[no-any-return]
