@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 from loguru import logger
 from PySide6.QtCore import Qt, QThreadPool, Slot
 from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent
@@ -27,6 +28,7 @@ from app.ui.settings_dialog import SettingsDialog
 from app.widgets.file_drop_zone import FileDropZone
 from app.widgets.playback_controls import PlaybackControls
 from app.widgets.progress_bar import ProgressBar
+from app.widgets.track_mixer import TrackMixerWidget
 from app.widgets.track_selector import TrackSelector
 from app.widgets.waveform_view import WaveformView
 from app.workers.audio_load_worker import AudioLoadWorker
@@ -45,7 +47,7 @@ class MainWindow(QMainWindow):
         self._main_controller = main_controller
         self._playback_controller = playback_controller
         self._settings_controller = settings_controller
-        self._separated_stems: dict[str, object] = {}
+        self._separated_stems: dict[str, np.ndarray] = {}
         self._processing_dialog: ProcessingDialog | None = None
 
         self.setWindowTitle("Descombinator Pro")
@@ -96,6 +98,9 @@ class MainWindow(QMainWindow):
 
         self._playback_controls = PlaybackControls()
         right_layout.addWidget(self._playback_controls)
+
+        self._track_mixer = TrackMixerWidget()
+        right_layout.addWidget(self._track_mixer)
 
         splitter.addWidget(right_panel)
 
@@ -196,6 +201,17 @@ class MainWindow(QMainWindow):
         )
         self._playback_controller.error_occurred.connect(self._on_playback_error)
 
+        self._playback_controller.tracks_changed.connect(self._on_tracks_changed)
+        self._playback_controller.track_volume_changed.connect(
+            self._track_mixer.set_track_volume
+        )
+        self._playback_controller.track_muted_changed.connect(
+            self._track_mixer.set_track_muted
+        )
+
+        self._track_mixer.volume_changed.connect(self._on_track_volume_changed)
+        self._track_mixer.muted_changed.connect(self._on_track_muted_changed)
+
     def _load_stylesheet(self) -> None:
         """Load the application stylesheet."""
         self._change_theme("dark")
@@ -277,6 +293,8 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def _on_file_dropped(self, file_path: str) -> None:
         """Handle a file being dropped on the drop zone."""
+        self._playback_controller.reset()
+        self._playback_controller.record_last_file(file_path)
         self._main_controller.handle_file_dropped(file_path)
         self._status_label.setText(f"Loaded: {Path(file_path).name}")
         self._separate_btn.setEnabled(True)
@@ -287,13 +305,14 @@ class MainWindow(QMainWindow):
         worker.signals.error.connect(self._on_audio_load_error)
         QThreadPool.globalInstance().start(worker)
 
-        self._playback_controller.load_file(file_path)
-
     @Slot(object)
     def _on_audio_loaded(self, result: object) -> None:
-        """Handle audio loaded successfully for waveform."""
-        audio_data, sample_rate = result
+        """Handle audio loaded successfully for waveform and playback."""
+        audio_data: np.ndarray
+        sample_rate: int
+        audio_data, sample_rate = result  # type: ignore[misc]
         self._waveform_view.set_audio_data(audio_data, sample_rate)
+        self._playback_controller.set_source(audio_data, sample_rate)
 
     @Slot(str)
     def _on_audio_load_error(self, error: str) -> None:
@@ -337,7 +356,7 @@ class MainWindow(QMainWindow):
         self._processing_dialog.show()
 
     @Slot(dict)
-    def _on_separation_completed(self, stems: dict[str, object]) -> None:
+    def _on_separation_completed(self, stems: dict[str, np.ndarray]) -> None:
         """Handle separation process completion."""
         self._separated_stems = stems
         self._status_label.setText("Separation complete!")
@@ -347,6 +366,9 @@ class MainWindow(QMainWindow):
         if self._processing_dialog:
             self._processing_dialog.set_complete()
             self._processing_dialog = None
+
+        # Feed stems into playback and rebuild the track mixer
+        self._playback_controller.set_stems(stems)
 
         # Update waveform with first stem (vocals preferred)
         sample_rate = 44100
@@ -381,6 +403,7 @@ class MainWindow(QMainWindow):
     def _on_playback_position_changed(self, position_ms: int) -> None:
         """Handle playback position changes."""
         self._playback_controls.set_position(position_ms)
+        self._waveform_view.set_position(position_ms / 1000)
 
     @Slot(int)
     def _on_playback_duration_changed(self, duration_ms: int) -> None:
@@ -402,6 +425,27 @@ class MainWindow(QMainWindow):
         """Handle playback errors."""
         self._status_label.setText(f"Playback error: {error_message}")
         QMessageBox.warning(self, "Playback Error", error_message)
+
+    # --- Track mixer signals ---
+
+    @Slot(list)
+    def _on_tracks_changed(self, stems: list[str]) -> None:
+        """Rebuild the track mixer when the loaded stems change."""
+        self._track_mixer.set_tracks(
+            stems,
+            self._playback_controller.track_volumes(),
+            self._playback_controller.muted_map(),
+        )
+
+    @Slot(str, float)
+    def _on_track_volume_changed(self, name: str, volume: float) -> None:
+        """Forward a mixer volume change to the playback controller."""
+        self._playback_controller.set_track_volume(name, volume)
+
+    @Slot(str, bool)
+    def _on_track_muted_changed(self, name: str, muted: bool) -> None:
+        """Forward a mixer mute change to the playback controller."""
+        self._playback_controller.set_track_muted(name, muted)
 
     # --- Drag and drop ---
 
