@@ -302,6 +302,7 @@ class MainWindow(QMainWindow):
         # Load audio in background thread for waveform display
         worker = AudioLoadWorker(Path(file_path))
         worker.signals.finished.connect(self._on_audio_loaded)
+        worker.signals.display_ready.connect(self._on_display_ready)
         worker.signals.error.connect(self._on_audio_load_error)
         QThreadPool.globalInstance().start(worker)
 
@@ -311,8 +312,18 @@ class MainWindow(QMainWindow):
         audio_data: np.ndarray
         sample_rate: int
         audio_data, sample_rate = result  # type: ignore[misc]
+        self._main_controller.set_loaded_audio(audio_data, sample_rate)
         self._waveform_view.set_audio_data(audio_data, sample_rate)
         self._playback_controller.set_source(audio_data, sample_rate)
+
+    @Slot(object)
+    def _on_display_ready(self, result: object) -> None:
+        """Render the worker-decimated waveform points."""
+        points: np.ndarray
+        time_step: float
+        total_time: float
+        points, time_step, total_time = result  # type: ignore[misc]
+        self._waveform_view.set_display_data(points, time_step, total_time)
 
     @Slot(str)
     def _on_audio_load_error(self, error: str) -> None:

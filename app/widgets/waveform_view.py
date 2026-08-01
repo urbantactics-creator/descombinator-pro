@@ -7,6 +7,47 @@ import pyqtgraph as pg
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 
+def decimate_waveform(
+    audio: np.ndarray,
+    max_points: int = 2000,
+    sample_rate: int = 44_100,
+) -> tuple[np.ndarray, float]:
+    """Compute peak amplitude per bucket for waveform display.
+
+    The audio is reduced to at most ``max_points`` buckets, each holding the
+    peak absolute value of its samples. Processing is done in chunks so large
+    files never build a full ``np.abs`` transient in memory.
+
+    Args:
+        audio: Input audio as 1D (mono) or 2D (channels, samples) float array.
+        max_points: Maximum number of display buckets.
+        sample_rate: Sample rate used to compute the time step.
+
+    Returns:
+        Tuple of (display_points, time_step) where time_step is seconds per
+        bucket.
+    """
+    mono = np.mean(audio, axis=0).astype(np.float32) if audio.ndim == 2 else audio
+    n = len(mono)
+    if n == 0:
+        return np.array([], dtype=np.float32), 1.0 / sample_rate
+
+    step = max(1, n // max_points)
+    n_buckets = n // step
+    if n_buckets == 0:
+        n_buckets = 1
+
+    display = np.empty(n_buckets, dtype=np.float32)
+    block_buckets = max(1, 1_000_000 // step)
+    for start in range(0, n_buckets, block_buckets):
+        end = min(start + block_buckets, n_buckets)
+        lo = start * step
+        hi = end * step
+        block = np.abs(mono[lo:hi]).reshape(end - start, step)
+        display[start:end] = np.max(block, axis=1)
+    return display, step / sample_rate
+
+
 class WaveformView(QWidget):
     """Widget for displaying audio waveform."""
 
@@ -36,6 +77,24 @@ class WaveformView(QWidget):
         self._position_line = self._plot_widget.addLine(x=0, pen=pg.mkPen("r", width=2))
         self._position_line.hide()
 
+    def set_display_data(
+        self,
+        points: np.ndarray,
+        time_step: float,
+        total_time: float,
+    ) -> None:
+        """Render pre-decimated display points.
+
+        Args:
+            points: Peak amplitudes per bucket.
+            time_step: Seconds per bucket.
+            total_time: Total audio duration in seconds.
+        """
+        times = np.arange(len(points)) * time_step
+        self._plot_data.setData(times, points)
+        self._plot_widget.setXRange(0, total_time)
+        self._position_line.show()
+
     def set_audio_data(self, audio_data: np.ndarray, sample_rate: int = 44100) -> None:
         """Set the audio data to display.
 
@@ -45,35 +104,14 @@ class WaveformView(QWidget):
         """
         self._audio_data = audio_data
 
-        # Convert to mono if stereo for display
-        if audio_data.ndim == 2:
-            display_data = np.mean(np.abs(audio_data), axis=0)
-        else:
-            display_data = np.abs(audio_data)
+        display_data, time_step = decimate_waveform(audio_data, sample_rate=sample_rate)
 
-        # Downsample for display if too long
-        max_points = 2000
-        if len(display_data) > max_points:
-            # Simple decimation
-            step = len(display_data) // max_points
-            display_data = display_data[::step]
-            time_step = step / sample_rate
-        else:
-            time_step = 1.0 / sample_rate
-
-        times = np.arange(len(display_data)) * time_step
-        self._plot_data.setData(times, display_data)
-
-        # Set x-axis range
         total_time = (
             len(audio_data) / sample_rate
             if audio_data.ndim == 1
             else len(audio_data[0]) / sample_rate
         )
-        self._plot_widget.setXRange(0, total_time)
-
-        # Show position line
-        self._position_line.show()
+        self.set_display_data(display_data, time_step, total_time)
 
     def set_position(self, position_seconds: float) -> None:
         """Set the playback position indicator.

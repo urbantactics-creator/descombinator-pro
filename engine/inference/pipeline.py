@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 
 import numpy as np
-import torch
 from loguru import logger
 
 from engine.audio.preprocessor import AudioPreprocessor
@@ -49,6 +48,8 @@ class InferencePipeline:
 
         if audio.ndim == 1:
             audio = audio[np.newaxis, :]
+        import torch
+
         tensor = torch.from_numpy(audio).float()
 
         stems_dict = await model.separate(tensor)

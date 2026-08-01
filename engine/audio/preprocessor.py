@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 
-import librosa
 import numpy as np
 from loguru import logger
 
@@ -47,6 +46,8 @@ class AudioPreprocessor:
     ) -> np.ndarray:
         """Trim leading/trailing silence."""
         try:
+            import librosa
+
             trimmed, _ = await asyncio.to_thread(
                 librosa.effects.trim, audio, top_db=top_db
             )

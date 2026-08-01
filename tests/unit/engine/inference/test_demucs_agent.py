@@ -45,11 +45,17 @@ class TestDemucsAgentInitialize:
 
     @pytest.mark.asyncio
     async def test_initialize_import_error(self, agent: DemucsAgent) -> None:
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fail_demucs(name: str, *args: object, **kwargs: object) -> object:
+            if name == "demucs.api":
+                raise ImportError("no demucs")
+            return real_import(name, *args, **kwargs)
+
         with (
-            patch(
-                "builtins.__import__",
-                side_effect=ImportError("no demucs"),
-            ),
+            patch("builtins.__import__", side_effect=fail_demucs),
             pytest.raises(ModelLoadError, match="Cannot load Demucs"),
         ):
             await agent.initialize()
