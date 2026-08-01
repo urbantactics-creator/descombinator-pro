@@ -37,7 +37,7 @@ Desktop application that separates a song into two AI-powered tracks — **vocal
 
 ## Project Structure
 
-```
+```text
 descombinator/
 ├── app/
 │   ├── ui/           # UI components and layouts
