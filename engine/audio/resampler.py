@@ -23,13 +23,26 @@ class AudioResampler:
         target_sr: int = 44_100,
     ) -> np.ndarray:
         """Resample with kaiser_best quality. Skips if already at target."""
+        return await asyncio.to_thread(self.resample_sync, audio, orig_sr, target_sr)
+
+    def resample_sync(
+        self,
+        audio: np.ndarray,
+        orig_sr: int,
+        target_sr: int = 44_100,
+    ) -> np.ndarray:
+        """Synchronous resample for use inside worker threads.
+
+        Keeps the existing logging and error contract of ``resample`` while
+        remaining callable from code already running in a thread.
+        """
         if orig_sr == target_sr:
             logger.debug(f"Already at {target_sr} Hz, returning copy")
             return audio.copy()
 
         try:
-            resampled = await asyncio.to_thread(
-                resampy.resample, audio, orig_sr, target_sr, filter="kaiser_best"
+            resampled = resampy.resample(
+                audio, orig_sr, target_sr, filter="kaiser_best"
             )
             duration = len(resampled) / target_sr
             logger.info(
