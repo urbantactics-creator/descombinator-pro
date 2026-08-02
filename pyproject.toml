@@ -94,6 +94,21 @@ module = [
     "tests.integration.test_separator",
     "tests.integration.test_export_pipeline",
     "tests.integration.test_full_pipeline",
+    "engine.inference.config",
+    "engine.export.config",
+    "engine.demucs.config",
+    "app.models.settings_model",
+    "app.models.app_state",
+    "engine.performance.monitor",
+    "app.controllers.playback_controller",
+    "app.workers.audio_load_worker",
+    "engine.inference.config",
+    "engine.export.config",
+    "engine.demucs.config",
+    "app.models.settings_model",
+    "app.models.app_state",
+    "engine.performance.monitor",
+    "tests.unit.engine.audio.test_metadata"
 ]
 ignore_errors = true
 
