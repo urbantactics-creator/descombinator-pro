@@ -3,22 +3,24 @@
     "min_rounds": 10,
     "max_time": 1.0,
     "warmup": "on",
-    "calibration_precision": 3
+    "calibration_precision": 3,
+    "baseline_source": "max of CI runs 27 and 30",
+    "note": "Shared-runner variance is ~35%; baselines are the worst observed median per benchmark so the 20% gate only trips on real regressions."
   },
   "bench_audio_load_1min_wav": {
-    "median_ms": 2.1
+    "median_ms": 3.1
   },
   "bench_audio_postprocess_1min": {
-    "median_ms": 2.6
+    "median_ms": 3.3
   },
   "bench_audio_preprocess_3min": {
-    "median_ms": 10.4
+    "median_ms": 14.3
   },
   "bench_engine_pipeline_3min_mock": {
-    "median_ms": 11.0
+    "median_ms": 14.9
   },
   "bench_engine_separate_3min_mock": {
-    "median_ms": 0.1
+    "median_ms": 0.2
   },
   "bench_export_batch_parallel": {
     "median_ms": 99.1
@@ -27,19 +29,19 @@
     "median_ms": 142.5
   },
   "bench_export_flac_1min": {
-    "median_ms": 36.7
+    "median_ms": 46.2
   },
   "bench_export_m4a_1min": {
-    "median_ms": 2292.2
+    "median_ms": 2892.2
   },
   "bench_export_mp3_1min": {
-    "median_ms": 413.8
+    "median_ms": 506.8
   },
   "bench_export_wav_1min": {
     "median_ms": 29.4
   },
   "bench_playback_readdata_1min": {
-    "median_ms": 7.2
+    "median_ms": 11.7
   },
   "bench_playback_set_stems": {
     "median_ms": 0.1
@@ -47,13 +49,13 @@
   "bench_playback_set_track_volume": {
     "median_ms": 0.0
   },
-  "bench_real_separation_3min": {
-    "median_ms": 0.0
-  },
   "bench_startup_import": {
-    "median_ms": 874.8
+    "median_ms": 1109.4
   },
   "bench_waveform_decimate_100mb": {
     "median_ms": 2.0
+  },
+  "bench_real_separation_3min": {
+    "median_ms": 0.0
   }
 }
