@@ -9,10 +9,15 @@ from typing import Any
 REGRESSION_RATIO: float = 1.2
 
 
-def load_baselines(path: Path) -> dict[str, dict[str, float]]:
-    """Load the committed baselines file (bench_name -> {median_ms})."""
+def load_baselines(path: Path) -> dict[str, dict[str, Any]]:
+    """Load the committed baselines file (bench_name -> {median_ms}).
+
+    The file may also carry a ``_meta`` key recording the pytest-benchmark
+    configuration (min rounds, warmup, etc.) used to capture the values; it is
+    returned as-is so the regression gate can validate it.
+    """
     with path.open("r", encoding="utf-8") as f:
-        data: dict[str, dict[str, float]] = json.load(f)
+        data: dict[str, dict[str, Any]] = json.load(f)
     return data
 
 

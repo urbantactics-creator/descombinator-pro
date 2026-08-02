@@ -109,7 +109,11 @@ jobs:
           QT_QPA_PLATFORM: offscreen
 
       - name: Check regressions against baselines
-        run: python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json
+        run: python -m scripts.bench.check_regressions \
+          --baseline benchmarks/baselines.json \
+          --result bench_results.json \
+          --min-rounds 10 --max-time 1.0 --warmup on \
+          --calibration-precision 3
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
