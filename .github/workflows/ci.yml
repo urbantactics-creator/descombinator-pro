@@ -22,10 +22,10 @@ jobs:
         python-version: ["3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -64,14 +64,14 @@ jobs:
           QT_QPA_PLATFORM: offscreen
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
           verbose: true
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: coverage.xml
@@ -81,10 +81,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -109,14 +109,15 @@ jobs:
           QT_QPA_PLATFORM: offscreen
 
       - name: Check regressions against baselines
-        run: python -m scripts.bench.check_regressions \
-          --baseline benchmarks/baselines.json \
-          --result bench_results.json \
-          --min-rounds 10 --max-time 1.0 --warmup on \
-          --calibration-precision 3
+        run: |
+          python -m scripts.bench.check_regressions \
+            --baseline benchmarks/baselines.json \
+            --result bench_results.json \
+            --min-rounds 10 --max-time 1.0 --warmup on \
+            --calibration-precision 3
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-results
           path: bench_results.json
