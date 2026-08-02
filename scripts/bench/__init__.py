@@ -8,16 +8,23 @@ from typing import Any
 
 REGRESSION_RATIO: float = 1.2
 
+# Key under which baselines.json stores the pytest-benchmark methodology used
+# to produce its median_ms values (rounds/warmup/calibration). Comparing
+# medians captured under different measurement settings produces false
+# regressions, so this must match the settings the "Run benchmarks" step uses.
+BASELINE_META_KEY = "_meta"
 
-def load_baselines(path: Path) -> dict[str, dict[str, Any]]:
+
+def load_baselines(path: Path) -> dict[str, dict[str, float]]:
     """Load the committed baselines file (bench_name -> {median_ms}).
 
-    The file may also carry a ``_meta`` key recording the pytest-benchmark
-    configuration (min rounds, warmup, etc.) used to capture the values; it is
-    returned as-is so the regression gate can validate it.
+    The special ``_meta`` key (if present) holds the benchmark methodology
+    baselines.json was generated with, and is returned as part of the dict
+    under ``BASELINE_META_KEY`` so callers can validate freshness; it is not a
+    benchmark entry.
     """
     with path.open("r", encoding="utf-8") as f:
-        data: dict[str, dict[str, Any]] = json.load(f)
+        data: dict[str, dict[str, float]] = json.load(f)
     return data
 
 

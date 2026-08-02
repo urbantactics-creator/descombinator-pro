@@ -14,12 +14,6 @@ Usage::
 A baseline median of ``0.0`` marks a benchmark as "no baseline yet"; it is
 skipped (the CI runner writes real values into baselines.json after an
 intentional optimization).
-
-Baselines are captured under a specific ``pytest-benchmark`` configuration
-(min rounds, max time, warmup, calibration precision). ``baselines.json``
-records that configuration under the ``_meta`` key; if the flags used to run
-the current benchmarks do not match it, the comparison is invalid and the gate
-fails with an explicit "baseline stale" error instead of a false regression.
 """
 
 from __future__ import annotations
@@ -30,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.bench import (
+    BASELINE_META_KEY,
     REGRESSION_RATIO,
     extract_medians,
     load_baselines,
@@ -45,39 +40,49 @@ TARGETS_MS: dict[str, float] = {
     "bench_real_separation_3min": 30000.0,
 }
 
-# pytest-benchmark flags that affect measurements; baselines are only valid
-# under the exact same configuration.
-CONFIG_KEYS: tuple[str, ...] = (
-    "min_rounds",
-    "max_time",
-    "warmup",
-    "calibration_precision",
-)
-
 
 def _fmt_ms(ms: float) -> str:
     return f"{ms:.1f} ms"
 
 
-def _stale_config(
-    baselines: dict[str, dict[str, Any]], config: dict[str, Any]
-) -> list[str]:
-    """Return config keys that differ from the one used to record baselines."""
-    meta = baselines.get("_meta", {})
-    stale: list[str] = []
-    for key in CONFIG_KEYS:
-        recorded = meta.get(key)
-        current = config.get(key)
-        if recorded != current:
-            stale.append(f"{key}: baseline recorded {recorded!r}, running {current!r}")
-    return stale
+def check_methodology(
+    baselines: dict[str, dict[str, Any]],
+    methodology: dict[str, str],
+) -> str | None:
+    """Return an error message if `baselines.json` is stale for this methodology.
+
+    `methodology` is the set of pytest-benchmark settings the "Run benchmarks"
+    step just used (min-rounds, max-time, warmup, calibration-precision).
+    Comparing medians captured under different settings is apples-to-oranges
+    and produces false regressions/passes, so a mismatch (or missing
+    baseline metadata) is a hard error distinct from a real regression.
+    """
+    meta = baselines.get(BASELINE_META_KEY)
+    if meta is None:
+        return (
+            "baselines.json has no recorded methodology (_meta). "
+            "Regenerate it with scripts/bench/update_baselines.py using the "
+            "same flags as the 'Run benchmarks' step."
+        )
+    mismatches = [
+        f"{key}: baseline={meta.get(key)!r} current={value!r}"
+        for key, value in methodology.items()
+        if str(meta.get(key)) != str(value)
+    ]
+    if mismatches:
+        return (
+            "baselines.json was generated with a different benchmark "
+            "methodology than this run used:\n  "
+            + "\n  ".join(mismatches)
+            + "\nRegenerate baselines.json with scripts/bench/update_baselines.py."
+        )
+    return None
 
 
 def check(
     baselines: dict[str, dict[str, Any]],
     result_path: Path,
     verbose: bool = True,
-    config: dict[str, Any] | None = None,
 ) -> int:
     """Compare benchmark results against baselines. Returns exit code."""
     result = load_benchmark_json(result_path)
@@ -123,34 +128,6 @@ def check(
     return 0
 
 
-def _add_config_args(parser: argparse.ArgumentParser) -> None:
-    """Add flags mirroring the pytest-benchmark measurement configuration."""
-    parser.add_argument(
-        "--min-rounds",
-        type=int,
-        required=True,
-        help="pytest-benchmark --benchmark-min-rounds used to run benchmarks",
-    )
-    parser.add_argument(
-        "--max-time",
-        type=float,
-        required=True,
-        help="pytest-benchmark --benchmark-max-time used to run benchmarks",
-    )
-    parser.add_argument(
-        "--warmup",
-        type=str,
-        required=True,
-        help="pytest-benchmark --benchmark-warmup used to run benchmarks",
-    )
-    parser.add_argument(
-        "--calibration-precision",
-        type=int,
-        required=True,
-        help="pytest-benchmark --benchmark-calibration-precision",
-    )
-
-
 def main() -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description="Check benchmark regressions")
@@ -166,25 +143,36 @@ def main() -> int:
         required=True,
         help="Path to pytest-benchmark --benchmark-json output",
     )
-    _add_config_args(parser)
+    parser.add_argument(
+        "--min-rounds", required=True, help="Must match the Run benchmarks step"
+    )
+    parser.add_argument(
+        "--max-time", required=True, help="Must match the Run benchmarks step"
+    )
+    parser.add_argument(
+        "--warmup", required=True, help="Must match the Run benchmarks step"
+    )
+    parser.add_argument(
+        "--calibration-precision",
+        required=True,
+        help="Must match the Run benchmarks step",
+    )
     args = parser.parse_args()
 
-    baselines = load_baselines(args.baseline)
-    config: dict[str, Any] = {
+    methodology = {
         "min_rounds": args.min_rounds,
         "max_time": args.max_time,
         "warmup": args.warmup,
         "calibration_precision": args.calibration_precision,
     }
-    stale = _stale_config(baselines, config)
-    if stale:
-        print("Baselines are stale: measurement configuration changed since they")
-        print("were recorded. Regenerate benchmarks/baselines.json under the")
-        print("current flags before comparing.")
-        for item in stale:
-            print(f"  - {item}")
-        return 2
-    return check(baselines, args.result, config=config)
+
+    baselines = load_baselines(args.baseline)
+    staleness_error = check_methodology(baselines, methodology)
+    if staleness_error:
+        print(f"##[error]{staleness_error}", file=sys.stderr)
+        return 1
+
+    return check(baselines, args.result)
 
 
 if __name__ == "__main__":

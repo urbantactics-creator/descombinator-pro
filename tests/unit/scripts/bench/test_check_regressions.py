@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from scripts.bench import extract_medians, load_baselines
-from scripts.bench.check_regressions import _stale_config, check
+from scripts.bench.check_regressions import check, check_methodology
 
 
 @pytest.fixture
@@ -23,6 +23,17 @@ def baselines() -> dict[str, dict[str, object]]:
         },
         "bench_dummy_fast": {"median_ms": 2.0},
         "bench_dummy_slow": {"median_ms": 100.0},
+    }
+
+
+@pytest.fixture
+def methodology() -> dict[str, str]:
+    """Methodology matching the ``_meta`` recorded in ``baselines``."""
+    return {
+        "min_rounds": "10",
+        "max_time": "1.0",
+        "warmup": "on",
+        "calibration_precision": "3",
     }
 
 
@@ -48,39 +59,28 @@ class TestLoadBaselines:
         assert loaded["bench_x"]["median_ms"] == 1.0
 
 
-class TestStaleConfig:
+class TestCheckMethodology:
     def test_matching_config_is_not_stale(
-        self, baselines: dict[str, dict[str, object]]
+        self,
+        baselines: dict[str, dict[str, object]],
+        methodology: dict[str, str],
     ) -> None:
-        config = {
-            "min_rounds": 10,
-            "max_time": 1.0,
-            "warmup": "on",
-            "calibration_precision": 3,
-        }
-        assert _stale_config(baselines, config) == []
+        assert check_methodology(baselines, methodology) is None
 
     def test_mismatched_rounds_is_stale(
-        self, baselines: dict[str, dict[str, object]]
+        self,
+        baselines: dict[str, dict[str, object]],
+        methodology: dict[str, str],
     ) -> None:
-        config = {
-            "min_rounds": 5,
-            "max_time": 1.0,
-            "warmup": "on",
-            "calibration_precision": 3,
-        }
-        stale = _stale_config(baselines, config)
-        assert len(stale) == 1
-        assert "min_rounds" in stale[0]
+        methodology["min_rounds"] = "5"
+        error = check_methodology(baselines, methodology)
+        assert error is not None
+        assert "min_rounds" in error
 
-    def test_missing_meta_is_stale(self) -> None:
-        config = {
-            "min_rounds": 10,
-            "max_time": 1.0,
-            "warmup": "on",
-            "calibration_precision": 3,
-        }
-        assert _stale_config({}, config) != []
+    def test_missing_meta_is_stale(self, methodology: dict[str, str]) -> None:
+        error = check_methodology({}, methodology)
+        assert error is not None
+        assert "_meta" in error
 
 
 class TestCheck:
