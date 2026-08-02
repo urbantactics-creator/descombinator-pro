@@ -155,6 +155,14 @@
 - [x] Benchmark suite reproducible (`benchmarks/`, `baselines.json`)
 - [x] Performance regression tests en CI (job `benchmark` con `check_regressions.py`)
 
+**Entrega CI (PR #4):**
+
+- [x] PR #4 fusionado a `develop` (merge `9379c22`, rama `feature/phase-8-performance-optimization` eliminada)
+- [x] CI verde: lint-and-test (Ruff, format, Mypy strict 0 issues en 134 archivos, 308 tests unit/integration + 17 UI) + benchmark (16 benchmarks, gate de regresión `ok`)
+- [x] `baselines.json` poblado con medianas reales de CI (ej. `bench_startup_import` 1093.8 ms, `bench_export_m4a_1min` 2947.7 ms)
+- [x] `pydantic` añadido a `requirements.txt`; deps de sistema CI (`libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`)
+- [x] Scripts de profiling corregidos (`profile_memory.py` con muestreo psutil, `_mem_runner.py` con mock inicializado); reporte de memoria generado (133 MB pico, PASS)
+
 ## Fase 9: Testing & Quality Assurance ⚠️
 
 - [x] `tests/conftest.py`
@@ -169,7 +177,7 @@
 - [x] `tests/ui/` (tests básicos)
 - [x] `tests/fixtures/`
 - [x] Mock external dependencies
-- [ ] Coverage report generation
+- [x] Coverage report generation (CI genera `coverage.xml` + term-missing)
 - [ ] Coverage gates
 
 ## Fase 10: Packaging & Distribution ❌

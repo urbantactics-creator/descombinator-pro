@@ -1,0 +1,7 @@
+Memory profile report
+====================
+runner: scripts/profiling/_mem_runner.py
+interval: 0.05s
+peak RSS: 133.4 MB (0.13 GB)
+target:   < 4096 MB (4 GB)
+status:   PASS

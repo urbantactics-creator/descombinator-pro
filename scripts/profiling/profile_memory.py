@@ -56,23 +56,29 @@ def main() -> int:
     if args.real:
         runner.append("--real")
 
-    code = (
-        "import sys, subprocess, json\n"
-        "from memory_profiler import memory_usage\n"
-        f"args = {runner!r}\n"
-        "cmd = [sys.executable, *args]\n"
-        f"interval = {args.interval!r}\n"
-        "samples = memory_usage(cmd, interval=interval, include_children=True)\n"
-        "peak = max(samples) if samples else 0.0\n"
-        "print('__PEAK_MB__', peak)\n"
+    import time
+
+    import psutil
+
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "scripts.profiling._mem_runner", *runner[1:]],
+        env={**__import__("os").environ, "PYTHONPATH": "."},
     )
-    result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True
-    )
-    peak_mb: float = 0.0
-    for line in result.stdout.splitlines():
-        if line.startswith("__PEAK_MB__"):
-            peak_mb = float(line.split()[1])
+    peak_mb = 0.0
+    try:
+        while proc.poll() is None:
+            try:
+                rss = psutil.Process(proc.pid).memory_info().rss
+                children = psutil.Process(proc.pid).children(recursive=True)
+                for child in children:
+                    rss += child.memory_info().rss
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                rss = 0.0
+            peak_mb = max(peak_mb, rss / (1024 * 1024))
+            time.sleep(args.interval)
+    finally:
+        proc.wait()
+        returncode = proc.returncode
 
     report = (
         f"Memory profile report\n"
@@ -86,9 +92,9 @@ def main() -> int:
     args.out.write_text(report, encoding="utf-8")
     print(report)
     print(f"Report written to {args.out}")
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        return result.returncode
+    if returncode != 0:
+        print(f"runner exited with code {returncode}", file=sys.stderr)
+        return returncode
     return 0 if peak_mb < 4096 else 1
 
 

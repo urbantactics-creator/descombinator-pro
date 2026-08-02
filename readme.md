@@ -2,22 +2,27 @@
 
 Desktop application that separates a song into two AI-powered tracks — **vocals** and **instrumental** — entirely on-device. No files are uploaded to the internet.
 
+## Project Status
+
+| Milestone | Status |
+| ----------- | -------- |
+| Vocal ↔ Instrumental separation | ✅ Complete |
+| Multi-instrument separation | 🔲 Planned |
+| Playback & waveform visualization | ✅ Complete |
+| Performance optimization | ✅ Complete |
+| Distributable packaging | 🔲 Planned |
+
 ## Features
 
 - **High-quality separation** powered by Demucs and Open-Unmix
 - **Modern, minimal UI** built with PySide6
 - **Fast local processing** with PyTorch acceleration
+- **On-device privacy** — no files uploaded to the internet
+- **Synchronized multi-track playback** with per-track volume/mute, seek, and gapless mixing
+- **Waveform visualization** with playback position tracking
+- **Performance-tested** — 16 benchmark gates enforced in CI (regression gate fails on > 20 % median drift)
 - **Cross-platform** support (Linux, macOS, Windows)
 - **Modular, production-ready** codebase
-
-## Project Status
-
-| Milestone | Status |
-| ----------- | -------- |
-| Vocal ↔ Instrumental separation | 🚧 In Development |
-| Multi-instrument separation | 🔲 Planned |
-| Performance optimization | 🔲 Planned |
-| Distributable packaging | 🔲 Planned |
 
 ## Tech Stack
 
@@ -109,12 +114,28 @@ pyinstaller --onefile main.py
 
 ## Roadmap
 
-1. Load audio file
-2. Separate vocals and instrumental
-3. Play both tracks
-4. Export results
-5. Performance optimization
-6. Packaging for distribution
+1. ✅ Load audio file
+2. ✅ Separate vocals and instrumental
+3. ✅ Play both tracks
+4. ✅ Export results
+5. ✅ Performance optimization (benchmarks, baselines, CI regression gate)
+6. 🔲 Packaging for distribution
+7. 🔲 Testing & QA hardening (coverage gates)
+8. 🔲 Documentation & release
+
+## Performance
+
+Phase 8 (Performance Optimization) is delivered. CI runs a benchmark regression gate:
+
+```bash
+# Run the benchmark suite (non-slow gates)
+pytest benchmarks/ -m "not slow" --benchmark-only
+
+# Check regressions against committed baselines
+python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json
+```
+
+Key results (real CI medians): startup import ~1.09 s (target < 3 s), playback interactions < 0.1 ms, waveform decimation ~2.1 ms, memory peak 133 MB (target < 4 GB). See `roadmap.md` (Phase 8) and `docs/development/performance/` for details.
 
 ## License
 

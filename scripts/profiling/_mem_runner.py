@@ -29,8 +29,17 @@ def run_mock_pipeline() -> dict[str, np.ndarray]:
             "other": np.zeros(44_100 * 180, dtype=np.float32),
         }
     )
+    mock_preprocessor = MagicMock()
+    mock_preprocessor.preprocess = AsyncMock(
+        side_effect=lambda audio, sr, normalize=True: audio
+    )
+    mock_postprocessor = MagicMock()
+    mock_postprocessor.postprocess = AsyncMock(side_effect=lambda stem, sr: stem)
+
     separator = DemucsSeparator(SeparationConfig())
     separator._pipeline = mock_pipeline
+    separator._preprocessor = mock_preprocessor
+    separator._postprocessor = mock_postprocessor
 
     sr = 44_100
     t = np.linspace(0.0, 180.0, sr * 180, endpoint=False, dtype=np.float32)

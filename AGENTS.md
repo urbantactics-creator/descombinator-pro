@@ -24,7 +24,10 @@ descombinator/
 │   ├── demucs/             # Demucs separation backend
 │   ├── inference/          # Model inference pipeline
 │   ├── audio/              # Audio loading and processing
-│   └── export/             # Result export and file writing
+│   ├── export/             # Result export and file writing
+│   └── performance/        # Profiling, monitoring, runtime optimization
+├── benchmarks/             # Performance benchmark suite + baselines.json
+├── scripts/                # Dev tooling (bench regression gate, profiling)
 ├── tests/                  # Unit, integration, and UI tests
 ├── docs/                   # Documentation
 ├── assets/                 # Project assets
@@ -110,6 +113,15 @@ pytest tests/unit/
 pytest tests/ui/
 ```
 
+## CI (GitHub Actions)
+
+- **Workflow**: `.github/workflows/ci.yml` — two jobs: `lint-and-test` and `benchmark` (benchmark `needs: lint-and-test`).
+- **System dependencies** (PySide6/QtMultimedia on Ubuntu runners): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`.
+- **Headless Qt**: unit/integration tests run with `QT_QPA_PLATFORM=offscreen`; UI tests run under `xvfb-run`.
+- **Coverage thresholds in CI**: unit/integration `--cov-fail-under=60`, UI `--cov-fail-under=40` (Phase 9 will raise them).
+- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 20 % median regression vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with real CI values.
+- **Mypy**: strict mode; pre-existing Phase 6/7 drift (Qt/Pydantic `Any` bases) is scoped via `[[tool.mypy.overrides]]` in `pyproject.toml`.
+
 ## Git Workflow
 
 - **Branch**: `feature/*`, `bugfix/*`, `hotfix/*` from `develop`
@@ -171,6 +183,16 @@ pyinstaller --onefile --windowed descombinator.spec
 # Lint and format
 ruff check .
 ruff format .
+
+# Run benchmarks (non-slow gates)
+pytest benchmarks/ -m "not slow" --benchmark-only
+
+# Check benchmark regressions vs baselines
+python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json
+
+# Profile memory / torch (slow, real model)
+python -m scripts.profiling.profile_memory
+python -m scripts.profiling.profile_torch
 ```
 
 ## Resources
