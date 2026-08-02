@@ -60,6 +60,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb libegl1 libgl1 libopengl0
           xvfb-run -a pytest tests/ui/ --cov=app --cov-report=xml --cov-report=term-missing
+        env:
+          QT_QPA_PLATFORM: offscreen
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -102,6 +104,8 @@ jobs:
           xvfb-run -a pytest benchmarks/ -m "not slow" --benchmark-only \
             --benchmark-min-rounds=5 --benchmark-calibration-precision=3 \
             --benchmark-json=bench_results.json
+        env:
+          QT_QPA_PLATFORM: offscreen
 
       - name: Check regressions against baselines
         run: python scripts/bench/check_regressions.py --baseline benchmarks/baselines.json --result bench_results.json
