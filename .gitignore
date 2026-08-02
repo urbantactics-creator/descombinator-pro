@@ -30,3 +30,6 @@ coverage.xml
 
 # OS
 Thumbs.db
+
+# Agent planning artifacts
+.kilo/plans/

@@ -40,11 +40,17 @@ class TestOpenUnmixAgentInitialize:
 
     @pytest.mark.asyncio
     async def test_initialize_import_error(self, agent: OpenUnmixAgent) -> None:
+        import builtins
+
+        real_import = builtins.__import__
+
+        def fail_openunmix(name: str, *args: object, **kwargs: object) -> object:
+            if name == "openunmix":
+                raise ImportError("no openunmix")
+            return real_import(name, *args, **kwargs)
+
         with (
-            patch(
-                "builtins.__import__",
-                side_effect=ImportError("no openunmix"),
-            ),
+            patch("builtins.__import__", side_effect=fail_openunmix),
             pytest.raises(ModelLoadError, match="Cannot load Open-Unmix"),
         ):
             await agent.initialize()

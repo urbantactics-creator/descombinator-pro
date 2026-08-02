@@ -69,7 +69,7 @@ class TestSeparationService:
         def callback(percent: int, message: str) -> None:
             progress_calls.append((percent, message))
 
-        with patch("app.services.separation_service.DemucsSeparator") as MockSeparator:
+        with patch("engine.demucs.separator.DemucsSeparator") as MockSeparator:
             mock_sep = MagicMock()
             mock_sep.initialize = AsyncMock()
             mock_sep.separate_file = AsyncMock(
@@ -91,7 +91,7 @@ class TestSeparationService:
         sample_wav_path: Path,
     ) -> None:
         with patch(
-            "app.services.separation_service.DemucsSeparator",
+            "engine.demucs.separator.DemucsSeparator",
             return_value=mock_separator,
         ):
             result = await service.separate(sample_wav_path)
@@ -138,7 +138,7 @@ class TestSeparationService:
         self,
         service: SeparationService,
     ) -> None:
-        with patch("app.services.separation_service.DemucsSeparator") as MockSeparator:
+        with patch("engine.demucs.separator.DemucsSeparator") as MockSeparator:
             mock_sep = MagicMock()
             mock_sep.initialize = AsyncMock()
             mock_sep.separate_file = AsyncMock(
@@ -156,7 +156,7 @@ class TestSeparationService:
         mock_separator: MagicMock,
     ) -> None:
         with patch(
-            "app.services.separation_service.DemucsSeparator",
+            "engine.demucs.separator.DemucsSeparator",
             return_value=mock_separator,
         ):
             await service.initialize()
@@ -171,7 +171,7 @@ class TestSeparationService:
         mock_separator: MagicMock,
     ) -> None:
         with patch(
-            "app.services.separation_service.DemucsSeparator",
+            "engine.demucs.separator.DemucsSeparator",
             return_value=mock_separator,
         ):
             await service.initialize()

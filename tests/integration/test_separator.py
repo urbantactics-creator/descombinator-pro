@@ -48,8 +48,8 @@ class TestDemucsSeparatorInitialize:
         self, separator: DemucsSeparator
     ) -> None:
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -67,7 +67,7 @@ class TestDemucsSeparatorInitialize:
         self, separator: DemucsSeparator
     ) -> None:
         with patch(
-            "engine.demucs.separator.ModelManager",
+            "engine.inference.model_manager.ModelManager",
             side_effect=ModelLoadError("mock failure"),
         ):
             with pytest.raises(ModelLoadError):
@@ -95,8 +95,8 @@ class TestDemucsSeparatorSeparate:
         )
 
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -117,8 +117,8 @@ class TestDemucsSeparatorSeparate:
         self, separator: DemucsSeparator
     ) -> None:
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -133,8 +133,8 @@ class TestDemucsSeparatorSeparate:
         self, separator: DemucsSeparator
     ) -> None:
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -149,9 +149,9 @@ class TestDemucsSeparatorSeparate:
         self, separator: DemucsSeparator
     ) -> None:
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
-            patch("engine.demucs.separator.AudioPostprocessor") as MockPost,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
+            patch("engine.audio.postprocessor.AudioPostprocessor") as MockPost,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -175,8 +175,8 @@ class TestDemucsSeparatorSeparate:
         self, separator: DemucsSeparator
     ) -> None:
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()
@@ -206,9 +206,9 @@ class TestDemucsSeparatorSeparateFile:
             w.writeframes(np.zeros(44100, dtype=np.int16).tobytes())
 
         with (
-            patch("engine.demucs.separator.ModelManager") as MockManager,
-            patch("engine.demucs.separator.InferencePipeline") as MockPipeline,
-            patch("engine.demucs.separator.AudioPostprocessor") as MockPost,
+            patch("engine.inference.model_manager.ModelManager") as MockManager,
+            patch("engine.inference.pipeline.InferencePipeline") as MockPipeline,
+            patch("engine.audio.postprocessor.AudioPostprocessor") as MockPost,
         ):
             mock_manager = MagicMock()
             mock_manager.switch_model = AsyncMock()

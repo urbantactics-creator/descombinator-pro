@@ -28,12 +28,6 @@ def sample_wav_path() -> pathlib.Path:
 
 
 @pytest.fixture
-def sample_stereo_path() -> pathlib.Path:
-    """Path to stereo WAV fixture."""
-    return pathlib.Path("tests/fixtures/sample_stereo.wav")
-
-
-@pytest.fixture
 def test_metadata_mp3_path() -> pathlib.Path:
     """Path to MP3 fixture with metadata."""
     return pathlib.Path("tests/fixtures/test_metadata.mp3")

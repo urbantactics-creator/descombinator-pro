@@ -3,7 +3,7 @@
 import os
 import tempfile
 
-from PySide6.QtCore import QMimeData, QUrl
+from PySide6.QtCore import QMimeData, Qt, QUrl
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 from app.widgets.file_drop_zone import FileDropZone
@@ -32,7 +32,11 @@ def test_file_drop_zone_accepts_valid_files(qapp):
         mime_data.setUrls(urls)
 
         event = QDragEnterEvent(
-            widget.rect().center(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+            widget.rect().center(),
+            Qt.CopyAction,
+            mime_data,
+            Qt.NoButton,
+            Qt.NoModifier,
         )
 
         # Accept the drag event
@@ -41,7 +45,11 @@ def test_file_drop_zone_accepts_valid_files(qapp):
 
         # Create a drop event
         drop_event = QDropEvent(
-            widget.rect().center(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+            widget.rect().center(),
+            Qt.CopyAction,
+            mime_data,
+            Qt.NoButton,
+            Qt.NoModifier,
         )
 
         # Accept the drop event
@@ -69,7 +77,11 @@ def test_file_drop_zone_rejects_invalid_files(qapp):
         mime_data.setUrls(urls)
 
         event = QDragEnterEvent(
-            widget.rect().center(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+            widget.rect().center(),
+            Qt.CopyAction,
+            mime_data,
+            Qt.NoButton,
+            Qt.NoModifier,
         )
 
         # Accept the drag event (it's still a valid file, just not audio)
@@ -78,7 +90,11 @@ def test_file_drop_zone_rejects_invalid_files(qapp):
 
         # Create a drop event
         drop_event = QDropEvent(
-            widget.rect().center(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+            widget.rect().center(),
+            Qt.CopyAction,
+            mime_data,
+            Qt.NoButton,
+            Qt.NoModifier,
         )
 
         # Accept the drop event

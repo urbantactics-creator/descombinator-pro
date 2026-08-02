@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-import torch
 from loguru import logger
 
-from engine.inference.config import InferenceConfig, ModelName
+from engine.inference.config import DeviceType, InferenceConfig, ModelName
 from engine.inference.errors import ModelNotFoundError
+
+if TYPE_CHECKING:
+    import torch
 
 
 class SeparationModel(Protocol):
@@ -109,3 +111,21 @@ class ModelManager:
             if self._current_name == model_name:
                 self._current_name = None
             logger.info(f"Unloaded model: {model_name}")
+
+    async def unload_all(self) -> None:
+        """Unload every cached model."""
+        for name in list(self._models):
+            await self.unload_model(name)
+        self.free_memory()
+        logger.info("All models unloaded")
+
+    def free_memory(self) -> None:
+        """Release cached memory: CUDA cache when applicable, then gc.collect()."""
+        if self._config.device == DeviceType.CUDA:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        import gc
+
+        gc.collect()

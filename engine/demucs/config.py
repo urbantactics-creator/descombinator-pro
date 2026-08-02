@@ -37,6 +37,10 @@ class SeparationConfig(BaseModel):
     shifts: int = Field(default=1, ge=0, le=10)
     overlap: float = Field(default=0.25, ge=0.0, le=1.0)
     split_mode: SplitMode = SplitMode.SEGMENT
+    segment: int | None = None
+    jobs: int = Field(default=0, ge=0)
+    mixed_precision: bool = False
+    pin_memory: bool = False
     output_stems: list[str] = Field(
         default_factory=lambda: ["vocals", "drums", "bass", "other"]
     )

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import torch
 from loguru import logger
 
-from engine.inference.config import InferenceConfig
-from engine.inference.errors import InferenceError, ModelLoadError
+from engine.inference.config import DeviceType, InferenceConfig
+from engine.inference.errors import DeviceError, InferenceError, ModelLoadError
+from engine.performance.optimizer import TorchRuntimeOptimizer
+
+if TYPE_CHECKING:
+    import torch
 
 
 class DemucsAgent:
@@ -21,6 +24,10 @@ class DemucsAgent:
 
     async def initialize(self) -> None:
         """Load the Demucs model. Must be called before separate()."""
+        import torch
+
+        if self._config.device == DeviceType.CUDA and not torch.cuda.is_available():
+            raise DeviceError("CUDA requested but no GPU is available on this machine")
         try:
             from demucs.api import Separator
 
@@ -51,8 +58,23 @@ class DemucsAgent:
         if self._separator is None:
             raise InferenceError("Demucs not initialized. Call initialize() first.")
 
+        import torch
+
         try:
-            with torch.inference_mode():
+            if (
+                self._config.pin_memory
+                and self._config.device == DeviceType.CUDA
+                and not audio.is_cuda
+            ):
+                audio = audio.pin_memory()
+            with (
+                torch.inference_mode(),
+                TorchRuntimeOptimizer.autocast_ctx(
+                    self._config.mixed_precision
+                    and self._config.device == DeviceType.CUDA,
+                    "cuda",
+                ),
+            ):
                 result = await asyncio.to_thread(self._separator.separate_tensor, audio)
             _, stems_dict = result
             filtered = {

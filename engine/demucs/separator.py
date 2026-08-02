@@ -5,12 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from loguru import logger
 
-from engine.audio.postprocessor import AudioPostprocessor
-from engine.audio.preprocessor import AudioPreprocessor
 from engine.demucs.config import SeparationConfig
 from engine.demucs.errors import (
     InvalidAudioError,
@@ -18,9 +17,12 @@ from engine.demucs.errors import (
     ProcessingError,
     SeparationError,
 )
-from engine.inference.config import InferenceConfig, ModelName
-from engine.inference.model_manager import ModelManager
-from engine.inference.pipeline import InferencePipeline
+from engine.inference.config import DeviceType, InferenceConfig, ModelName
+
+if TYPE_CHECKING:
+    from engine.audio.postprocessor import AudioPostprocessor
+    from engine.audio.preprocessor import AudioPreprocessor
+    from engine.inference.pipeline import InferencePipeline
 
 
 class SeparationState(StrEnum):
@@ -47,8 +49,8 @@ class DemucsSeparator:
         self._config = config
         self._progress_callback = progress_callback
         self._state = SeparationState.IDLE
-        self._preprocessor = AudioPreprocessor()
-        self._postprocessor = AudioPostprocessor()
+        self._preprocessor: AudioPreprocessor | None = None
+        self._postprocessor: AudioPostprocessor | None = None
         self._pipeline: InferencePipeline | None = None
         self._error: SeparationError | None = None
 
@@ -76,6 +78,10 @@ class DemucsSeparator:
             device=self._config.device,
             shifts=self._config.shifts,
             overlap=self._config.overlap,
+            segment=self._config.segment,
+            jobs=self._config.jobs,
+            mixed_precision=self._config.mixed_precision,
+            pin_memory=self._config.pin_memory,
             target_stems=self._config.output_stems,
         )
 
@@ -84,7 +90,19 @@ class DemucsSeparator:
         self._set_state(SeparationState.LOADING)
         self._report_progress(5)
         try:
+            from engine.audio.postprocessor import AudioPostprocessor
+            from engine.audio.preprocessor import AudioPreprocessor
+            from engine.inference.model_manager import ModelManager
+            from engine.inference.pipeline import InferencePipeline
+
             inference_config = self._build_inference_config()
+            from engine.performance.optimizer import TorchRuntimeOptimizer
+
+            TorchRuntimeOptimizer.configure(
+                inference_config.device, inference_config.jobs
+            )
+            self._preprocessor = AudioPreprocessor()
+            self._postprocessor = AudioPostprocessor()
             model_manager = ModelManager(inference_config)
             await model_manager.switch_model(inference_config.model_name)
             self._pipeline = InferencePipeline(model_manager)
@@ -118,6 +136,9 @@ class DemucsSeparator:
             Dict of stem_name -> numpy array.
         """
         if self._pipeline is None:
+            raise SeparationError("Separator not initialized. Call initialize() first.")
+
+        if self._preprocessor is None or self._postprocessor is None:
             raise SeparationError("Separator not initialized. Call initialize() first.")
 
         if audio is None or audio.size == 0:
@@ -155,6 +176,11 @@ class DemucsSeparator:
             self._error = ProcessingError(f"Separation failed: {e}")
             logger.error(f"Separation failed: {e}")
             raise self._error from e
+        finally:
+            if self._config.device == DeviceType.CUDA:
+                model_manager = getattr(self._pipeline, "_model_manager", None)
+                if model_manager is not None:
+                    model_manager.free_memory()
 
     async def separate_file(
         self,

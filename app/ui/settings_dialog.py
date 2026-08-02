@@ -59,6 +59,18 @@ class SettingsDialog(QDialog):
             self._model_combo.addItem(model.value, model)
         sep_form.addRow("Model:", self._model_combo)
 
+        self._segment_spin = QSpinBox()
+        self._segment_spin.setRange(0, 300)
+        self._segment_spin.setSpecialValueText("Auto (default)")
+        self._segment_spin.setSuffix(" s")
+        sep_form.addRow("Segment:", self._segment_spin)
+
+        self._mixed_precision_check = QCheckBox("Mixed precision (GPU)")
+        sep_form.addRow(self._mixed_precision_check)
+
+        self._pin_memory_check = QCheckBox("Pin memory (GPU)")
+        sep_form.addRow(self._pin_memory_check)
+
         layout.addWidget(sep_group)
 
         # --- Export group ---
@@ -146,6 +158,10 @@ class SettingsDialog(QDialog):
         if idx >= 0:
             self._model_combo.setCurrentIndex(idx)
 
+        self._segment_spin.setValue(s.segment or 0)
+        self._mixed_precision_check.setChecked(s.mixed_precision)
+        self._pin_memory_check.setChecked(s.pin_memory)
+
         fmt_idx = self._format_combo.findData(s.default_format)
         if fmt_idx >= 0:
             self._format_combo.setCurrentIndex(fmt_idx)
@@ -179,6 +195,10 @@ class SettingsDialog(QDialog):
             self._settings.default_format = self._format_combo.currentData()
             self._settings.output_dir = Path(self._output_dir_label.text())
             self._settings.theme = self._theme_combo.currentText()
+            segment = self._segment_spin.value()
+            self._settings.segment = segment if segment > 0 else None
+            self._settings.mixed_precision = self._mixed_precision_check.isChecked()
+            self._settings.pin_memory = self._pin_memory_check.isChecked()
 
             self._settings_controller.save_settings(self._settings)
             self._settings_controller._settings = SettingsModel(
