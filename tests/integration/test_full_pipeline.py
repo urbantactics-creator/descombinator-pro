@@ -21,8 +21,8 @@ def mock_model() -> MagicMock:
     model = MagicMock()
     model.separate = AsyncMock(
         return_value={
-            "vocals": torch.randn(1, 44100),
-            "other": torch.randn(1, 44100),
+            "vocals": torch.randn(44100),
+            "other": torch.randn(44100),
         }
     )
     model.sources = ["vocals", "other"]

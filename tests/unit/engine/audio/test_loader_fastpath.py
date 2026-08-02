@@ -27,6 +27,7 @@ def _write_wav(
     channels: int = 1,
 ) -> None:
     """Write a minimal PCM WAV fixture."""
+    dtype: type[np.generic]
     if bits == 16:
         dtype = np.int16
     elif bits == 24 or bits == 32:
