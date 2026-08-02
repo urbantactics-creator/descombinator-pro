@@ -12,9 +12,15 @@ from engine.audio.loader import AudioLoader
 from engine.audio.postprocessor import AudioPostprocessor
 from engine.audio.preprocessor import AudioPreprocessor
 
+# Reuse a single event loop across benchmark iterations instead of creating
+# one per call (asyncio.run). Loop creation is a measurable, noisy overhead
+# on fast benchmarks and widens the median spread that the regression gate
+# compares against.
+_LOOP = asyncio.new_event_loop()
+
 
 def _run(coro) -> object:
-    return asyncio.run(coro)
+    return _LOOP.run_until_complete(coro)
 
 
 @pytest.fixture(scope="session")

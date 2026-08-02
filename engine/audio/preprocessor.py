@@ -19,7 +19,7 @@ class AudioPreprocessor:
         if abs(dc) < 1e-10:
             logger.debug("DC offset negligible, returning copy")
             return audio.copy()
-        result = (audio - dc).astype(np.float32)
+        result = (audio - dc).astype(np.float32, copy=False)
         logger.debug(f"Removed DC offset: {dc:.6f}")
         return result
 
@@ -34,7 +34,7 @@ class AudioPreprocessor:
             logger.debug("Audio is silent, returning copy")
             return audio.copy()
         target_linear = 10 ** (target_db / 20)
-        result = (audio * (target_linear / peak)).astype(np.float32)
+        result = (audio * (target_linear / peak)).astype(np.float32, copy=False)
         logger.debug(f"Normalized: peak {peak:.4f} → {target_linear:.4f}")
         return result
 

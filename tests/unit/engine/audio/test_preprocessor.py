@@ -30,6 +30,12 @@ class TestRemoveDcOffset:
         result = await preprocessor.remove_dc_offset(mono_audio_3s)
         assert result is not mono_audio_3s
 
+    async def test_output_float32_when_input_float64(
+        self, preprocessor: AudioPreprocessor, dc_offset_audio: np.ndarray
+    ) -> None:
+        result = await preprocessor.remove_dc_offset(dc_offset_audio.astype(np.float64))
+        assert result.dtype == np.float32
+
 
 class TestNormalizePeak:
     async def test_normalizes(
@@ -51,6 +57,12 @@ class TestNormalizePeak:
     ) -> None:
         result = await preprocessor.normalize_peak(mono_audio_3s)
         assert result is not mono_audio_3s
+
+    async def test_output_float32_when_input_float64(
+        self, preprocessor: AudioPreprocessor, mono_audio_3s: np.ndarray
+    ) -> None:
+        result = await preprocessor.normalize_peak(mono_audio_3s.astype(np.float64))
+        assert result.dtype == np.float32
 
 
 class TestClipSilence:
