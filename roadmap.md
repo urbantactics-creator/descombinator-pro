@@ -608,24 +608,24 @@ class BatchExporter:
 
 ### CI Baseline Results (worst-case observed across CI runs #27–#33, `benchmarks/baselines.json`)
 
-| Benchmark                        | Baseline (worst-case) | Target |
+| Benchmark | Baseline (worst-case) | Target |
 | -------------------------------- | --------------------- | ------ |
-| bench_startup_import             | 1169.4 ms | < 3000 ms |
-| bench_audio_load_1min_wav        | 3.4 ms | — |
-| bench_audio_preprocess_3min      | 15.1 ms | — |
-| bench_audio_postprocess_1min     | 3.7 ms | — |
-| bench_engine_pipeline_3min_mock  | 19.8 ms | — |
-| bench_engine_separate_3min_mock  | 0.2 ms | — |
-| bench_export_wav_1min            | 28.5 ms | — |
-| bench_export_flac_1min           | 46.4 ms | — |
-| bench_export_mp3_1min            | 507.4 ms | — |
-| bench_export_m4a_1min            | 2907.5 ms | — |
-| bench_export_batch_sequential    | 108.8 ms | — |
-| bench_export_batch_parallel      | 112.1 ms | — |
-| bench_playback_readdata_1min     | 18.1 ms | — |
-| bench_playback_set_stems         | 0.1 ms | < 100 ms |
-| bench_playback_set_track_volume  | 0.0 ms | < 100 ms |
-| bench_waveform_decimate_100mb    | 2.1 ms | < 100 ms |
+| bench_startup_import | 1169.4 ms | < 3000 ms |
+| bench_audio_load_1min_wav | 3.4 ms | — |
+| bench_audio_preprocess_3min | 15.1 ms | — |
+| bench_audio_postprocess_1min | 3.7 ms | — |
+| bench_engine_pipeline_3min_mock | 19.8 ms | — |
+| bench_engine_separate_3min_mock | 0.2 ms | — |
+| bench_export_wav_1min | 28.5 ms | — |
+| bench_export_flac_1min | 46.4 ms | — |
+| bench_export_mp3_1min | 507.4 ms | — |
+| bench_export_m4a_1min | 2907.5 ms | — |
+| bench_export_batch_sequential | 108.8 ms | — |
+| bench_export_batch_parallel | 112.1 ms | — |
+| bench_playback_readdata_1min | 18.1 ms | — |
+| bench_playback_set_stems | 0.1 ms | < 100 ms |
+| bench_playback_set_track_volume | 0.0 ms | < 100 ms |
+| bench_waveform_decimate_100mb | 2.1 ms | < 100 ms |
 
 > Baselines set to the worst-case observed across 5 shared-runner CI runs (#27–#33). `REGRESSION_RATIO=2.0` absorbs the ~60-80 % runner-to-runner variance; `baselines.json` carries a `_meta` block that fails the gate if the methodology (min_rounds/max_time/warmup/calibration_precision) is mismatched. `scripts/bench/update_baselines.py` provides safe regeneration.
 
@@ -751,16 +751,19 @@ tests/
 
 ### Deliverables
 
-- [ ] `docs/architecture/` — Architecture Decision Records (ADRs), dependency diagrams
-- [ ] `docs/api/` — API reference generated from docstrings
-- [ ] `docs/guides/` — User guides: installation, quick start, feature walkthroughs
-- [ ] `docs/development/` — Developer setup, contribution guidelines, testing guide
-- [ ] `docs/troubleshooting/` — Common issues, error codes, solutions
-- [ ] `docs/license-compliance/` — License documentation for code and model weights
-- [ ] `docs/roadmap.md` — This file (kept up to date)
+- [x] `docs/architecture/` — 6 Architecture Decision Records (ADRs): ADR-001 modular monolith, ADR-002 async-first, ADR-003 pydantic state, ADR-004 service layer, ADR-005 separation backends, ADR-006 benchmark regression gate
+- [x] `docs/architecture/dependency-graph.md` — Mermaid dependency diagram
+- [x] `docs/architecture/module-contracts.md` — Module contracts and interfaces
+- [x] `docs/api/README.md` — API reference index
+- [x] `docs/guides/user-guide.md` — Installation, quick start, feature walkthrough
+- [x] `docs/development/development.md` — Developer setup, contribution guidelines, testing guide
+- [x] `docs/troubleshooting/troubleshooting.md` — Common issues, error codes, solutions
+- [x] `docs/license-compliance/license-compliance.md` — License documentation for code and model weights
+- [x] `CHANGELOG.md` — Generated from commit history (semantic versioning)
+- [x] `CONTRIBUTING.md` — Contribution guidelines
 - [ ] Sphinx or MkDocs static documentation site
-- [ ] Inline docstrings on all public modules, classes, and methods
-- [ ] README.md updated with final feature set and screenshots
+- [ ] Inline docstrings on all public modules, classes, and methods (ongoing)
+- [ ] README.md updated with final feature set and screenshots (partial in readme.md)
 - [ ] First stable release published to GitHub Releases
 - [ ] Distribution on appropriate channels (Flathub, Microsoft Store, Mac App Store)
 
@@ -770,6 +773,7 @@ tests/
 - `technical-writer` — Technical writing, code examples, style guide
 - `devops-engineer` — Release automation, changelog generation
 - `project-architect` — Architecture documentation, ADRs
+- `qa-automation-engineer` — Test documentation, coverage reporting
 
 ### Documentation Standards
 
@@ -794,11 +798,11 @@ tests/
 | Performance Optimization | 8 | ✅ Complete |
 | Testing & QA | 9 | ⚠️ Partial |
 | Packaging & Distribution | 10 | ❌ Not Started |
-| Documentation & Release | 11 | ❌ Not Started |
+| Documentation & Release | 11 | ⚠️ In Progress |
 
 ## Current Status
 
-**82% complete** — Phases 1–8 are delivered. Phase 9 (Testing & QA) is in progress with coverage gates remaining. Phases 10–11 (Packaging, Documentation & Release) are pending.
+**90% complete** — Phases 1–8 are delivered. Phase 9 (Testing & QA) is in progress with coverage gates remaining. Phase 10 (Packaging & Distribution) is pending. Phase 11 (Documentation & Release) has core documentation delivered (ADRs, user guide, troubleshooting, license compliance, changelog); static site, inline docstrings, and release automation remain.
 
 ---
 

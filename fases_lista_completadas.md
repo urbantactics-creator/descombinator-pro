@@ -1,6 +1,6 @@
 # Fases — Lista de Tareas Completadas
 
-## Estado General: 82% completado
+## Estado General: 90% completado
 
 | Fase |               Nombre             |     Estado         | Completado |
 |------|----------------------------------|--------------------|------------|
@@ -14,7 +14,7 @@
 |  8   | Performance Optimization         | ✅ Completa        | 11/11      |
 |  9   | Testing & Quality Assurance      | ⚠️ Parcial         | 13/14      |
 |  10  | Packaging & Distribution         | ❌ No iniciada     | 0/10       |
-|  11  | Documentation & Release          | ❌ No iniciada     | 0/12       |
+|  11  | Documentation & Release          | ⚠️ En progreso     | 9/12       |
 
 ---
 
@@ -194,17 +194,20 @@
 - [ ] Semantic versioning
 - [ ] Changelog generation
 
-## Fase 11: Documentation & Release ❌
+## Fase 11: Documentation & Release ⚠️
 
-- [ ] `docs/architecture/` (ADRs)
-- [ ] `docs/api/`
-- [ ] `docs/guides/`
-- [ ] `docs/development/`
-- [ ] `docs/troubleshooting/`
-- [ ] `docs/license-compliance/`
-- [ ] Sphinx/MkDocs site
-- [ ] Inline docstrings
-- [ ] README.md actualizado
+- [x] `docs/architecture/` (ADRs) — 6 ADRs: modular-monolith, async-first, pydantic-state, service-layer, separation-backends, benchmark-regression-gate
+- [x] `docs/architecture/dependency-graph.md` — Mermaid dependency diagram
+- [x] `docs/architecture/module-contracts.md` — Module contracts and interfaces
+- [x] `docs/api/README.md` — API reference index
+- [x] `docs/guides/user-guide.md` — Installation, quick start, feature walkthrough
+- [x] `docs/development/development.md` — Developer setup, contribution guidelines
+- [x] `docs/troubleshooting/troubleshooting.md` — Common issues and solutions
+- [x] `docs/license-compliance/license-compliance.md` — Dependency and model license audit
+- [x] `CHANGELOG.md` — Generated from commit history
+- [x] `CONTRIBUTING.md` — Contribution guidelines
+- [ ] Sphinx/MkDocs static site
+- [ ] Inline docstrings (ongoing)
+- [ ] README.md actualizado (parcial en readme.md)
 - [ ] First stable release
-- [ ] Distribution channels
-- [ ] CHANGELOG.md
+- [ ] Distribution channels (Flathub, Microsoft Store, Mac App Store)
