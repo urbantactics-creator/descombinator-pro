@@ -673,7 +673,7 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 - [x] `tests/unit/app/controllers/` — Controller logic tests
 - [x] `tests/unit/app/widgets/` — Widget unit tests
 - [x] `tests/integration/` — Full pipeline integration tests
-- [x] `tests/ui/` — UI behavior tests with `pytest-qt` (17 tests)
+- [x] `tests/ui/` — UI behavior tests with `pytest-qt` (101 tests)
 - [x] `tests/fixtures/` — Small audio files (< 1 MB), synthetic audio for edge cases
 - [x] Mock external dependencies (file system, network, HuggingFace)
 - [x] Coverage report generation with `pytest-cov` (XML + term-missing in CI)
@@ -689,13 +689,14 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 
 | Metric | Target | Actual |
 | -------- | -------- | -------- |
-| Total tests | ≥ 380 | **564** |
+| Total tests | ≥ 380 | **665** (564 unit/integration + 101 UI) |
 | Unit+integration coverage | ≥ 85% | **87.69%** |
+| UI coverage | ≥ 70% | **78.27%** |
 | Engine coverage | ≥ 85% | **98%+** |
 | App coverage | ≥ 70% | **90%+** |
 | Ruff lint | clean | ✅ |
 | Ruff format | clean | ✅ |
-| Mypy strict | 0 issues | ✅ |
+| Mypy strict | 0 issues (155 files) | ✅ |
 
 ### New Test Files Added
 
@@ -727,7 +728,7 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 
 ### Phase 9 Review Notes
 
-**Status:** ✅ **Complete** — All deliverables implemented and tested. Coverage gates met (87.69% overall, 85%+ engine, 70%+ app). Thermal monitoring integrated as bonus deliverable.
+**Status:** ✅ **Complete** — All deliverables implemented and tested. Coverage gates met (87.69% unit/integration, 78.27% UI, 85%+ engine, 70%+ app). Thermal monitoring integrated as bonus deliverable.
 
 **Key Decisions:**
 
@@ -735,6 +736,13 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 - `app/ui/*` and `app/widgets/*` excluded from unit test coverage (tested separately by UI tests under xvfb)
 - `pyproject.toml` coverage omit patterns added for UI modules
 - mypy overrides extended for new test modules
+
+### Phase 9 CI Fixes
+
+- **UI coverage gate (a4516eb):** Global `omit` patterns in `pyproject.toml` excluded `app/ui/*` and `app/widgets/*` from all coverage runs, dropping UI coverage to 39.52% vs the required 70%. Reverted the global omit, added `.coveragerc-unit` (scoped to the unit+integration gate), and added UI behavioral tests (expanded `test_widgets.py`/`test_main_window.py`; new `test_processing_dialog.py`, `test_settings_dialog.py`, `test_playback_integration.py`, `test_settings_controller.py`). UI coverage is now 78.27%.
+- **Mypy duplicate module (4e04936):** `pip install .[dev]` leaves a `build/lib/app` tree that mypy scanned alongside `./app/`, causing `Duplicate module named "app"`. Added `[tool.mypy] exclude` for `build/`, `dist/`, and `.venv/`.
+- **Security audit (094a3f9):** The CI step `pip-audit --descending --no-deps --fail-level high` used flags that don't exist in pip-audit 2.10.1 (failure was argument parsing, not vulnerabilities). Corrected to `pip-audit --desc on`; audit reports "No known vulnerabilities found".
+- **Result:** CI run #45 (`094a3f9`) is fully green — `lint-and-test`, `benchmark`, and `security-audit` all succeeded.
 
 ### Milestone Summary
 
@@ -925,8 +933,10 @@ hiddenimports = [
 | CI coverage thresholds (85%/70%) | ✅ Updated |
 | Ruff lint/format | ✅ Clean |
 | Mypy strict | ✅ 0 issues |
-| Total test count | ✅ 564 passed |
-| Overall coverage | ✅ 87.69% |
+| Total test count | ✅ 665 passed (564 unit/integration + 101 UI) |
+| Unit/integration coverage | ✅ 87.69% (≥ 85%) |
+| UI coverage | ✅ 78.27% (≥ 70%) |
+| CI status | ✅ Fully green (run #45) |
 
 ### Phase 10 Deliverables (In Progress)
 
