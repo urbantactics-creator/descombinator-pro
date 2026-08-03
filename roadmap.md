@@ -733,7 +733,7 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 
 - CI thresholds raised to 85% (unit+integration) and 70% (UI)
 - UI modules (`app/ui/*`, `app/widgets/*`) covered by UI tests; excluded from the unit+integration coverage gate via `.coveragerc-unit` (no global omit in `pyproject.toml`)
-- `pyproject.toml` coverage omit patterns added for UI modules
+- `.coveragerc-unit` — coverage omit config scoped to the unit+integration gate (UI modules covered by UI tests)
 - mypy overrides extended for new test modules
 
 ### Phase 9 CI Fixes
@@ -916,7 +916,7 @@ hiddenimports = [
 | Thermal monitoring tests | ✅ 38 tests |
 | CI coverage thresholds (85%/70%) | ✅ Updated |
 | Ruff lint/format | ✅ Clean |
-| Mypy strict | ✅ 0 issues |
+| Mypy strict | ✅ 0 issues (155 files) |
 | Total test count | ✅ 665 passed (564 unit/integration + 101 UI) |
 | Unit/integration coverage | ✅ 87.69% (≥ 85%) |
 | UI coverage | ✅ 78.27% (≥ 70%) |

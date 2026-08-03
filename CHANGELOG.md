@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Phase 9: Testing & QA — 564 tests passing, 87.69% coverage (up from 308 at 72%)
+- Phase 9: Testing & QA — 665 tests passing (564 unit/integration + 101 UI), 87.69% unit/integration coverage (up from 308 at 72%)
 - Phase 9: CI coverage thresholds raised — unit+int 60→85%, UI 40→70%
 - Phase 9: Thermal monitoring — `engine/performance/thermal.py` with `ThermalMonitor`, `ThermalState`, `ThermalSnapshot`
 - Phase 9: Thermal integration — `SeparationService` accepts `ThermalMonitor`, `SeparationState.PAUSED`, `thermal_warning` signal, status bar display
 - Phase 9: `ResourceSnapshot` extended with `cpu_temp_c`/`gpu_temp_c` fields
 - Phase 9: `engine/performance/__init__.py` exports updated with thermal symbols
 - Phase 9: mypy overrides extended for new test modules
-- Phase 9: `pyproject.toml` coverage omit patterns for UI modules in unit tests
+- Phase 9: `.coveragerc-unit` — coverage omit config scoped to the unit+integration gate (UI modules covered by UI tests)
 - Phase 10: `descombinator.spec` — PyInstaller spec with hidden imports for torch, demucs, PySide6
 - Phase 10: `.github/workflows/build.yml` — multi-platform build matrix (ubuntu, windows, macos)
 - Phase 10: `scripts/build/build_linux.sh` — PyInstaller → AppImage
@@ -72,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/profiling/_mem_runner.py`: Fixed mock initialization
 - Pre-existing integration drift: Repaired and cleaned mypy config
 - Pre-existing ruff drift: Resolved and fixed drop-event accept bug
+- CI: Fixed UI coverage gate — global omit patterns excluded app/ui/* and app/widgets/* from all coverage runs (UI 39.52% vs required 70%); reverted global omit, added .coveragerc-unit, added UI behavioral tests; UI now 78.27% (a4516eb)
+- CI: Fixed mypy "Duplicate module named app" — pip install .[dev] built build/lib/app; added exclude = ["^build/", "^dist/", "^\.venv/"] to [tool.mypy] (4e04936)
+- CI: Fixed security-audit (pip-audit exit 2) — --descending/--fail-level don't exist in pip-audit 2.10.1 and --no-deps requires -r; changed step to `pip-audit --desc on`; failure was argument parsing, not vulnerabilities; audit reports "No known vulnerabilities found" (094a3f9)
 
 ### Removed
 

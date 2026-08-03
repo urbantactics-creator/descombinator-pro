@@ -12,7 +12,7 @@
 |  6   | PySide6 UI Development           | ✅ Completa        | 24/25      |
 |  7   | Media Playback & Visualization   | ✅ Completa        | 10/10      |
 |  8   | Performance Optimization         | ✅ Completa        | 11/11      |
-|  9   | Testing & Quality Assurance      | ⚠️ Parcial         | 13/14      |
+|  9   | Testing & Quality Assurance      | ✅ Completa        | 14/14      |
 |  10  | Packaging & Distribution         | ❌ No iniciada     | 0/10       |
 |  11  | Documentation & Release          | ⚠️ En progreso     | 9/12       |
 
@@ -177,16 +177,20 @@
 - [x] `tests/unit/app/models/` — SettingsModel (11), AppState (10)
 - [x] `tests/unit/engine/performance/` — Profiler (4), Thermal (38)
 - [x] `tests/integration/`
-- [x] `tests/ui/` (tests básicos)
+- [x] `tests/ui/` (101 tests de comportamiento)
 - [x] `tests/fixtures/`
 - [x] Mock external dependencies
 - [x] Coverage report generation (CI genera `coverage.xml` + term-missing)
-- [x] Coverage gates: engine ≥ 85%, app ≥ 70%, overall ≥ 85%
+- [x] Coverage gates alcanzados: unit/integration 87.69% (≥ 85%), UI 78.27% (≥ 70%)
 - [x] CI thresholds updated: unit+int 60→85, UI 40→70
 - [x] Ruff lint/format clean, mypy strict clean
 - [x] Thermal monitoring tests (38 tests)
 
-**Resultado:** 564 tests passing, 87.69% coverage
+**Resultado:** 665 tests passing (564 unit/integration + 101 UI), 87.69% unit/integration y 78.27% UI
+- CI fix: omit global revertido, `.coveragerc-unit` (gate unit/integration) y tests de comportamiento UI → UI 78.27%
+- CI fix: mypy `exclude` de `build/`, `dist/` y `.venv/` → resuelve "Duplicate module named app"
+- CI fix: `pip-audit --desc on` (flags inexistentes en pip-audit 2.10.1; fallo de parsing de argumentos, no vulnerabilidades)
+- CI completamente verde: lint-and-test, benchmark y security-audit (run #45)
 
 ## Fase 10: Packaging & Distribution ⚠️
 

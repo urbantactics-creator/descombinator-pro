@@ -11,7 +11,7 @@ Desktop application that separates a song into two AI-powered tracks — **vocal
 | Playback & waveform visualization | ✅ Complete |
 | Export pipeline (WAV, FLAC, MP3, M4A) | ✅ Complete |
 | Performance optimization (benchmarks, baselines, CI regression gate) | ✅ Complete |
-| Testing & QA (564 tests, 87.69% coverage) | ✅ Complete |
+| Testing & QA (665 tests — 564 unit/integration @ 87.69% + 101 UI @ 78.27%, CI fully green) | ✅ Complete |
 | Packaging & distribution | ⚠️ In Progress |
 | Documentation & release | ⚠️ In Progress |
 
@@ -191,7 +191,7 @@ See [roadmap.md](roadmap.md) for the full phase-by-phase plan.
 | 6 | PySide6 UI Development | ✅ Complete |
 | 7 | Media Playback & Visualization | ✅ Complete |
 | 8 | Performance Optimization | ✅ Complete |
-| 9 | Testing & Quality Assurance | ⚠️ Partial |
+| 9 | Testing & Quality Assurance | ✅ Complete |
 | 10 | Packaging & Distribution | 🔲 Planned |
 | 11 | Documentation & Release | 🔲 Planned |
 
