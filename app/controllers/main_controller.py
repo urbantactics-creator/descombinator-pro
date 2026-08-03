@@ -15,6 +15,7 @@ from app.models.processing_state import ProcessingState
 from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
 from engine.demucs.config import ModelName, SeparationConfig
+from engine.performance.thermal import ThermalMonitor
 
 
 class SeparationWorkerSignals(QObject):
@@ -89,11 +90,16 @@ class MainController(QObject):
     separation_progress = Signal(int, str)  # percent, message
     export_completed = Signal(dict)  # stem_name -> file_path
     export_failed = Signal(str)  # error message
+    thermal_warning = Signal(str, float)  # state, cpu_temp_c
 
     def __init__(self) -> None:
         super().__init__()
         self._app_state = AppState()
-        self._separation_service = SeparationService(self._build_separation_config())
+        self._thermal_monitor = ThermalMonitor()
+        self._separation_service = SeparationService(
+            self._build_separation_config(),
+            thermal_monitor=self._thermal_monitor,
+        )
         self._export_service = ExportService()
         self._thread_pool = QThreadPool.globalInstance()
         self._current_worker: SeparationWorker | None = None

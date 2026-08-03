@@ -1,0 +1,172 @@
+"""Thermal monitoring for CPU and GPU temperature sensors.
+
+Reads temperature data from ``psutil.sensors_temperatures()`` (Linux) and
+``nvidia-smi`` (cross-platform). On macOS and Windows where
+``psutil.sensors_temperatures()`` returns ``{}``, the monitor gracefully
+degrades to reporting ``None`` and defaulting to ``ThermalState.NORMAL``.
+
+Thresholds:
+
+    NORMAL:  CPU < 70 °C, GPU < 80 °C
+    WARM:    CPU 70–80 °C, GPU 80–85 °C
+    HOT:     CPU 80–90 °C, GPU 85–95 °C
+    CRITICAL: CPU > 90 °C, GPU > 95 °C
+"""
+
+from __future__ import annotations
+
+import asyncio
+import subprocess
+import sys
+from enum import StrEnum
+
+from loguru import logger
+from pydantic import BaseModel
+
+
+class ThermalState(StrEnum):
+    """Thermal state machine."""
+
+    NORMAL = "normal"
+    WARM = "warm"
+    HOT = "hot"
+    CRITICAL = "critical"
+
+
+class ThermalSnapshot(BaseModel):
+    """Point-in-time thermal reading."""
+
+    cpu_temp_c: float | None = None
+    gpu_temp_c: float | None = None
+    state: ThermalState = ThermalState.NORMAL
+
+
+class ThermalMonitor:
+    """Asynchronously sample CPU and GPU temperatures.
+
+    The monitor is designed to be called from async code (separation service,
+    resource monitor).  All heavy I/O (psutil, subprocess) runs in threads
+    via ``asyncio.to_thread`` so the event loop is never blocked.
+    """
+
+    CPU_WARM = 70.0
+    CPU_HOT = 80.0
+    CPU_CRITICAL = 90.0
+    GPU_WARM = 80.0
+    GPU_HOT = 85.0
+    GPU_CRITICAL = 95.0
+
+    def __init__(self) -> None:
+        self._state = ThermalState.NORMAL
+
+    @property
+    def state(self) -> ThermalState:
+        """Current thermal state."""
+        return self._state
+
+    async def sample(self) -> ThermalSnapshot:
+        """Sample temperatures and update internal state.
+
+        Returns:
+            A :class:`ThermalSnapshot` with current readings and state.
+        """
+        cpu = await self._read_cpu_temp()
+        gpu = await self._read_gpu_temp()
+        self._state = self._evaluate(cpu, gpu)
+        return ThermalSnapshot(
+            cpu_temp_c=cpu,
+            gpu_temp_c=gpu,
+            state=self._state,
+        )
+
+    async def check_thresholds(self) -> ThermalState:
+        """Sample and return the current thermal state (convenience alias)."""
+        snap = await self.sample()
+        return snap.state
+
+    async def apply_throttle(self) -> dict[str, int]:
+        """Apply throttling actions based on the current thermal state.
+
+        Returns:
+            Dict describing actions taken (e.g. ``{"threads": 1}``).
+        """
+        snap = await self.sample()
+        if snap.state == ThermalState.HOT:
+            import torch
+
+            await asyncio.to_thread(torch.set_num_threads, 1)
+            logger.warning("Thermal throttle: reduced torch threads to 1")
+            return {"threads": 1}
+        if snap.state == ThermalState.CRITICAL:
+            import torch
+
+            await asyncio.to_thread(torch.set_num_threads, 1)
+            logger.critical(
+                "Thermal CRITICAL: reduced threads, separation should pause"
+            )
+            return {"threads": 1, "pause": True}
+        return {}
+
+    @staticmethod
+    def _evaluate(cpu: float | None, gpu: float | None) -> ThermalState:
+        """Determine thermal state from temperature readings."""
+        worst = ThermalState.NORMAL
+        if cpu is not None:
+            if cpu >= ThermalMonitor.CPU_CRITICAL:
+                return ThermalState.CRITICAL
+            if cpu >= ThermalMonitor.CPU_HOT:
+                worst = ThermalState.HOT
+            elif cpu >= ThermalMonitor.CPU_WARM and worst == ThermalState.NORMAL:
+                worst = ThermalState.WARM
+        if gpu is not None:
+            if gpu >= ThermalMonitor.GPU_CRITICAL:
+                return ThermalState.CRITICAL
+            if gpu >= ThermalMonitor.GPU_HOT:
+                worst = max(
+                    worst, ThermalState.HOT, key=lambda s: list(ThermalState).index(s)
+                )
+            elif gpu >= ThermalMonitor.GPU_WARM and worst == ThermalState.NORMAL:
+                worst = ThermalState.WARM
+        return worst
+
+    @staticmethod
+    async def _read_cpu_temp() -> float | None:
+        """Read CPU temperature via psutil (Linux) or return None."""
+        try:
+            import psutil
+
+            temps = await asyncio.to_thread(psutil.sensors_temperatures)
+            if not temps:
+                return None
+            for name in ("coretemp", "k10temp", "cpu_thermal", "acpitz"):
+                if name in temps and temps[name]:
+                    return float(temps[name][0].current)
+            first_key = next(iter(temps))
+            if temps[first_key]:
+                return float(temps[first_key][0].current)
+        except (AttributeError, Exception):
+            pass
+        return None
+
+    @staticmethod
+    async def _read_gpu_temp() -> float | None:
+        """Read GPU temperature via nvidia-smi or return None."""
+        if sys.platform == "darwin":
+            return None
+        try:
+            proc = await asyncio.to_thread(
+                subprocess.run,
+                [
+                    "nvidia-smi",
+                    "--query-gpu=temperature.gpu",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return float(proc.stdout.strip().split("\n")[0])
+        except (FileNotFoundError, subprocess.TimeoutExpired, ValueError):
+            pass
+        return None

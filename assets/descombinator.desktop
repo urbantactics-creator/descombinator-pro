@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Descombinator Pro
+GenericName=Audio Source Separator
+Comment=AI-powered audio source separation
+Exec=descombinator %f
+Icon=descombinator
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;
+MimeType=audio/mpeg;audio/x-wav;audio/flac;audio/x-m4a;audio/ogg;audio/aiff;
+Keywords=audio;separation;vocals;stems;demucs;
+StartupWMClass=descombinator

@@ -188,6 +188,7 @@ class MainWindow(QMainWindow):
         )
         self._main_controller.separation_failed.connect(self._on_separation_failed)
         self._main_controller.separation_progress.connect(self._on_separation_progress)
+        self._main_controller.thermal_warning.connect(self._on_thermal_warning)
 
         self._playback_controller.position_changed.connect(
             self._on_playback_position_changed
@@ -407,6 +408,12 @@ class MainWindow(QMainWindow):
 
         if self._processing_dialog:
             self._processing_dialog.update_progress(percent, message)
+
+    @Slot(str, float)
+    def _on_thermal_warning(self, state: str, cpu_temp: float) -> None:
+        """Display thermal status in the status bar."""
+        if cpu_temp is not None:
+            self._status_bar.showMessage(f"Thermal: {state} ({cpu_temp:.0f}°C)", 5000)
 
     # --- Playback signals ---
 

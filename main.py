@@ -1,18 +1,40 @@
 """Descombinator Pro — Audio source separation and processing engine."""
 
+from __future__ import annotations
+
+import multiprocessing
 import os
 import sys
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
-from loguru import logger
 
-from app.controllers.main_controller import MainController
-from app.controllers.playback_controller import PlaybackController
-from app.controllers.settings_controller import SettingsController
-from app.ui.main_window import MainWindow
+def get_resource_path(relative: str) -> Path:
+    """Resolve a resource path for both frozen and development modes.
+
+    When running as a PyInstaller bundle, ``sys._MEIPASS`` is the temp
+    directory where bundled data is extracted.  In development mode the
+    project root is used instead.
+    """
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    else:
+        base = Path(__file__).parent
+    return base / relative
+
+
+def _app_version() -> str:
+    """Return the installed package version or fall back to 0.1.0."""
+    try:
+        return version("descombinator")
+    except PackageNotFoundError:
+        return "0.1.0"
 
 
 def configure_loguru() -> None:
     """Configure loguru from environment variables."""
+    from loguru import logger
+
     log_level = os.getenv("LOG_LEVEL", "INFO")
     log_file = os.getenv("LOG_FILE")
 
@@ -44,15 +66,30 @@ def configure_loguru() -> None:
 
 def main() -> None:
     """Entry point for the Descombinator Pro desktop application."""
+    multiprocessing.freeze_support()
+
+    from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QApplication
 
+    from app.controllers.main_controller import MainController
+    from app.controllers.playback_controller import PlaybackController
+    from app.controllers.settings_controller import SettingsController
+    from app.ui.main_window import MainWindow
+
     configure_loguru()
+
+    from loguru import logger
+
     logger.info("Descombinator Pro starting...")
 
     app = QApplication(sys.argv)
     app.setApplicationName("Descombinator Pro")
     app.setOrganizationName("Descombinator")
-    app.setApplicationVersion("0.1.0")
+    app.setApplicationVersion(_app_version())
+
+    icon_path = get_resource_path("assets/icons/icon.png")
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
 
     settings_ctrl = SettingsController()
     settings_ctrl.load_settings()

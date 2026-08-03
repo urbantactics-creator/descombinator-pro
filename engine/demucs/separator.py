@@ -31,6 +31,7 @@ class SeparationState(StrEnum):
     IDLE = "idle"
     LOADING = "loading"
     PROCESSING = "processing"
+    PAUSED = "paused"
     COMPLETE = "complete"
     ERROR = "error"
 

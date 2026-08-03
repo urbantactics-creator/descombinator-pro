@@ -28,6 +28,8 @@ class ResourceSnapshot(BaseModel):
     rss_bytes: int
     vms_bytes: int
     swap_bytes: int
+    cpu_temp_c: float | None = None
+    gpu_temp_c: float | None = None
 
 
 class ResourceMonitor:

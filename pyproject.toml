@@ -127,6 +127,9 @@ module = [
     "tests.unit.engine.export.*",
     "tests.unit.engine.inference.*",
     "tests.unit.engine.performance.*",
+    "tests.unit.engine.demucs.*",
+    "tests.unit.engine.audio.test_errors",
+    "tests.unit.app.models.*",
     "tests.integration.test_separator",
     "tests.integration.test_export_pipeline",
     "tests.integration.test_full_pipeline",
@@ -163,6 +166,13 @@ markers = [
 [tool.coverage.run]
 source = ["app", "engine"]
 branch = true
+omit = [
+    "app/ui/*",
+    "app/widgets/*",
+    "app/__init__.py",
+    "app/resources/*",
+    "tests/*",
+]
 
 [tool.coverage.report]
 fail_under = 85

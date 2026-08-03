@@ -15,11 +15,19 @@ from engine.audio.postprocessor import AudioPostprocessor
 from engine.demucs.config import SeparationConfig
 from engine.demucs.errors import InvalidAudioError, ProcessingError, SeparationError
 from engine.performance.monitor import ResourceMonitor
+from engine.performance.thermal import ThermalMonitor, ThermalState
 
 if TYPE_CHECKING:
     from engine.demucs.separator import DemucsSeparator, SeparationState
 
 ProgressCallback = Callable[[int, str], None]
+
+
+class ThermalError(SeparationError):
+    """Separation paused due to critical thermal conditions."""
+
+    def __init__(self, message: str = "Thermal limit exceeded") -> None:
+        super().__init__(message)
 
 
 class SeparationService:
@@ -29,11 +37,13 @@ class SeparationService:
         self,
         config: SeparationConfig,
         monitor: ResourceMonitor | None = None,
+        thermal_monitor: ThermalMonitor | None = None,
     ) -> None:
         self._config = config
         self._loader = AudioLoader()
         self._postprocessor = AudioPostprocessor()
         self._monitor = monitor
+        self._thermal_monitor = thermal_monitor
         self._separator: DemucsSeparator | None = None
 
     async def initialize(self) -> None:
@@ -88,11 +98,19 @@ class SeparationService:
         if self._monitor is not None:
             await self._monitor.start()
         try:
+            if self._thermal_monitor is not None:
+                snap = await self._thermal_monitor.sample()
+                if snap.state == ThermalState.CRITICAL:
+                    raise ThermalError(
+                        f"CPU={snap.cpu_temp_c}°C, GPU={snap.gpu_temp_c}°C"
+                    )
             result = await self._separator.separate_file(file_path)
             elapsed = time.monotonic() - start
             logger.info(f"Separation complete in {elapsed:.2f}s: {list(result.keys())}")
             return result
         except InvalidAudioError:
+            raise
+        except ThermalError:
             raise
         except SeparationError as e:
             logger.error(f"Separation failed: {e}")
@@ -131,11 +149,19 @@ class SeparationService:
         if self._monitor is not None:
             await self._monitor.start()
         try:
+            if self._thermal_monitor is not None:
+                snap = await self._thermal_monitor.sample()
+                if snap.state == ThermalState.CRITICAL:
+                    raise ThermalError(
+                        f"CPU={snap.cpu_temp_c}°C, GPU={snap.gpu_temp_c}°C"
+                    )
             result = await self._separator.separate(audio, sample_rate)
             elapsed = time.monotonic() - start
             logger.info(f"Separation complete in {elapsed:.2f}s: {list(result.keys())}")
             return result
         except InvalidAudioError:
+            raise
+        except ThermalError:
             raise
         except SeparationError as e:
             logger.error(f"Separation failed: {e}")
@@ -152,6 +178,7 @@ class SeparationService:
             SeparationState.IDLE: "Preparing...",
             SeparationState.LOADING: f"Loading model... {percent}%",
             SeparationState.PROCESSING: f"Processing... {percent}%",
+            SeparationState.PAUSED: "Paused — thermal limit",
             SeparationState.COMPLETE: f"Complete {percent}%",
             SeparationState.ERROR: "Error occurred",
         }
