@@ -6,43 +6,43 @@
     "warmup": "on"
   },
   "bench_audio_load_1min_wav": {
-    "median_ms": 2.1
+    "median_ms": 3.4
   },
   "bench_audio_postprocess_1min": {
-    "median_ms": 2.6
+    "median_ms": 3.7
   },
   "bench_audio_preprocess_3min": {
-    "median_ms": 10.4
+    "median_ms": 15.1
   },
   "bench_engine_pipeline_3min_mock": {
-    "median_ms": 11.0
+    "median_ms": 19.8
   },
   "bench_engine_separate_3min_mock": {
-    "median_ms": 0.1
+    "median_ms": 0.2
   },
   "bench_export_batch_parallel": {
-    "median_ms": 99.1
+    "median_ms": 47.8
   },
   "bench_export_batch_sequential": {
-    "median_ms": 142.5
+    "median_ms": 108.8
   },
   "bench_export_flac_1min": {
-    "median_ms": 36.7
+    "median_ms": 46.4
   },
   "bench_export_m4a_1min": {
-    "median_ms": 2292.2
+    "median_ms": 2907.5
   },
   "bench_export_mp3_1min": {
-    "median_ms": 413.8
+    "median_ms": 507.4
   },
   "bench_export_wav_1min": {
-    "median_ms": 29.4
+    "median_ms": 28.5
   },
   "bench_playback_readdata_1min": {
-    "median_ms": 7.2
+    "median_ms": 18.1
   },
   "bench_playback_set_stems": {
-    "median_ms": 0.0
+    "median_ms": 0.1
   },
   "bench_playback_set_track_volume": {
     "median_ms": 0.0
@@ -51,9 +51,9 @@
     "median_ms": 0.0
   },
   "bench_startup_import": {
-    "median_ms": 874.8
+    "median_ms": 1169.4
   },
   "bench_waveform_decimate_100mb": {
-    "median_ms": 2.0
+    "median_ms": 2.1
   }
 }
