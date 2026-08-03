@@ -809,11 +809,23 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 ### PyInstaller Hidden Imports
 
 ```python
-hiddenimports=[
-    "torch", "torch._C", "torch.cuda", "torch.backends",
-    "demucs", "openunmix", "PySide6", "pyqtgraph",
-    "onnxruntime", "librosa", "soundfile", "resampy",
-    "mutagen", "psutil", "numpy", "scipy",
+hiddenimports = [
+    "torch",
+    "torch._C",
+    "torch.cuda",
+    "torch.backends",
+    "demucs",
+    "openunmix",
+    "PySide6",
+    "pyqtgraph",
+    "onnxruntime",
+    "librosa",
+    "soundfile",
+    "resampy",
+    "mutagen",
+    "psutil",
+    "numpy",
+    "scipy",
 ]
 ```
 
