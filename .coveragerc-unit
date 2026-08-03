@@ -1,0 +1,21 @@
+[run]
+source = app, engine
+branch = true
+omit =
+    app/ui/*
+    app/widgets/*
+    app/__init__.py
+    app/resources/*
+    tests/*
+
+[report]
+show_missing = true
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @\w+.*\s+\.\.\.

@@ -166,13 +166,6 @@ markers = [
 [tool.coverage.run]
 source = ["app", "engine"]
 branch = true
-omit = [
-    "app/ui/*",
-    "app/widgets/*",
-    "app/__init__.py",
-    "app/resources/*",
-    "tests/*",
-]
 
 [tool.coverage.report]
 fail_under = 85
