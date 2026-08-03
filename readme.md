@@ -5,40 +5,47 @@ Desktop application that separates a song into two AI-powered tracks — **vocal
 ## Project Status
 
 | Milestone | Status |
-| ----------- | -------- |
+|-----------|--------|
 | Vocal ↔ Instrumental separation | ✅ Complete |
-| Multi-instrument separation | 🔲 Planned |
+| Multi-instrument separation (Demucs) | ✅ Complete |
 | Playback & waveform visualization | ✅ Complete |
-| Performance optimization | ✅ Complete |
-| Distributable packaging | 🔲 Planned |
+| Export pipeline (WAV, FLAC, MP3, M4A) | ✅ Complete |
+| Performance optimization (benchmarks, baselines, CI regression gate) | ✅ Complete |
+| Testing & QA (308 unit/integration + 17 UI tests) | ⚠️ Partial — coverage gates in progress |
+| Packaging & distribution | 🔲 Planned |
+| Documentation & release | 🔲 Planned |
 
 ## Features
 
-- **High-quality separation** powered by Demucs and Open-Unmix
-- **Modern, minimal UI** built with PySide6
+- **High-quality separation** powered by Demucs (htdemucs_ft, mdx_extra) and Open-Unmix (umxhq)
+- **Modern, minimal UI** built with PySide6 — dark/light theme support
 - **Fast local processing** with PyTorch acceleration
 - **On-device privacy** — no files uploaded to the internet
 - **Synchronized multi-track playback** with per-track volume/mute, seek, and gapless mixing
 - **Waveform visualization** with playback position tracking
+- **Multi-format export** — WAV, FLAC, MP3, M4A with metadata embedding
 - **Performance-tested** — 16 benchmark gates enforced in CI (regression gate fails on > 20 % median drift)
 - **Cross-platform** support (Linux, macOS, Windows)
-- **Modular, production-ready** codebase
+- **Modular, production-ready** codebase with async-first architecture
 
 ## Tech Stack
 
 | Category | Technology |
-| ---------- | ------------ |
+|----------|------------|
 | Language | Python 3.12+ |
-| GUI Framework | PySide6 |
-| ML Backend | PyTorch, TorchAudio |
-| Separation | Demucs, Open-Unmix |
-| Audio I/O | Librosa, SoundFile, Resampy |
-| Metadata | Mutagen |
-| Visualization | PyQtGraph |
-| Async I/O | aiofiles |
-| Logging | Loguru |
-| Testing | pytest, pytest-qt |
-| Packaging | PyInstaller |
+| GUI Framework | PySide6 ≥6.11 |
+| ML Backend | PyTorch ≥2.13, TorchAudio ≥2.11 |
+| Separation | Demucs ≥4.1, Open-Unmix ≥1.3 |
+| Audio I/O | Librosa ≥0.11, SoundFile ≥0.14, Resampy ≥0.4.3 |
+| Metadata | Mutagen ≥1.48 |
+| Visualization | PyQtGraph ≥0.14 |
+| Async I/O | aiofiles ≥25.1 |
+| Logging | Loguru ≥0.7.3 |
+| Configuration | Pydantic ≥2.13, python-dotenv ≥1.2, PyYAML ≥6.0 |
+| Testing | pytest ≥9.1, pytest-qt ≥4.5, pytest-asyncio ≥1.4, pytest-cov ≥7.1, pytest-benchmark ≥5.2 |
+| Code Quality | ruff ≥0.16, mypy ≥2.3, pre-commit ≥4.6 |
+| Profiling | memory-profiler ≥0.61, py-spy ≥0.4, snakeviz ≥2.2 |
+| Packaging | PyInstaller ≥6.21 |
 
 ## Project Structure
 
@@ -55,16 +62,20 @@ descombinator/
 │   ├── demucs/       # Demucs separation backend
 │   ├── inference/    # Model inference pipeline
 │   ├── audio/        # Audio loading and processing
-│   └── export/       # Result export and file writing
-├── tests/            # Unit and integration tests
+│   ├── export/       # Result export and file writing
+│   └── performance/  # Profiling, monitoring, runtime optimization
+├── benchmarks/       # Performance benchmark suite + baselines.json
+├── scripts/          # Dev tooling (bench regression gate, profiling)
+├── tests/            # Unit, integration, and UI tests
 ├── docs/             # Documentation
 ├── assets/           # Project assets
-├── .venv/            # Virtual environment (auto-activated)
+├── .kilo/skills/    # Specialized agent skills
 ├── main.py           # Application entry point
 ├── requirements.txt  # Python dependencies
+├── requirements-dev.txt  # Dev dependencies
 ├── pyproject.toml    # Project configuration
-├── .envrc          # direnv auto-activation
-└── activate.sh     # Manual venv activation script
+├── .envrc            # direnv auto-activation
+└── activate.sh       # Manual venv activation script
 ```
 
 ## Installation
@@ -73,6 +84,7 @@ descombinator/
 
 - Python 3.12+
 - pip
+- System dependencies (Linux): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg`
 
 ### Setup
 
@@ -103,25 +115,54 @@ python main.py
 ### Running Tests
 
 ```bash
+# All tests
 pytest tests/
+
+# With coverage
+pytest tests/ --cov=app --cov=engine --cov-report=term-missing
+
+# Unit tests only
+pytest tests/unit/
+
+# UI tests (headless)
+QT_QPA_PLATFORM=offscreen pytest tests/ui/
+```
+
+### Code Quality
+
+```bash
+# Lint
+ruff check .
+
+# Format
+ruff format .
+
+# Type checking
+mypy .
+```
+
+### Pre-commit Hooks
+
+```bash
+pre-commit install
+pre-commit run --all-files
 ```
 
 ### Building a Distributable
 
 ```bash
-pyinstaller --onefile main.py
+pyinstaller --onefile --windowed descombinator.spec
 ```
 
-## Roadmap
+### Benchmarks
 
-1. ✅ Load audio file
-2. ✅ Separate vocals and instrumental
-3. ✅ Play both tracks
-4. ✅ Export results
-5. ✅ Performance optimization (benchmarks, baselines, CI regression gate)
-6. 🔲 Packaging for distribution
-7. 🔲 Testing & QA hardening (coverage gates)
-8. 🔲 Documentation & release
+```bash
+# Run benchmark suite (non-slow gates)
+pytest benchmarks/ -m "not slow" --benchmark-only
+
+# Check regressions against committed baselines
+python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json
+```
 
 ## Performance
 
@@ -136,6 +177,24 @@ python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json -
 ```
 
 Key results (real CI medians): startup import ~1.09 s (target < 3 s), playback interactions < 0.1 ms, waveform decimation ~2.1 ms, memory peak 133 MB (target < 4 GB). See `roadmap.md` (Phase 8) and `docs/development/performance/` for details.
+
+## Roadmap
+
+See [roadmap.md](roadmap.md) for the full phase-by-phase plan.
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Project Foundation | ✅ Complete |
+| 2 | Audio I/O & DSP Pipeline | ✅ Complete |
+| 3 | ML Model Integration & Inference | ✅ Complete |
+| 4 | Separation Engine Core | ✅ Complete |
+| 5 | Export Pipeline | ✅ Complete |
+| 6 | PySide6 UI Development | ✅ Complete |
+| 7 | Media Playback & Visualization | ✅ Complete |
+| 8 | Performance Optimization | ✅ Complete |
+| 9 | Testing & Quality Assurance | ⚠️ Partial |
+| 10 | Packaging & Distribution | 🔲 Planned |
+| 11 | Documentation & Release | 🔲 Planned |
 
 ## License
 

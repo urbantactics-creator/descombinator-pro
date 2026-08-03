@@ -115,3 +115,63 @@ class TestDemucsAgentSources:
         mock_sep.model.sources = ["vocals", "drums"]
         agent._separator = mock_sep
         assert agent.sources == ["vocals", "drums"]
+
+
+class TestDemucsAgentMonoUpmix:
+    """Mono inputs must be upmixed to stereo for stereo-only Demucs models."""
+
+    def _make_mock(self, audio: torch.Tensor) -> MagicMock:
+        """Build a mock separator returning filtered stems."""
+        stems_dict = {
+            "vocals": torch.randn(2, 44100),
+            "other": torch.randn(2, 44100),
+        }
+        mock_sep = MagicMock()
+        mock_sep.separate_tensor.return_value = (audio, stems_dict)
+        return mock_sep
+
+    @pytest.mark.asyncio
+    async def test_separate_upmixes_single_channel_to_stereo(
+        self, agent: DemucsAgent
+    ) -> None:
+        """A (1, N) mono tensor is duplicated to (2, N) before inference."""
+        mono = torch.randn(1, 44100)
+        mock_sep = self._make_mock(mono)
+        agent._separator = mock_sep
+
+        await agent.separate(mono)
+
+        assert mock_sep.separate_tensor.call_count == 1
+        called = mock_sep.separate_tensor.call_args.args[0]
+        assert called.shape == (2, 44100)
+        assert torch.equal(called[0], called[1])
+
+    @pytest.mark.asyncio
+    async def test_separate_upmixes_1d_input_to_stereo(
+        self, agent: DemucsAgent
+    ) -> None:
+        """A raw (N,) tensor is reshaped and duplicated to (2, N)."""
+        mono_1d = torch.randn(44100)
+        mock_sep = self._make_mock(mono_1d)
+        agent._separator = mock_sep
+
+        await agent.separate(mono_1d)
+
+        assert mock_sep.separate_tensor.call_count == 1
+        called = mock_sep.separate_tensor.call_args.args[0]
+        assert called.shape == (2, 44100)
+        assert torch.equal(called[0], called[1])
+
+    @pytest.mark.asyncio
+    async def test_separate_leaves_stereo_unchanged(self, agent: DemucsAgent) -> None:
+        """Genuine (2, N) stereo input is passed through untouched."""
+        stereo = torch.randn(2, 44100)
+        mock_sep = self._make_mock(stereo)
+        agent._separator = mock_sep
+
+        await agent.separate(stereo)
+
+        assert mock_sep.separate_tensor.call_count == 1
+        called = mock_sep.separate_tensor.call_args.args[0]
+        assert called.shape == (2, 44100)
+        assert called is stereo

@@ -1,9 +1,9 @@
-pre-commit>=4.0.0
-mypy>=2.0.0
-ruff>=0.5.0
-pytest-cov>=5.0.0
-pytest-asyncio>=0.24.0
-pytest-benchmark>=5.0.0
+pre-commit>=4.6.0
+mypy>=2.3.0
+ruff>=0.16.1
+pytest-cov>=7.1.0
+pytest-asyncio>=1.4.0
+pytest-benchmark>=5.2.3
 memory_profiler>=0.61.0
-py-spy>=0.4.0
-snakeviz>=2.2.0
+py-spy>=0.4.2
+snakeviz>=2.2.2

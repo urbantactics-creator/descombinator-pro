@@ -67,6 +67,12 @@ class DemucsAgent:
                 and not audio.is_cuda
             ):
                 audio = audio.pin_memory()
+            # htdemucs / MDX models are stereo-only: upmix mono input
+            # (1, N) to stereo (2, N) before inference.
+            if audio.ndim == 1:
+                audio = audio.unsqueeze(0)
+            if audio.shape[0] == 1:
+                audio = audio.repeat(2, 1)
             with (
                 torch.inference_mode(),
                 TorchRuntimeOptimizer.autocast_ctx(
