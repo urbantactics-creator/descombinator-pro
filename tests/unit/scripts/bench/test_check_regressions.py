@@ -95,7 +95,7 @@ class TestCheck:
         self, tmp_path: Path, baselines: dict[str, dict[str, object]]
     ) -> None:
         result = tmp_path / "result.json"
-        _write_result(result, {"bench_dummy_fast": 2.0, "bench_dummy_slow": 200.0})
+        _write_result(result, {"bench_dummy_fast": 2.0, "bench_dummy_slow": 250.0})
         assert check(baselines, result, verbose=False) == 1
 
     def test_absolute_target_fails(

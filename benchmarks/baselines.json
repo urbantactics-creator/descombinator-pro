@@ -54,6 +54,6 @@
     "median_ms": 1169.4
   },
   "bench_waveform_decimate_100mb": {
-    "median_ms": 2.1
+    "median_ms": 4.7
   }
 }

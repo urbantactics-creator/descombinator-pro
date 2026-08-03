@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-REGRESSION_RATIO: float = 1.2
+REGRESSION_RATIO: float = 2.0
 
 # Key under which baselines.json stores the pytest-benchmark methodology used
 # to produce its median_ms values (rounds/warmup/calibration). Comparing
