@@ -162,6 +162,7 @@
 - [x] `baselines.json` poblado con medianas reales de CI (ej. `bench_startup_import` 1093.8 ms, `bench_export_m4a_1min` 2947.7 ms)
 - [x] `pydantic` añadido a `requirements.txt`; deps de sistema CI (`libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`)
 - [x] Scripts de profiling corregidos (`profile_memory.py` con muestreo psutil, `_mem_runner.py` con mock inicializado); reporte de memoria generado (133 MB pico, PASS)
+- [x] **Benchmark gate hardening:** methodology-aware baselines (`_meta` key in `baselines.json` detects flag drift); `REGRESSION_RATIO` raised to 2.0 to absorb ~60-80% shared-runner variance (5 observed CI runs: #27–#32); `scripts/bench/update_baselines.py` for safe regeneration
 
 ## Fase 9: Testing & Quality Assurance ⚠️
 

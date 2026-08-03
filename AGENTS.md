@@ -95,7 +95,8 @@ except DemucsError as e:
 ## Testing
 
 - **Framework**: `pytest` with `pytest-asyncio` and `pytest-qt`
-- **Coverage**: 85% minimum for engine, 70% for UI
+- **Coverage**: 85% minimum for engine, 70% for UI (Phase 9 will raise these)
+- **Current status**: 308 unit/integration tests passing, 17 UI tests passing
 - **Test data**: Store in `tests/fixtures/`, use small files (< 1 MB)
 - **Mocking**: Mock external dependencies (file system, network, models)
 
@@ -113,13 +114,29 @@ pytest tests/unit/
 pytest tests/ui/
 ```
 
+## Phase Status
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Project Foundation | ✅ Complete |
+| 2 | Audio I/O & DSP Pipeline | ✅ Complete |
+| 3 | ML Model Integration & Inference | ✅ Complete |
+| 4 | Separation Engine Core | ✅ Complete |
+| 5 | Export Pipeline | ✅ Complete |
+| 6 | PySide6 UI Development | ✅ Complete |
+| 7 | Media Playback & Visualization | ✅ Complete |
+| 8 | Performance Optimization | ✅ Complete |
+| 9 | Testing & Quality Assurance | ⚠️ Partial |
+| 10 | Packaging & Distribution | ❌ Not Started |
+| 11 | Documentation & Release | ❌ Not Started |
+
 ## CI (GitHub Actions)
 
 - **Workflow**: `.github/workflows/ci.yml` — two jobs: `lint-and-test` and `benchmark` (benchmark `needs: lint-and-test`).
 - **System dependencies** (PySide6/QtMultimedia on Ubuntu runners): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`.
 - **Headless Qt**: unit/integration tests run with `QT_QPA_PLATFORM=offscreen`; UI tests run under `xvfb-run`.
 - **Coverage thresholds in CI**: unit/integration `--cov-fail-under=60`, UI `--cov-fail-under=40` (Phase 9 will raise them).
-- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 20 % median regression vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with real CI values.
+- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 100 % median regression (REGRESSION_RATIO=2.0) vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with real CI values.
 - **Mypy**: strict mode; pre-existing Phase 6/7 drift (Qt/Pydantic `Any` bases) is scoped via `[[tool.mypy.overrides]]` in `pyproject.toml`.
 
 ## Git Workflow
@@ -155,12 +172,22 @@ This project includes specialized agent skills in `.kilo/skills/`. Each skill pr
 - **python-backend-engineer** — Python coding standards and patterns
 - **ai-ml-engineer** — ML model integration and optimization
 - **audio-dsp-engineer** — Audio processing and DSP
+- **audio-separation-specialist** — Audio source separation techniques and quality evaluation
 - **pyside6-ui-engineer** — PySide6 UI development
-- **qa-automation-engineer** — Testing strategy and automation
+- **media-playback-engineer** — Audio playback, media controls, and state management
+- **export-pipeline-engineer** — Export pipeline design, format conversion, metadata embedding
+- **qa-automation-engineer** — Testing strategy, framework setup, coverage gates
+- **testing-engineer** — Test automation, test data management, CI testing
 - **code-reviewer** — Code review checklist and standards
 - **security-auditor** — Security best practices and auditing
 - **devops-engineer** — CI/CD and deployment
-- **documentation-writer** — Documentation standards
+- **performance-engineer** — Profiling, benchmarking, and optimization
+- **documentation-writer** — Technical documentation and user guides
+- **technical-writer** — Specifications, release notes, and technical communication
+- **configuration-manager** — Application configuration and environment management
+- **dependency-manager** — Python dependency management and security auditing
+- **packaging-distribution-engineer** — Application packaging and distribution
+- **cross-platform-engineer** — Cross-platform compatibility and platform-specific builds
 
 ## Useful Commands
 
@@ -188,7 +215,7 @@ ruff format .
 pytest benchmarks/ -m "not slow" --benchmark-only
 
 # Check benchmark regressions vs baselines
-python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json
+python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json --min-rounds 10 --max-time 1.0 --warmup on --calibration-precision 3
 
 # Profile memory / torch (slow, real model)
 python -m scripts.profiling.profile_memory
