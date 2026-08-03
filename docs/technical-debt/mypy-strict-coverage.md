@@ -2,9 +2,19 @@
 
 ## Status
 
-`mypy --strict` passes in CI, but `[[tool.mypy.overrides]]` in `pyproject.toml` sets `ignore_errors = true` for **28 of 44** business-logic modules in `app/` and `engine/` (~64%).
+`mypy --strict` passes cleanly in CI (**0 issues across 155 source files**, CI run #45, commit `094a3f9`). CI also excludes `build/`, `dist/`, and `.venv/` from the type-check surface (commit `4e04936`).
 
-The override comment says: *"Pre-existing drift (Phase 6/7-era): Qt enum/attr typing gaps and untyped mutagen calls. Kept out of the Phase 8 scope."*
+However, `[[tool.mypy.overrides]]` in `pyproject.toml` sets `ignore_errors = true` for the app/engine business-logic modules listed below. The override comment says: *"Pre-existing drift (Phase 6/7-era): Qt enum/attr typing gaps and untyped mutagen calls. Kept out of the Phase 8 scope; see PR #4 description."*
+
+## Configuration Notes
+
+- The strict-mode overrides live in `pyproject.toml` under `[tool.mypy]` / `[[tool.mypy.overrides]]`:
+  - One override block sets `ignore_missing_imports = true` for third-party stubs (`torch.*`, `PySide6.*`, etc.) — this is expected and permanent.
+  - One override block sets `ignore_errors = true` for dev tooling (`benchmarks.*`, `scripts.*`) — intentional.
+  - One override block sets `ignore_errors = true` for pre-existing Phase 6/7-era drift in `app/` and `engine/` plus test modules — this is the debt tracked here.
+- Mypy runs with `exclude = ["^build/", "^dist/", "^\\.venv/"]` so packaging artifacts never gate the type-check.
+- The override list contains duplicate entries (e.g., `engine.inference.config`, `engine.export.config`, `engine.demucs.config`, `app.models.settings_model`, `app.models.app_state`, `engine.performance.monitor`) that should be deduplicated when cleaning up.
+- CI command: `mypy .` (must stay clean). Local verification: `source activate.sh && mypy .`
 
 ## Goal
 

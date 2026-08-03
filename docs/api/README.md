@@ -40,12 +40,15 @@ The API is organized into three layers:
 ### Performance
 
 - [ResourceMonitor](engine/performance/monitor.md) — System resource monitoring
+- [ThermalMonitor](engine/performance/thermal.md) — Cross-platform CPU/GPU temperature monitoring
+- [cpu_profile / torch_profile_trace](engine/performance/profiler.md) — Profiling context managers
 - [TorchRuntimeOptimizer](engine/performance/optimizer.md) — PyTorch runtime optimization
 
 ## Service API
 
 - [SeparationService](app/services/separation_service.md) — Separation pipeline orchestration
 - [PlaybackService](app/services/playback_service.md) — Audio playback orchestration
+- [PlaybackStateStore](app/services/playback_state_store.md) — Playback state persistence
 - [ExportService](app/services/export_service.md) — Export pipeline orchestration
 
 ## Data Models
@@ -61,6 +64,8 @@ The API is organized into three layers:
 ## Enums
 
 - [SeparationStatus](app/models/app_state.md) — Separation workflow states
+- [SeparationState](engine/demucs/separator.md) — Separation workflow states
+- [ThermalState](engine/performance/thermal.md) — Thermal thresholds state machine
 - [ModelName](engine/inference/config.md) — Available separation models
 - [DeviceType](engine/inference/config.md) — Compute device types
 - [ExportFormat](engine/export/config.md) — Supported export formats
