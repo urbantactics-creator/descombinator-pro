@@ -11,9 +11,9 @@ Desktop application that separates a song into two AI-powered tracks — **vocal
 | Playback & waveform visualization | ✅ Complete |
 | Export pipeline (WAV, FLAC, MP3, M4A) | ✅ Complete |
 | Performance optimization (benchmarks, baselines, CI regression gate) | ✅ Complete |
-| Testing & QA (308 unit/integration + 17 UI tests) | ⚠️ Partial — coverage gates in progress |
-| Packaging & distribution | 🔲 Planned |
-| Documentation & release | 🔲 Planned |
+| Testing & QA (564 tests, 87.69% coverage) | ✅ Complete |
+| Packaging & distribution | ⚠️ In Progress |
+| Documentation & release | ⚠️ In Progress |
 
 ## Features
 
@@ -25,6 +25,7 @@ Desktop application that separates a song into two AI-powered tracks — **vocal
 - **Waveform visualization** with playback position tracking
 - **Multi-format export** — WAV, FLAC, MP3, M4A with metadata embedding
 - **Performance-tested** — 16 benchmark gates enforced in CI (regression gate fails on > 20 % median drift)
+- **Thermal monitoring** — cross-platform CPU/GPU temperature sampling with graceful degradation and thermal throttling
 - **Cross-platform** support (Linux, macOS, Windows)
 - **Modular, production-ready** codebase with async-first architecture
 

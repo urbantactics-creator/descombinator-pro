@@ -9,33 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Phase 8: Performance Optimization — profiling infrastructure (`cProfile`, `py-spy`, `memory_profiler`, `torch.profiler`), `engine/performance/` package with `ResourceMonitor` and `TorchRuntimeOptimizer`, benchmark suite with 16 gates, CI regression job
-- Phase 8: Lazy imports (PEP 562) for startup optimization — `import main` loads none of the ML stack
-- Phase 8: WAV-PCM `np.memmap` fast path for large file loading
-- Phase 8: `separate_loaded()` method on `SeparationService` to avoid double audio decode
-- Phase 8: Worker-side waveform decimation for UI responsiveness
-- Phase 8: Guarded CUDA support (`torch.cuda.amp.autocast()`, pinned memory, segment/jobs config)
-- Phase 8: `scripts/profiling/` directory with `profile_cpu.py`, `profile_memory.py`, `profile_torch.py`, `profile_pyspy.py`, `measure_startup.py`
-- Phase 8: `benchmarks/` package with `baselines.json` and `scripts/bench/check_regressions.py`
-- Phase 7: `AudioMixer` in `app/audio/` — in-memory mixer with `QAudioSink` for synchronized gapless multi-track playback
-- Phase 7: `PlaybackStateStore` — persists volumes, mutes, active stems, and last file
-- Phase 7: `TrackMixerWidget` — per-track volume sliders and mute toggles
-- Phase 7: Seek slider with live drag seeking and `m:ss` time display
-- Phase 6: `ProcessingDialog` — modal progress dialog with cancel button and ETA calculation
-- Phase 6: `SettingsDialog` — settings UI with model/format/sample-rate/bitrate/theme controls
-- Phase 6: `AudioLoadWorker` — `QRunnable` for background audio loading
-- Phase 5: Multi-format export (WAV, FLAC, MP3, M4A) with metadata embedding
-- Phase 5: `BatchExporter` with progress tracking and error handling
-- Phase 4: `InferenceError` added to `engine/demucs/errors.py` exception hierarchy
-- Phase 4: State machine for separation workflow (idle → loading → processing → complete → error)
-- Phase 3: `ModelManager` with `SeparationModel` protocol, cache, and lazy factory
-- Phase 3: `torch.inference_mode()` applied in both `DemucsAgent` and `OpenUnmixAgent`
-- Phase 2: `MetadataReader` and `MetadataWriter` via `mutagen`
-- Phase 2: `AudioPostprocessor` with artifact reduction (windowing, crossfading, peak limiting)
-- Phase 1: Pre-commit hooks (ruff, ruff-format, trailing-whitespace, end-of-file, check-yaml, check-toml, check-merge-conflict, large-files)
-- Phase 1: GitHub Actions CI workflow with lint, format, test, mypy, and benchmark jobs
-- Phase 1: `docs/` structure (architecture, guides, development, troubleshooting)
-- Phase 1: `assets/` structure (icons, styles, i18n)
+- Phase 9: Testing & QA — 564 tests passing, 87.69% coverage (up from 308 at 72%)
+- Phase 9: CI coverage thresholds raised — unit+int 60→85%, UI 40→70%
+- Phase 9: Thermal monitoring — `engine/performance/thermal.py` with `ThermalMonitor`, `ThermalState`, `ThermalSnapshot`
+- Phase 9: Thermal integration — `SeparationService` accepts `ThermalMonitor`, `SeparationState.PAUSED`, `thermal_warning` signal, status bar display
+- Phase 9: `ResourceSnapshot` extended with `cpu_temp_c`/`gpu_temp_c` fields
+- Phase 9: `engine/performance/__init__.py` exports updated with thermal symbols
+- Phase 9: mypy overrides extended for new test modules
+- Phase 9: `pyproject.toml` coverage omit patterns for UI modules in unit tests
+- Phase 10: `descombinator.spec` — PyInstaller spec with hidden imports for torch, demucs, PySide6
+- Phase 10: `.github/workflows/build.yml` — multi-platform build matrix (ubuntu, windows, macos)
+- Phase 10: `scripts/build/build_linux.sh` — PyInstaller → AppImage
+- Phase 10: `scripts/build/build_windows.ps1` — PyInstaller → Inno Setup
+- Phase 10: `scripts/build/build_macos.sh` — PyInstaller → codesign → notarytool → staple
+- Phase 10: `scripts/build/installer.iss` — Inno Setup installer script
+- Phase 10: `assets/descombinator.desktop` — Linux desktop entry file
+- Phase 10: `main.py` frozen bundle support — `freeze_support()`, `get_resource_path()`, dynamic version
+- Phase 10: `main.py` window icon from `assets/icons/icon.png` with graceful fallback
 
 ### Changed
 
