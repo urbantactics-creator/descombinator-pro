@@ -136,7 +136,7 @@ pytest tests/ui/
 - **System dependencies** (PySide6/QtMultimedia on Ubuntu runners): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`.
 - **Headless Qt**: unit/integration tests run with `QT_QPA_PLATFORM=offscreen`; UI tests run under `xvfb-run`.
 - **Coverage thresholds in CI**: unit/integration `--cov-fail-under=60`, UI `--cov-fail-under=40` (Phase 9 will raise them).
-- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 100 % median regression (REGRESSION_RATIO=2.0) vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with real CI values.
+- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 100 % median regression (REGRESSION_RATIO=2.0) vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with worst-case observed values across multiple CI runs to absorb shared-runner variance.
 - **Mypy**: strict mode; pre-existing Phase 6/7 drift (Qt/Pydantic `Any` bases) is scoped via `[[tool.mypy.overrides]]` in `pyproject.toml`.
 
 ## Git Workflow

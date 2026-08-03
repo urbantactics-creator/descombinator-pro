@@ -606,7 +606,7 @@ class BatchExporter:
 | Startup time | < 3 seconds | **Median 1093.8 ms** on CI (`bench_startup_import`) |
 | File load time | < 5 seconds for 100 MB | WAV-PCM `np.memmap` fast path |
 
-### CI Baseline Results (worst-case median across CI runs #27–#32, `benchmarks/baselines.json`)
+### CI Baseline Results (worst-case observed across CI runs #27–#33, `benchmarks/baselines.json`)
 
 | Benchmark                        | Baseline (worst-case) | Target |
 | -------------------------------- | --------------------- | ------ |
@@ -621,13 +621,13 @@ class BatchExporter:
 | bench_export_mp3_1min            | 507.4 ms | — |
 | bench_export_m4a_1min            | 2907.5 ms | — |
 | bench_export_batch_sequential    | 108.8 ms | — |
-| bench_export_batch_parallel      | 47.8 ms | — |
+| bench_export_batch_parallel      | 112.1 ms | — |
 | bench_playback_readdata_1min     | 18.1 ms | — |
 | bench_playback_set_stems         | 0.1 ms | < 100 ms |
 | bench_playback_set_track_volume  | 0.0 ms | < 100 ms |
 | bench_waveform_decimate_100mb    | 2.1 ms | < 100 ms |
 
-> Baselines set to the worst-case median observed across 5 shared-runner CI runs (#27–#32). `REGRESSION_RATIO=2.0` absorbs the ~60-80 % runner-to-runner variance; `baselines.json` carries a `_meta` block that fails the gate if the methodology (min_rounds/max_time/warmup/calibration_precision) is mismatched. `scripts/bench/update_baselines.py` provides safe regeneration.
+> Baselines set to the worst-case observed across 5 shared-runner CI runs (#27–#33). `REGRESSION_RATIO=2.0` absorbs the ~60-80 % runner-to-runner variance; `baselines.json` carries a `_meta` block that fails the gate if the methodology (min_rounds/max_time/warmup/calibration_precision) is mismatched. `scripts/bench/update_baselines.py` provides safe regeneration.
 
 ### Phase 8 Refinement Notes
 

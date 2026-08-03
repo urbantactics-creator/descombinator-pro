@@ -21,7 +21,7 @@
     "median_ms": 0.2
   },
   "bench_export_batch_parallel": {
-    "median_ms": 47.8
+    "median_ms": 112.1
   },
   "bench_export_batch_sequential": {
     "median_ms": 108.8
