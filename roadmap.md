@@ -17,7 +17,6 @@
 | 7 | Media Playback & Visualization | Sprint 8 | Phase 6 |
 | 8 | Performance Optimization | Sprint 9 | Phases 2–7 |
 | 9 | Testing & Quality Assurance | Sprint 10 | Phases 1–8 |
-| 9 | Testing & Quality Assurance | Sprint 10 | Phases 1–8 |
 | 10 | Packaging & Distribution | Sprint 11 | Phase 9 |
 | 11 | Documentation & Release | Sprint 12 | Phase 10 |
 
@@ -733,7 +732,7 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 **Key Decisions:**
 
 - CI thresholds raised to 85% (unit+integration) and 70% (UI)
-- `app/ui/*` and `app/widgets/*` excluded from unit test coverage (tested separately by UI tests under xvfb)
+- UI modules (`app/ui/*`, `app/widgets/*`) covered by UI tests; excluded from the unit+integration coverage gate via `.coveragerc-unit` (no global omit in `pyproject.toml`)
 - `pyproject.toml` coverage omit patterns added for UI modules
 - mypy overrides extended for new test modules
 
@@ -846,21 +845,6 @@ hiddenimports = [
 - Platform icons: `assets/icons/icon.ico`, `assets/icons/icon.icns`, `assets/icons/icon.png` — requires conversion from `assets/icons/LOGO-HZ.svg`
 - Code signing certificates — requires real certificates for release builds
 - Notarization credentials — requires Apple Developer account for macOS
-
-### Skills Applied
-
-- `packaging-distribution-engineer` — Packaging, code signing, release management
-- `cross-platform-engineer` — Platform-specific builds, CI/CD matrix
-- `devops-engineer` — CI/CD pipelines, GitHub Actions workflows
-- `project-architect` — Build configuration, dependency bundling
-
-### Supported Platforms
-
-| Platform | Version | Architecture |
-| ---------- | --------- | ------------- |
-| Windows | 10, 11 | x64 |
-| macOS | 12+ | ARM64, x64 |
-| Linux | Ubuntu 22.04+, Fedora 38+ | x64, ARM64 |
 
 ---
 
