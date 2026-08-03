@@ -94,7 +94,7 @@ jobs:
           pip install .[dev]
 
       - name: Run pip-audit
-        run: pip-audit --descending --no-deps
+        run: pip-audit --descending --no-deps --fail-level high
 
   benchmark:
     runs-on: ubuntu-latest
