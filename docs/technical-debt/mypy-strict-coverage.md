@@ -4,7 +4,7 @@
 
 `mypy --strict` passes cleanly in CI (**0 issues across 155 source files**, CI run #45, commit `094a3f9`). CI also excludes `build/`, `dist/`, and `.venv/` from the type-check surface (commit `4e04936`).
 
-However, `[[tool.mypy.overrides]]` in `pyproject.toml` sets `ignore_errors = true` for the app/engine business-logic modules listed below. The override comment says: *"Pre-existing drift (Phase 6/7-era): Qt enum/attr typing gaps and untyped mutagen calls. Kept out of the Phase 8 scope; see PR #4 description."*
+However, `[[tool.mypy.overrides]]` in `pyproject.toml` sets `ignore_errors = true` for the app/engine business-logic modules listed below. The override comment says: *"Pre-existing drift (Phase 6/7-era): Qt enum/attr typing gaps and untyped mutagen calls. Kept out of the Phase 8 scope; see PR #4 description."* Phase 9 added overrides for `tests.unit.engine.demucs.*`, `tests.unit.engine.audio.test_errors`, and `tests.unit.app.models.*`; `engine/performance/thermal.py` and `engine/performance/profiler.py` are written strict and are NOT in the overrides.
 
 ## Configuration Notes
 
@@ -22,7 +22,7 @@ Bring all excluded modules into mypy strict compliance. Remove `ignore_errors = 
 
 ## Checklist
 
-### app/ layer (17 modules)
+### app/ layer
 
 - [ ] `app/ui/main_window.py`
 - [ ] `app/ui/processing_dialog.py`
@@ -42,7 +42,7 @@ Bring all excluded modules into mypy strict compliance. Remove `ignore_errors = 
 - [ ] `app/models/app_state.py`
 - [ ] `app/workers/audio_load_worker.py`
 
-### engine/ layer (11 modules)
+### engine/ layer
 
 - [ ] `engine/audio/metadata.py`
 - [ ] `engine/audio/postprocessor.py`

@@ -53,6 +53,13 @@ pytest tests/
 # Run with coverage
 pytest tests/ --cov=app --cov=engine --cov-report=term-missing
 
+# CI coverage gates
+QT_QPA_PLATFORM=offscreen pytest tests/unit/ tests/integration/ --cov=app --cov=engine --cov-config=.coveragerc-unit --cov-fail-under=85
+QT_QPA_PLATFORM=offscreen pytest tests/ui/ --cov=app --cov-fail-under=70
+```
+
+`--cov-config=.coveragerc-unit` scopes the UI-module omit to the unit+integration gate; UI modules are covered by the UI tests.
+
 # Run only unit tests
 pytest tests/unit/
 
@@ -73,7 +80,10 @@ ruff format .
 mypy .
 
 # Security audit
-pip-audit
+pip-audit --desc on
+```
+
+CI uses the same command for `pip-audit --desc on`.
 
 # Run all pre-commit hooks
 pre-commit run --all-files
@@ -100,6 +110,17 @@ git push origin feature/phase-XX-short-name
 ### 7. Create a Pull Request
 
 Create a PR to `develop` and assign reviewers.
+
+### 8. Build Distributables
+
+```bash
+pyinstaller descombinator.spec
+scripts/build/build_linux.sh
+powershell -ExecutionPolicy Bypass -File scripts/build/build_windows.ps1
+scripts/build/build_macos.sh
+```
+
+CI builds all platforms on release tags via `.github/workflows/build.yml`.
 
 ## Profiling
 

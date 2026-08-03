@@ -39,6 +39,10 @@ pip install .[dev]
 
 > **Tip:** If you have [direnv](https://direnv.net/) installed, the `.envrc` file will auto-activate the venv.
 
+### Distributable Builds
+
+Prebuilt installers are built with PyInstaller — see `descombinator.spec` and `scripts/build/` (AppImage on Linux, Inno Setup `.exe` on Windows, `.app` bundle on macOS).
+
 ## Quick Start
 
 1. Launch the application:
@@ -191,4 +195,8 @@ CI runs a benchmark regression gate on every PR. Key results:
 | Waveform decimation | ~2.1 ms | < 100 ms |
 | Memory peak | 133 MB | < 4 GB |
 
-See `roadmap.md` (Phase 8) for full details.
+### Thermal Monitoring
+
+The status bar shows CPU/GPU temperature when sensors are available (Linux `coretemp`/`k10temp`; NVIDIA via `nvidia-smi`). macOS/Windows may not report temperatures and the app runs normally. On sustained heat the app reduces CPU threads (HOT) and pauses separation (CRITICAL).
+
+See `roadmap.md` (Phases 8-9) for full details.

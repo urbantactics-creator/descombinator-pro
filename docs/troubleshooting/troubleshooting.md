@@ -148,6 +148,18 @@ ffmpeg -i input.mp4 -ar 44100 -ac 2 output.wav
 2. Adjust `MAX_WORKERS` environment variable
 3. Use GPU if available (CUDA 12+ required)
 
+### Thermal Monitoring Not Reporting Temperatures
+
+**Symptom:** The status bar shows no temperature, even during heavy separation.
+
+**Solution:** On macOS/Windows sensors are empty and `nvidia-smi` is absent — this is expected; the app runs normally without temperature display.
+
+### nvidia-smi Not Found
+
+**Symptom:** `nvidia-smi: command not found` or GPU temperature unavailable.
+
+**Solution:** Install NVIDIA drivers or ignore the warning (CPU-only machines).
+
 ## UI Issues
 
 ### UI Freezes During Processing
@@ -227,6 +239,24 @@ ffmpeg -i input.mp4 -ar 44100 -ac 2 output.wav
    pytest benchmarks/ -m "not slow" --benchmark-only --benchmark-json=benchmarks/baselines.json
    ```
 4. If unintentional, optimize the code path
+
+### mypy: Duplicate module named "app"
+
+**Symptom:** `error: Duplicate module named "app"` during `mypy .`.
+
+**Solution:** This is caused by a `build/` tree created by `pip install`; fix with `rm -rf build` or rely on the `[tool.mypy] exclude` added in commit `4e04936`.
+
+### CI: pip-audit exits with code 2
+
+**Symptom:** The `pip-audit` step exits with code 2 in CI.
+
+**Solution:** Use `pip-audit --desc on`; the old `--descending`/`--fail-level` flags don't exist in pip-audit 2.10.1 (fixed in `094a3f9`; it was an argument-parsing error, not real vulnerabilities).
+
+### UI coverage gate fails
+
+**Symptom:** The UI coverage gate fails with a coverage threshold error.
+
+**Solution:** Run UI tests with `--cov-fail-under=70`; the unit+integration gate uses `.coveragerc-unit`; UI modules are covered by the UI tests (fixed in `a4516eb`).
 
 ## Getting Help
 

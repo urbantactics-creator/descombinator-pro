@@ -1,7 +1,8 @@
 # Performance Optimization Guide
 
-Descombinator Pro's Phase 8 performance work: profiling tooling, the
-`engine/performance/` package, benchmarks, and the CI regression gate.
+Descombinator Pro's Phase 8 and Phase 9 (thermal) performance work: profiling
+tooling, the `engine/performance/` package, thermal monitoring, benchmarks,
+and the CI regression gate.
 
 ## Performance Targets
 
@@ -81,6 +82,26 @@ finally:
 
 `SeparationService` accepts an optional `monitor=` and logs a peak-RSS summary
 around every separation.
+
+## Thermal Monitoring
+
+`engine/performance/thermal.py` provides `ThermalMonitor` for continuous CPU/GPU
+temperature sampling. It reports a `ThermalState` based on the following
+thresholds:
+
+| Sensor | Warm | Hot | Critical |
+| ------ | ---- | --- | -------- |
+| CPU    | 70 °C | 80 °C | 90 °C   |
+| GPU    | 80 °C | 85 °C | 95 °C   |
+
+`sample()` returns a `ThermalSnapshot(cpu_temp_c, gpu_temp_c, state)`.
+`apply_throttle()` reduces torch threads on HOT and signals pause on CRITICAL.
+
+`SeparationService` accepts an optional `thermal_monitor=` and raises
+`ThermalError` on CRITICAL, transitions to `SeparationState.PAUSED`, and emits a
+`thermal_warning` signal on `MainController`; the temperature is shown in the
+status bar. On macOS/Windows and when `nvidia-smi` is missing the monitor
+degrades gracefully and separation proceeds normally.
 
 ## Lazy Imports & Startup
 
