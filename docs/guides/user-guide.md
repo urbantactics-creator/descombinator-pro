@@ -34,7 +34,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install .[dev]
 ```
 
 > **Tip:** If you have [direnv](https://direnv.net/) installed, the `.envrc` file will auto-activate the venv.

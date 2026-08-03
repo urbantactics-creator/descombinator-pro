@@ -52,7 +52,7 @@ python --version  # Should be 3.12+
 rm -rf .venv
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+pip install .[dev]
 ```
 
 ## Runtime Issues

@@ -35,8 +35,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install .[dev]
 
 # Install pre-commit hooks
 pre-commit install
@@ -67,9 +66,7 @@ descombinator/
 ├── docs/                   # Documentation
 ├── .kilo/skills/           # Specialized agent skills
 ├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── requirements-dev.txt    # Dev dependencies
-├── pyproject.toml          # Project configuration
+├── pyproject.toml          # Project configuration (single source of truth for dependencies)
 ├── .envrc                  # direnv auto-activation
 └── activate.sh             # Manual venv activation script
 ```
@@ -188,6 +185,15 @@ ruff format .
 ```bash
 mypy .
 ```
+
+### Security Auditing
+
+```bash
+pip-audit
+```
+
+Scans all installed dependencies for known vulnerabilities (PyPI advisory database).
+Runs automatically in CI as the `security-audit` job.
 
 ### Pre-commit Hooks
 

@@ -786,19 +786,19 @@ tests/
 
 ## Milestone Summary
 
-| Milestone | Phases | Status |
-| ----------- | -------- | -------- |
-| Environment & Foundation | 1 | ✅ Complete |
-| Audio I/O & DSP Pipeline | 2 | ✅ Complete |
-| ML Model Integration | 3 | ✅ Complete |
-| Separation Engine | 4 | ✅ Complete |
-| Export Pipeline | 5 | ✅ Complete |
-| Desktop UI | 6 | ✅ Complete |
-| Playback & Visualization | 7 | ✅ Complete |
-| Performance Optimization | 8 | ✅ Complete |
-| Testing & QA | 9 | ⚠️ Partial |
-| Packaging & Distribution | 10 | ❌ Not Started |
-| Documentation & Release | 11 | ⚠️ In Progress |
+| Milestone                | Phases   | Status         |
+| ------------------------ | -------- | -------------- |
+| Environment & Foundation |  1       | ✅ Complete    |
+| Audio I/O & DSP Pipeline |  2       | ✅ Complete    |
+| ML Model Integration     |  3       | ✅ Complete    |
+| Separation Engine        |  4       | ✅ Complete    |
+| Export Pipeline          |  5       | ✅ Complete    |
+| Desktop UI               |  6       | ✅ Complete    |
+| Playback & Visualization |  7       | ✅ Complete    |
+| Performance Optimization |  8       | ✅ Complete    |
+| Testing & QA             |  9       | ⚠️ Partial     |
+| Packaging & Distribution | 10       | ❌ Not Started |
+| Documentation & Release  | 11       | ⚠️ In Progress |
 
 ## Current Status
 

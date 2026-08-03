@@ -3,7 +3,7 @@
 > **Agent Instructions for Descombinator Pro**
 >
 > This file provides guidance for AI agents working on the Descombinator Pro codebase.
-> It is **not** a user-facing document. Refer to `readme.md` for user documentation.
+> It is **not** a user-facing document. Refer to `README.md` for user documentation.
 
 ## Project Overview
 
@@ -33,8 +33,7 @@ descombinator/
 ├── assets/                 # Project assets
 ├── .kilo/skills/           # Specialized agent skills
 ├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── pyproject.toml          # Project configuration
+├── pyproject.toml          # Project configuration (single source of truth for dependencies)
 └── .envrc                # direnv auto-activation
 ```
 
@@ -196,7 +195,7 @@ This project includes specialized agent skills in `.kilo/skills/`. Each skill pr
 source activate.sh
 
 # Install dependencies
-pip install -r requirements.txt
+pip install .[dev]
 
 # Run the application
 python main.py
@@ -210,6 +209,9 @@ pyinstaller --onefile --windowed descombinator.spec
 # Lint and format
 ruff check .
 ruff format .
+
+# Security audit
+pip-audit
 
 # Run benchmarks (non-slow gates)
 pytest benchmarks/ -m "not slow" --benchmark-only

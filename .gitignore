@@ -33,3 +33,7 @@ Thumbs.db
 
 # Agent planning artifacts
 .kilo/plans/
+
+# Backup files
+*.bak
+*.backup

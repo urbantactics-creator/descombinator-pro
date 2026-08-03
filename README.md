@@ -71,9 +71,7 @@ descombinator/
 ├── assets/           # Project assets
 ├── .kilo/skills/    # Specialized agent skills
 ├── main.py           # Application entry point
-├── requirements.txt  # Python dependencies
-├── requirements-dev.txt  # Dev dependencies
-├── pyproject.toml    # Project configuration
+├── pyproject.toml    # Project configuration (single source of truth for dependencies)
 ├── .envrc            # direnv auto-activation
 └── activate.sh       # Manual venv activation script
 ```
@@ -98,7 +96,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install .[dev]
 ```
 
 > **Tip:** If you have [direnv](https://direnv.net/) installed, the `.envrc` file will auto-activate the venv when you enter the project directory.
