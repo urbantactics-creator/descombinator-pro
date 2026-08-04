@@ -12,6 +12,8 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+from loguru import logger
+
 from engine.inference.config import DeviceType
 
 
@@ -36,7 +38,15 @@ class TorchRuntimeOptimizer:
         if jobs > 1:
             torch.set_num_threads(1)
         else:
-            workers = int(os.getenv("MAX_WORKERS", os.cpu_count() or 1))
+            _workers_env = os.getenv("MAX_WORKERS")
+            try:
+                workers = (
+                    int(_workers_env)
+                    if _workers_env is not None
+                    else (os.cpu_count() or 1)
+                )
+            except ValueError:
+                workers = os.cpu_count() or 1
             torch.set_num_threads(workers)
 
         mkldnn = getattr(torch.backends, "mkldnn", None)
@@ -44,11 +54,8 @@ class TorchRuntimeOptimizer:
             try:
                 if mkldnn.is_available():
                     mkldnn.enabled = True
-            except Exception:
-                pass
-
-        if hasattr(torch, "set_flush_denormal"):
-            torch.set_flush_denormal(True)
+            except Exception as exc:
+                logger.debug(f"MKL-DNN enable failed: {exc}")
 
         cls._configured = True
 

@@ -66,12 +66,16 @@ def test_processing_dialog_cancel_emits(qapp):
 
 
 def test_processing_dialog_reject_after_complete(qapp):
-    """Test reject closes normally after completion."""
+    """Test reject closes normally after completion without cancel flow."""
     dialog = _make_dialog(qapp)
     dialog.start()
     dialog.set_complete()
+    emitted = []
+    dialog.cancel_requested.connect(lambda: emitted.append(1))
     dialog.reject()
-    assert dialog.result() != dialog.DialogCode.Accepted or True
+    # Regression (C5): the previous `or True` made this a tautology.
+    assert dialog.result() == dialog.DialogCode.Rejected
+    assert emitted == []
 
 
 def test_processing_dialog_format_time(qapp):

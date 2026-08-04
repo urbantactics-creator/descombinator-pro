@@ -35,6 +35,9 @@ class AudioResampler:
 
         Keeps the existing logging and error contract of ``resample`` while
         remaining callable from code already running in a thread.
+
+        Multi-channel input must be channels-first ``(C, N)`` so that
+        resampling acts on the samples axis (``axis=-1``).
         """
         if orig_sr == target_sr:
             logger.debug(f"Already at {target_sr} Hz, returning copy")
@@ -42,7 +45,7 @@ class AudioResampler:
 
         try:
             resampled = resampy.resample(
-                audio, orig_sr, target_sr, filter="kaiser_best"
+                audio, orig_sr, target_sr, filter="kaiser_best", axis=-1
             )
             duration = len(resampled) / target_sr
             logger.info(
@@ -55,7 +58,11 @@ class AudioResampler:
             raise ResampleError(f"Cannot resample {orig_sr}→{target_sr}: {e}") from e
 
     async def to_mono(self, audio: np.ndarray) -> np.ndarray:
-        """Convert stereo to mono by averaging channels. No-op if already mono."""
+        """Convert stereo to mono by averaging channels. No-op if already mono.
+
+        Expects channels-first ``(C, N)`` input (axis 0 = channels), the same
+        convention produced by ``AudioLoader`` and librosa. (Regression A5.)
+        """
         if audio.ndim == 1:
             return audio.copy()
         mono = np.mean(audio, axis=0).astype(np.float32)

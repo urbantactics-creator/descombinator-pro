@@ -12,9 +12,18 @@ from engine.export.batch_exporter import BatchExporter
 from engine.export.config import ExportConfig, ExportFormat
 from engine.export.writer import ExportWriter
 
+_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _get_loop() -> asyncio.AbstractEventLoop:
+    global _loop
+    if _loop is None or _loop.is_closed():
+        _loop = asyncio.new_event_loop()
+    return _loop
+
 
 def _run(coro) -> object:
-    return asyncio.run(coro)
+    return _get_loop().run_until_complete(coro)
 
 
 @pytest.fixture

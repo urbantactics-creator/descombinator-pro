@@ -146,12 +146,6 @@ module = [
     "engine.performance.monitor",
     "app.controllers.playback_controller",
     "app.workers.audio_load_worker",
-    "engine.inference.config",
-    "engine.export.config",
-    "engine.demucs.config",
-    "app.models.settings_model",
-    "app.models.app_state",
-    "engine.performance.monitor",
     "tests.unit.engine.audio.test_metadata"
 ]
 ignore_errors = true
@@ -186,11 +180,6 @@ exclude_lines = [
     "@\\w+.*\\s+\\.\\.\\.",
 ]
 
-[tool.coverage.overrides]
-# Per-module coverage thresholds
-# engine: 85% minimum
-# app: 70% minimum
-# tests: 80% minimum (for test helper code)
-engine_fail_under = 85
-app_fail_under = 70
-tests_fail_under = 80
+# Per-layer coverage gates are enforced in .github/workflows/ci.yml
+# (unit/integration: --cov-fail-under=85; UI: --cov-fail-under=70).
+# The global threshold below applies to bare local `pytest --cov` runs.

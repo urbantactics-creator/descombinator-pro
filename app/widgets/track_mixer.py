@@ -99,13 +99,16 @@ class TrackMixerWidget(QGroupBox):
             sub = item.layout()
             if sub is not None:
                 while sub.count():
-                    widget = sub.takeAt(0).widget()
+                    sub_item = sub.takeAt(0)
+                    widget = sub_item.widget()
                     if widget is not None:
-                        widget.setParent(None)
+                        widget.deleteLater()
+                # Schedule the sub-layout for deletion
+                sub.deleteLater()
             else:
                 widget = item.widget()
                 if widget is not None:
-                    widget.setParent(None)
+                    widget.deleteLater()
         self._rows.clear()
         self._muted.clear()
 

@@ -33,12 +33,14 @@ def mixer(synthetic_stems: dict[str, np.ndarray]) -> AudioMixer:
 def test_bench_playback_readdata_1min(benchmark, mixer: AudioMixer) -> None:
     """Throughput of mixer.readData for a 1-minute mix buffer."""
 
+    BYTES_PER_FRAME = 4  # 16-bit stereo = 2 bytes × 2 channels
+
     def _read() -> None:
         n = 44100 * 60
         remaining = n
         while remaining > 0:
             chunk = min(remaining, 4096)
-            mixer.readData(chunk * mixer._bytes_per_frame)
+            mixer.readData(chunk * BYTES_PER_FRAME)
             remaining -= chunk
 
     benchmark(_read)

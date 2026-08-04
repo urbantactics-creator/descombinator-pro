@@ -62,8 +62,9 @@ def sample_audio_1min() -> np.ndarray:
 
 
 @pytest.fixture(scope="session")
-def big_wav_100mb() -> tuple[Path, int]:
+def big_wav_100mb() -> Iterator[tuple[Path, int]]:
     """Write a ~100 MB WAV file to a temp dir (slow, session-scoped)."""
+    import shutil
     import tempfile
 
     tmpdir = tempfile.mkdtemp(prefix="descombinator-bench-")
@@ -73,7 +74,8 @@ def big_wav_100mb() -> tuple[Path, int]:
     audio = np.zeros(target_samples, dtype=np.float32)
     audio[::64] = 0.5
     _write_wav(path, audio, SAMPLE_RATE)
-    return path, SAMPLE_RATE
+    yield path, SAMPLE_RATE
+    shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 @pytest.fixture(scope="session")

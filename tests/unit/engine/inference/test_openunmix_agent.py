@@ -32,25 +32,20 @@ class TestOpenUnmixAgentInitialize:
     @pytest.mark.asyncio
     async def test_initialize_success(self, agent: OpenUnmixAgent) -> None:
         with patch(
-            "engine.inference.openunmix_agent.predict",
-            create=True,
+            "engine.inference.openunmix_agent.predict.utils.load_separator",
+            return_value=MagicMock(),
         ):
             await agent.initialize()
             assert agent._separator is not None
+            assert agent._model is not None
 
     @pytest.mark.asyncio
     async def test_initialize_import_error(self, agent: OpenUnmixAgent) -> None:
-        import builtins
-
-        real_import = builtins.__import__
-
-        def fail_openunmix(name: str, *args: object, **kwargs: object) -> object:
-            if name == "openunmix":
-                raise ImportError("no openunmix")
-            return real_import(name, *args, **kwargs)
-
         with (
-            patch("builtins.__import__", side_effect=fail_openunmix),
+            patch(
+                "engine.inference.openunmix_agent.predict.utils.load_separator",
+                side_effect=ImportError("no openunmix"),
+            ),
             pytest.raises(ModelLoadError, match="Cannot load Open-Unmix"),
         ):
             await agent.initialize()
@@ -91,6 +86,49 @@ class TestOpenUnmixAgentSeparate:
 
         with pytest.raises(InferenceError, match="Separation failed"):
             await agent.separate(dummy_audio_torch)
+
+    @pytest.mark.asyncio
+    async def test_separate_upmixes_mono_input(
+        self, agent: OpenUnmixAgent, dummy_audio_torch: torch.Tensor
+    ) -> None:
+        """Mono (1, N) input is upmixed to stereo (2, N) before inference (A7)."""
+        mock_predict = MagicMock()
+        mock_predict.separate.return_value = {
+            "vocals": torch.randn(1, 2, 44100),
+            "other": torch.randn(1, 2, 44100),
+        }
+        agent._separator = mock_predict
+        agent._model = MagicMock()
+
+        mono = torch.randn(1, 44100)
+        await agent.separate(mono)
+
+        call_audio = mock_predict.separate.call_args.args[0]
+        assert call_audio.shape[0] == 2
+        assert call_audio.shape[1] == 44100
+        assert mock_predict.separate.call_args.kwargs.get("separator") is agent._model
+        assert "model_str_or_path" not in mock_predict.separate.call_args.kwargs
+
+    @pytest.mark.asyncio
+    async def test_separate_reuses_cached_model(
+        self, agent: OpenUnmixAgent, dummy_audio_torch: torch.Tensor
+    ) -> None:
+        """The model loaded in initialize() is reused across separate() calls (A7)."""
+        mock_predict = MagicMock()
+        mock_predict.separate.return_value = {
+            "vocals": torch.randn(1, 2, 44100),
+            "other": torch.randn(1, 2, 44100),
+        }
+        agent._separator = mock_predict
+        agent._model = MagicMock()
+
+        await agent.separate(dummy_audio_torch)
+        await agent.separate(dummy_audio_torch)
+
+        assert mock_predict.separate.call_count == 2
+        for call in mock_predict.separate.call_args_list:
+            assert call.kwargs.get("separator") is agent._model
+            assert "model_str_or_path" not in call.kwargs
 
 
 class TestOpenUnmixAgentSources:

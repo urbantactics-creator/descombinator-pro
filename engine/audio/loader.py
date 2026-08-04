@@ -256,16 +256,20 @@ class AudioLoader:
         sr: int,
         mono: bool,
     ) -> np.ndarray:
-        """Convert decoded frames to the requested channel layout and rate."""
+        """Convert decoded frames to the requested channel layout and rate.
+
+        Decoders produce frames-first (N, C) audio. It is normalized to the
+        channels-first (C, N) convention (matching librosa and the export
+        writer) BEFORE resampling, so resampling always acts on the samples
+        axis (the last axis). Mono downmixing averages across channels
+        (axis 0). (Regression A5.)
+        """
         if audio.ndim == 1:
             audio = audio.reshape(-1, 1)
+        # Frames-first -> channels-first (C, N).
+        audio = audio.T
         if mono:
-            if audio.shape[1] == 1:
-                audio = audio[:, 0]
-            else:
-                audio = np.mean(audio, axis=1).astype(np.float32)
-        else:
-            audio = audio.T
+            audio = np.mean(audio, axis=0).astype(np.float32)
         if native_sr != sr:
             audio = self._resampler.resample_sync(audio, native_sr, sr)
         return audio

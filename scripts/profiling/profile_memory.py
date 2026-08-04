@@ -52,16 +52,13 @@ def main() -> int:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
-    runner = ["scripts/profiling/_mem_runner.py"]
-    if args.real:
-        runner.append("--real")
-
     import time
 
     import psutil
 
+    extra_args = ["--real"] if args.real else []
     proc = subprocess.Popen(
-        [sys.executable, "-m", "scripts.profiling._mem_runner", *runner[1:]],
+        [sys.executable, "-m", "scripts.profiling._mem_runner", *extra_args],
         env={**__import__("os").environ, "PYTHONPATH": "."},
     )
     peak_mb = 0.0
@@ -83,7 +80,7 @@ def main() -> int:
     report = (
         f"Memory profile report\n"
         f"====================\n"
-        f"runner: {' '.join(runner)}\n"
+        f"runner: scripts.profiling._mem_runner {' '.join(extra_args)}\n"
         f"interval: {args.interval}s\n"
         f"peak RSS: {peak_mb:.1f} MB ({peak_mb / 1024:.2f} GB)\n"
         f"target:   < 4096 MB (4 GB)\n"

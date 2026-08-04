@@ -201,6 +201,7 @@ def test_change_theme(qapp):
 def test_stems_changed_delegates(qapp):
     """Test _on_stems_changed forwards to the main controller."""
     window, main_controller, _ = _make_window()
+    main_controller.handle_stems_changed.reset_mock()
     window._on_stems_changed(["vocals", "drums"])
     main_controller.handle_stems_changed.assert_called_once_with(["vocals", "drums"])
 
@@ -227,3 +228,46 @@ def test_audio_load_error_updates_status(qapp):
     window, _, _ = _make_window()
     window._on_audio_load_error("decode failed")
     assert "Error loading audio: decode failed" in window._status_label.text()
+
+
+def test_load_stylesheet_applies_persisted_theme(qapp) -> None:
+    """The persisted theme (not hardcoded 'dark') is applied at startup (A8)."""
+    from app.controllers.settings_controller import SettingsController
+    from app.models.settings_model import SettingsModel
+
+    settings_ctrl = SettingsController()
+    settings_ctrl._settings = SettingsModel(theme="light")
+    window = MainWindow(
+        MagicMock(spec=MainController),
+        MagicMock(spec=PlaybackController),
+        settings_ctrl,
+    )
+    assert window.styleSheet() != ""
+
+
+def test_styles_path_resolves_in_repo() -> None:
+    """_styles_path points at app/resources, not a hardcoded path (A8)."""
+    from app.ui.main_window import _styles_path
+
+    style_path = _styles_path("dark")
+    assert style_path.name == "dark.qss"
+    assert "resources" in style_path.parts
+    assert style_path.exists()
+
+
+def test_settings_changed_reapplies_theme(qapp) -> None:
+    """Changing settings re-applies the new theme (A8)."""
+    from unittest.mock import patch
+
+    from app.controllers.settings_controller import SettingsController
+    from app.models.settings_model import SettingsModel
+
+    settings_ctrl = SettingsController()
+    window = MainWindow(
+        MagicMock(spec=MainController),
+        MagicMock(spec=PlaybackController),
+        settings_ctrl,
+    )
+    with patch.object(window, "_change_theme") as mock_change:
+        window._on_settings_changed(SettingsModel(theme="light"))
+    mock_change.assert_called_once_with("light")

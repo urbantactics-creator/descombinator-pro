@@ -58,6 +58,8 @@ class ThermalMonitor:
 
     def __init__(self) -> None:
         self._state = ThermalState.NORMAL
+        self._original_threads: int | None = None
+        self._throttled = False
 
     @property
     def state(self) -> ThermalState:
@@ -87,25 +89,39 @@ class ThermalMonitor:
     async def apply_throttle(self) -> dict[str, int]:
         """Apply throttling actions based on the current thermal state.
 
+        Saves the original thread count before throttling so it can be
+        restored later via :meth:`restore_throttle`.
+
         Returns:
             Dict describing actions taken (e.g. ``{"threads": 1}``).
         """
         snap = await self.sample()
-        if snap.state == ThermalState.HOT:
+        if snap.state in (ThermalState.HOT, ThermalState.CRITICAL):
             import torch
 
+            if not self._throttled:
+                self._original_threads = torch.get_num_threads()
+                self._throttled = True
             await asyncio.to_thread(torch.set_num_threads, 1)
+            if snap.state == ThermalState.CRITICAL:
+                logger.critical(
+                    "Thermal CRITICAL: reduced threads, separation should pause"
+                )
+                return {"threads": 1, "pause": True}
             logger.warning("Thermal throttle: reduced torch threads to 1")
             return {"threads": 1}
-        if snap.state == ThermalState.CRITICAL:
+        return {}
+
+    async def restore_throttle(self) -> None:
+        """Restore original thread count after thermal throttling ends."""
+        if self._throttled and self._original_threads is not None:
             import torch
 
-            await asyncio.to_thread(torch.set_num_threads, 1)
-            logger.critical(
-                "Thermal CRITICAL: reduced threads, separation should pause"
-            )
-            return {"threads": 1, "pause": True}
-        return {}
+            await asyncio.to_thread(torch.set_num_threads, self._original_threads)
+            threads = self._original_threads
+            logger.info(f"Thermal throttle released: restored threads to {threads}")
+            self._throttled = False
+            self._original_threads = None
 
     @staticmethod
     def _evaluate(cpu: float | None, gpu: float | None) -> ThermalState:
@@ -144,8 +160,8 @@ class ThermalMonitor:
             first_key = next(iter(temps))
             if temps[first_key]:
                 return float(temps[first_key][0].current)
-        except (AttributeError, Exception):
-            pass
+        except Exception as exc:
+            logger.debug(f"CPU temp read failed: {exc}")
         return None
 
     @staticmethod

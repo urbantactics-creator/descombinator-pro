@@ -97,6 +97,13 @@ class ExportWriter:
         try:
             audio = np.clip(audio, -1.0, 1.0).astype(np.float32)
 
+            # Stems arrive channels-first (C, N) from the inference pipeline,
+            # but soundfile and lameenc expect frames-first (N, C) interleaved
+            # audio. Normalize the layout here so every format writer below
+            # receives a frames-first buffer.
+            if audio.ndim == 2:
+                audio = np.ascontiguousarray(audio.T)
+
             suffix = path.suffix.lower()
             if suffix == ".wav":
                 await self._write_wav(audio, path, sample_rate)
@@ -151,7 +158,7 @@ class ExportWriter:
 
         encoder = lameenc.Encoder()
         encoder.set_bit_rate(self._config.bitrate // 1000)
-        encoder.set_channels(1 if audio.ndim == 1 else audio.shape[0])
+        encoder.set_channels(1 if audio.ndim == 1 else audio.shape[1])
         encoder.set_in_sample_rate(sample_rate)
         encoder.set_out_sample_rate(sample_rate)
         encoder.set_quality(2)
@@ -192,6 +199,8 @@ class ExportWriter:
             ]
 
             try:
+                if path.exists():
+                    logger.info(f"Overwriting existing file: {path.name}")
                 await asyncio.to_thread(subprocess.run, cmd, check=True)
                 logger.debug(f"Wrote M4A: {path.name}")
             except subprocess.CalledProcessError as e:

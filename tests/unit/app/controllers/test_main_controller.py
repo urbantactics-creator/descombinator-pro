@@ -98,6 +98,28 @@ class TestMainControllerSignals:
         assert len(errors) == 1
         assert "Already processing" in errors[0]
 
+    def test_separate_while_loading_fails(self, qapp) -> None:
+        """A second click while LOADING is rejected (regression for C3)."""
+        ctrl = MainController()
+        ctrl.handle_file_dropped("/tmp/test.wav")
+        ctrl._app_state.processing_status = ProcessingState.LOADING
+        errors = []
+        ctrl.separation_failed.connect(lambda msg: errors.append(msg))
+        ctrl.handle_separate_requested()
+        assert len(errors) == 1
+        assert "Already processing" in errors[0]
+
+    def test_separate_with_active_worker_fails(self, qapp) -> None:
+        """A second click while a worker is alive is rejected (regression for C3)."""
+        ctrl = MainController()
+        ctrl.handle_file_dropped("/tmp/test.wav")
+        ctrl._current_worker = object()  # type: ignore[assignment]
+        errors = []
+        ctrl.separation_failed.connect(lambda msg: errors.append(msg))
+        ctrl.handle_separate_requested()
+        assert len(errors) == 1
+        assert "Already processing" in errors[0]
+
 
 class TestMainControllerCancel:
     """Tests for cancel_separation."""

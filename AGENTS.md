@@ -11,7 +11,7 @@ Descombinator Pro is a desktop application that separates audio into **vocals** 
 
 ## Architecture
 
-```
+```text
 descombinator/
 ├── app/                    # Presentation layer
 │   ├── ui/                 # Layout definitions
@@ -34,7 +34,7 @@ descombinator/
 ├── .kilo/skills/           # Specialized agent skills
 ├── main.py                 # Application entry point
 ├── pyproject.toml          # Project configuration (single source of truth for dependencies)
-└── .envrc                # direnv auto-activation
+└── .envrc                  # direnv auto-activation
 ```
 
 ## Module Boundaries
@@ -115,26 +115,26 @@ pytest tests/ui/
 
 ## Phase Status
 
-| Phase | Name | Status |
-|-------|------|--------|
-| 1 | Project Foundation | ✅ Complete |
-| 2 | Audio I/O & DSP Pipeline | ✅ Complete |
-| 3 | ML Model Integration & Inference | ✅ Complete |
-| 4 | Separation Engine Core | ✅ Complete |
-| 5 | Export Pipeline | ✅ Complete |
-| 6 | PySide6 UI Development | ✅ Complete |
-| 7 | Media Playback & Visualization | ✅ Complete |
-| 8 | Performance Optimization | ✅ Complete |
-| 9 | Testing & Quality Assurance | ⚠️ Partial |
-| 10 | Packaging & Distribution | ❌ Not Started |
-| 11 | Documentation & Release | ❌ Not Started |
+| Phase | Name                             | Status         |
+|-------|----------------------------------|----------------|
+| 1     | Project Foundation               | ✅ Complete    |
+| 2     | Audio I/O & DSP Pipeline         | ✅ Complete    |
+| 3     | ML Model Integration & Inference | ✅ Complete    |
+| 4     | Separation Engine Core           | ✅ Complete    |
+| 5     | Export Pipeline                  | ✅ Complete    |
+| 6     | PySide6 UI Development           | ✅ Complete    |
+| 7     | Media Playback & Visualization   | ✅ Complete    |
+| 8     | Performance Optimization         | ✅ Complete    |
+| 9     | Testing & Quality Assurance      | ⚠️ Partial     |
+| 10    | Packaging & Distribution         | ❌ Not Started |
+| 11    | Documentation & Release          | ❌ Not Started |
 
 ## CI (GitHub Actions)
 
 - **Workflow**: `.github/workflows/ci.yml` — two jobs: `lint-and-test` and `benchmark` (benchmark `needs: lint-and-test`).
 - **System dependencies** (PySide6/QtMultimedia on Ubuntu runners): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`.
 - **Headless Qt**: unit/integration tests run with `QT_QPA_PLATFORM=offscreen`; UI tests run under `xvfb-run`.
-- **Coverage thresholds in CI**: unit/integration `--cov-fail-under=60`, UI `--cov-fail-under=40` (Phase 9 will raise them).
+- **Coverage thresholds in CI**: unit/integration `--cov-fail-under=85`, UI `--cov-fail-under=70` (Phase 9 will raise them).
 - **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 100 % median regression (REGRESSION_RATIO=2.0) vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with worst-case observed values across multiple CI runs to absorb shared-runner variance.
 - **Mypy**: strict mode; pre-existing Phase 6/7 drift (Qt/Pydantic `Any` bases) is scoped via `[[tool.mypy.overrides]]` in `pyproject.toml`.
 
@@ -156,12 +156,12 @@ source activate.sh
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `LOG_FILE` | None | Log file path |
-| `MODEL_CACHE_DIR` | `~/.cache/descombinator` | Model weights cache |
-| `MAX_WORKERS` | CPU count | Parallel processing workers |
+| Variable           | Default                  | Description                 |
+|--------------------|--------------------------|-----------------------------|
+| `LOG_LEVEL`        | `INFO`                   | Logging level               |
+| `LOG_FILE`         | None                     | Log file path               |
+| `MODEL_CACHE_DIR`  | `~/.cache/descombinator` | Model weights cache         |
+| `MAX_WORKERS`      | CPU count                | Parallel processing workers |
 
 ## Skills
 

@@ -14,7 +14,7 @@ We need to decide on the overall architectural style: monolith, microservices, o
 
 We adopt a **modular monolith** architecture with clear layer separation:
 
-```
+```text
 app/          → Presentation layer (UI, controllers, widgets)
 engine/       → Processing layer (audio, demucs, inference, export)
 app/services/ → Orchestration layer (pipeline coordination)

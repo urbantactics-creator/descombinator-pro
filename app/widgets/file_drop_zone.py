@@ -8,8 +8,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from engine.audio.loader import AudioLoader
-
 
 class FileDropZone(QWidget):
     """Widget that accepts drag-and-drop of audio files."""
@@ -20,7 +18,6 @@ class FileDropZone(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self._loader = AudioLoader()
         self._setup_ui()
 
     def _setup_ui(self) -> None:

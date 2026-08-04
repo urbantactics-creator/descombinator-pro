@@ -169,6 +169,21 @@ class TestWavFastPath:
         assert audio.shape[0] == 2
         assert audio.shape[1] == 44100 * 2
 
+    async def test_stereo_resample_keeps_channels(
+        self, loader: AudioLoader, tmp_path: Path
+    ) -> None:
+        """Stereo (C, N) survives resampling; channels are not corrupted (A5)."""
+        path = tmp_path / "stereo16.wav"
+        left = _sine(44100 * 2, freq=440.0)
+        right = _sine(44100 * 2, freq=880.0)
+        _write_wav(path, np.stack([left, right]).T, 44100, channels=2)
+
+        audio = await loader.load(path, sr=22050, mono=False)
+
+        assert audio.shape == (2, 44100)  # 2s at 22050 Hz
+        assert not np.array_equal(audio[0], audio[1])
+        assert float(np.max(np.abs(audio))) <= 1.05
+
 
 class TestNonPcmAndFallbacks:
     """soundfile path and librosa fallback."""
@@ -176,22 +191,31 @@ class TestNonPcmAndFallbacks:
     async def test_corrupt_wav_falls_back(
         self, loader: AudioLoader, test_corrupt_wav_path: Path
     ) -> None:
-        """A corrupt WAV falls back through soundfile to librosa or raises."""
-        try:
-            audio = await loader.load(test_corrupt_wav_path)
-            assert audio is not None
-        except AudioLoadError:
-            pass  # corrupt file may fail cleanly
+        """A corrupt WAV is rejected cleanly with AudioLoadError.
+
+        Regression (C5): this test previously swallowed AudioLoadError in a
+        try/except pass, so a fallback that silently returned garbage would
+        still pass. The corrupt fixture (truncated RIFF header, no data chunk)
+        cannot be decoded by any backend, so the loader must raise
+        AudioLoadError and never return audio.
+        """
+        with pytest.raises(AudioLoadError):
+            await loader.load(test_corrupt_wav_path)
 
     async def test_empty_wav_falls_back(
         self, loader: AudioLoader, test_empty_wav_path: Path
     ) -> None:
-        """An empty WAV does not crash."""
-        try:
-            audio = await loader.load(test_empty_wav_path)
-            assert audio is not None
-        except AudioLoadError:
-            pass
+        """An empty WAV loads cleanly as an empty float32 array.
+
+        Regression (C5): this test previously swallowed AudioLoadError in a
+        try/except pass, so a broken fallback could not fail the test. The
+        empty fixture (header-only WAV, zero-length data chunk) makes the
+        memmap fast path decline (n_frames == 0) and the load must complete
+        cleanly: float32, size 0, never a raw exception.
+        """
+        audio = await loader.load(test_empty_wav_path)
+        assert audio.dtype == np.float32
+        assert audio.size == 0
 
     async def test_mp3_uses_librosa(
         self, loader: AudioLoader, test_metadata_mp3_path: Path

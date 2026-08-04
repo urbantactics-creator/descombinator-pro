@@ -60,6 +60,7 @@ class TrackSelector(QWidget):
         ]
 
     def set_selected_stems(self, stems: list[str]) -> None:
+        """Sync checkbox state with an external stem list and emit stems_changed."""
         for stem, checkbox in self._checkboxes.items():
             checkbox.setChecked(stem in stems)
 

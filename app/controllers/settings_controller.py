@@ -24,6 +24,11 @@ class SettingsController(QObject):
         self._settings_file.parent.mkdir(parents=True, exist_ok=True)
         self._settings: SettingsModel = SettingsModel()
 
+    @property
+    def settings(self) -> SettingsModel:
+        """Current settings model."""
+        return self._settings
+
     def load_settings(self) -> SettingsModel:
         """Load settings from file.
 
@@ -73,7 +78,7 @@ class SettingsController(QObject):
             self.settings_saved.emit(False)
             return False
 
-    def update_setting(self, key: str, value: any) -> bool:
+    def update_setting(self, key: str, value: object) -> bool:
         """Update a single setting.
 
         Args:
@@ -84,12 +89,11 @@ class SettingsController(QObject):
             bool: True if successful, False otherwise
         """
         try:
-            if hasattr(self._settings, key):
-                setattr(self._settings, key, value)
-                return self.save_settings(self._settings)
-            else:
+            if key not in self._settings.model_fields:
                 logger.warning(f"Unknown setting: {key}")
                 return False
+            setattr(self._settings, key, value)
+            return self.save_settings(self._settings)
         except Exception as e:
             logger.error(f"Failed to update setting {key}: {e}")
             return False

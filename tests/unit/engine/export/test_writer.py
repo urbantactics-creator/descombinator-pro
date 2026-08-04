@@ -86,6 +86,51 @@ class TestExportWriter:
         assert result == output_path
         assert output_path.exists()
 
+    async def test_write_wav_stereo_channels_first(
+        self,
+        writer_wav: ExportWriter,
+        tmp_output_dir: Path,
+    ) -> None:
+        """Channels-first (2, N) stems must be written frames-first (N, 2)."""
+        import soundfile as sf
+
+        n = 4096
+        t = np.linspace(0, 1, n)
+        left = np.sin(2 * np.pi * 440 * t).astype(np.float32)
+        right = np.sin(2 * np.pi * 880 * t).astype(np.float32)
+        stereo = np.stack([left, right])  # (2, N) channels-first
+
+        output_path = tmp_output_dir / "stereo.wav"
+        await writer_wav.write_stem("stereo", stereo, output_path)
+
+        data, sr = sf.read(str(output_path))
+        assert sr == 44100
+        assert data.shape == (n, 2)
+        np.testing.assert_allclose(data[:, 0], left, atol=1e-4)
+
+        np.testing.assert_allclose(data[:, 1], right, atol=1e-4)
+
+    async def test_write_mp3_stereo(
+        self,
+        writer_mp3: ExportWriter,
+        tmp_output_dir: Path,
+    ) -> None:
+        """Stereo (2, N) MP3 export must not corrupt channel layout."""
+        n = 44100
+        t = np.linspace(0, 1, n)
+        stereo = np.stack(
+            [
+                np.sin(2 * np.pi * 440 * t),
+                np.sin(2 * np.pi * 880 * t),
+            ]
+        ).astype(np.float32)  # (2, N) channels-first
+
+        output_path = tmp_output_dir / "stereo.mp3"
+        await writer_mp3.write_stem("stereo", stereo, output_path)
+
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+
     async def test_write_batch(
         self,
         writer_wav: ExportWriter,

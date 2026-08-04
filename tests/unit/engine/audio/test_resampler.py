@@ -35,6 +35,21 @@ class TestResample:
         expected_len = int(len(short) * 48000 / 44100)
         assert abs(len(result) - expected_len) < 10
 
+    async def test_resample_sync_acts_on_samples_axis(self) -> None:
+        """(C, N) input is resampled along samples, not channels (A5)."""
+        from engine.audio.resampler import AudioResampler
+
+        resampler = AudioResampler()
+        stereo = np.stack(
+            [np.ones(100, dtype=np.float32), np.zeros(100, dtype=np.float32)]
+        )
+        out = resampler.resample_sync(stereo, 44100, 22050)
+        assert out.shape == (2, 50)
+        # kaiser_best sinc ringing near boundaries is bounded by ~0.28;
+        # the channel that is exactly zero stays exactly zero.
+        np.testing.assert_allclose(out[0], 1.0, atol=0.3)
+        np.testing.assert_allclose(out[1], 0.0, atol=1e-6)
+
 
 class TestToMono:
     async def test_stereo_to_mono(

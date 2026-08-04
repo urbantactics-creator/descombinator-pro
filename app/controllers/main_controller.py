@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -12,9 +14,11 @@ from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
 
 from app.models.app_state import AppState
 from app.models.processing_state import ProcessingState
+from app.models.settings_model import SettingsModel
 from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
 from engine.demucs.config import ModelName, SeparationConfig
+from engine.demucs.errors import SeparationError
 from engine.performance.thermal import ThermalMonitor
 
 
@@ -23,7 +27,15 @@ class SeparationWorkerSignals(QObject):
 
     finished = Signal(object)
     error = Signal(Exception)
+    cancelled = Signal()
     progress = Signal(int, str)
+
+
+class WorkerCancelledError(SeparationError):
+    """Raised from the progress callback to abort a cancelled separation."""
+
+    def __init__(self, message: str = "Separation cancelled") -> None:
+        super().__init__(message)
 
 
 class SeparationWorker(QRunnable):
@@ -33,7 +45,7 @@ class SeparationWorker(QRunnable):
         self,
         separation_service: SeparationService,
         file_path: Path,
-        progress_callback: callable,
+        progress_callback: Callable[[int, str], None],
         audio: np.ndarray | None = None,
         sample_rate: int = 44_100,
     ) -> None:
@@ -46,9 +58,24 @@ class SeparationWorker(QRunnable):
         self.signals = SeparationWorkerSignals()
         self._result: dict[str, Any] | None = None
         self._exception: Exception | None = None
+        self._cancelled = threading.Event()
+
+    def cancel(self) -> None:
+        """Request cooperative cancellation of this worker."""
+        self._cancelled.set()
 
     def run(self) -> None:
         """Run the separation process in a separate thread."""
+        if self._cancelled.is_set():
+            self.signals.cancelled.emit()
+            return
+
+        def progress(percent: int, message: str) -> None:
+            # Cooperative cancellation: abort at the next engine progress tick.
+            if self._cancelled.is_set():
+                raise WorkerCancelledError()
+            self._progress_callback(percent, message)
+
         # Create a new event loop for this thread
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -60,20 +87,73 @@ class SeparationWorker(QRunnable):
                     self._separation_service.separate_loaded(
                         self._audio,
                         self._sample_rate,
-                        progress_callback=self._progress_callback,
+                        progress_callback=progress,
                     )
                 )
             else:
                 result = loop.run_until_complete(
                     self._separation_service.separate(
-                        self._file_path, progress_callback=self._progress_callback
+                        self._file_path, progress_callback=progress
                     )
                 )
-            self._result = result
-            self.signals.finished.emit(self._result)
+            if self._cancelled.is_set():
+                logger.info("Separation cancelled")
+                self.signals.cancelled.emit()
+            else:
+                self._result = result
+                self.signals.finished.emit(self._result)
         except Exception as e:
-            self._exception = e
-            logger.error(f"Separation failed: {e}")
+            if self._cancelled.is_set():
+                logger.info("Separation cancelled")
+                self.signals.cancelled.emit()
+            else:
+                self._exception = e
+                logger.error(f"Separation failed: {e}")
+                self.signals.error.emit(e)
+        finally:
+            loop.close()
+
+
+class ExportWorkerSignals(QObject):
+    """Signals for the export worker."""
+
+    finished = Signal(dict)
+    error = Signal(Exception)
+    progress = Signal(int, str)
+
+
+class ExportWorker(QRunnable):
+    """Worker thread for exporting stems without blocking the UI (regression A3)."""
+
+    def __init__(
+        self,
+        export_service: ExportService,
+        stems: dict[str, Any],
+        output_dir: Path,
+        progress_callback: Callable[[int, str], None],
+    ) -> None:
+        super().__init__()
+        self._export_service = export_service
+        self._stems = stems
+        self._output_dir = output_dir
+        self._progress_callback = progress_callback
+        self.signals = ExportWorkerSignals()
+
+    def run(self) -> None:
+        """Run the export in a separate thread."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            result = loop.run_until_complete(
+                self._export_service.export_stems(
+                    self._stems,
+                    self._output_dir,
+                    progress_callback=self._progress_callback,
+                )
+            )
+            self.signals.finished.emit(result)
+        except Exception as e:
+            logger.error(f"Export failed: {e}")
             self.signals.error.emit(e)
         finally:
             loop.close()
@@ -87,14 +167,16 @@ class MainController(QObject):
     separation_started = Signal()
     separation_completed = Signal(dict)  # stems dict
     separation_failed = Signal(str)  # error message
+    separation_cancelled = Signal()
     separation_progress = Signal(int, str)  # percent, message
+    export_progress = Signal(int, str)
     export_completed = Signal(dict)  # stem_name -> file_path
     export_failed = Signal(str)  # error message
     thermal_warning = Signal(str, float)  # state, cpu_temp_c
 
-    def __init__(self) -> None:
+    def __init__(self, settings: SettingsModel | None = None) -> None:
         super().__init__()
-        self._app_state = AppState()
+        self._app_state = AppState(settings=settings or SettingsModel())
         self._thermal_monitor = ThermalMonitor()
         self._separation_service = SeparationService(
             self._build_separation_config(),
@@ -154,7 +236,16 @@ class MainController(QObject):
             self.separation_failed.emit("No file selected")
             return
 
-        if self._app_state.processing_status == ProcessingState.PROCESSING:
+        # Guard against concurrent separations. The previous check compared against
+        # ProcessingState.PROCESSING, a state never assigned by this controller
+        # (only IDLE/LOADING/COMPLETE/ERROR are used), so two quick clicks both
+        # passed the guard and launched two SeparationWorkers sharing the same
+        # non-reentrant SeparationService/separator and ResourceMonitor.
+        if self._current_worker is not None or self._app_state.processing_status in (
+            ProcessingState.LOADING,
+            ProcessingState.PROCESSING,
+            ProcessingState.CANCELLED,
+        ):
             self.separation_failed.emit("Already processing")
             return
 

@@ -21,8 +21,8 @@ def mock_model() -> MagicMock:
     model = MagicMock()
     model.separate = AsyncMock(
         return_value={
-            "vocals": torch.randn(44100),
-            "other": torch.randn(44100),
+            "vocals": torch.randn(2, 44100),
+            "other": torch.randn(2, 44100),
         }
     )
     model.sources = ["vocals", "other"]
@@ -89,6 +89,8 @@ class TestFullPipeline:
         sample_stereo_path: Path,
         tmp_path: Path,
     ) -> None:
+        import soundfile as sf
+
         audio = await loader.load(sample_stereo_path, sr=44100, mono=False)
         assert audio.ndim == 2
         assert audio.shape[0] == 2
@@ -100,6 +102,15 @@ class TestFullPipeline:
         output_paths = await writer.write(stems, tmp_path, sample_rate=44100)
         assert output_paths["vocals"].exists()
         assert output_paths["other"].exists()
+
+        # Regression: channels-first (2, N) stems must be exported as
+        # frames-first (N, 2) files, not corrupt 2-frame WAVs.
+        for stem_name, path in output_paths.items():
+            data, sr = sf.read(str(path))
+            assert sr == 44100
+            assert data.ndim == 2
+            assert data.shape == (stems[stem_name].shape[1], 2)
+            assert data.shape[0] > 100
 
     @pytest.mark.asyncio
     async def test_full_pipeline_custom_sr(

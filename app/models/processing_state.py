@@ -13,3 +13,4 @@ class ProcessingState(StrEnum):
     PROCESSING = "processing"
     COMPLETE = "complete"
     ERROR = "error"
+    CANCELLED = "cancelled"

@@ -98,6 +98,18 @@ class ProcessingDialog(QDialog):
         self._eta_label.setText("")
         self._cancel_btn.setText("Close")
 
+    def set_cancelled(self) -> None:
+        """Display cancelled state and close the dialog."""
+        self._completed = True
+        self._progress_bar.setValue(0)
+        self._progress_bar.setStyleSheet(
+            "QProgressBar::chunk { background-color: #F59E0B; }"
+        )
+        self._message_label.setText("Separation cancelled")
+        self._eta_label.setText("")
+        self._cancel_btn.setText("Close")
+        self._cancel_btn.setEnabled(True)
+
     def _on_cancel(self) -> None:
         """Handle cancel button click."""
         if self._completed:
@@ -113,6 +125,14 @@ class ProcessingDialog(QDialog):
             self._on_cancel()
             return
         super().reject()
+
+    def closeEvent(self, event) -> None:  # type: ignore[override]
+        """Prevent closing while processing; trigger cancel instead."""
+        if not self._completed:
+            self._on_cancel()
+            event.ignore()
+            return
+        event.accept()
 
     @staticmethod
     def _format_time(ms: int) -> str:

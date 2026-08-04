@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
 from loguru import logger
 from PySide6.QtCore import Qt, QThreadPool, Slot
-from PySide6.QtGui import QAction, QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QAction, QCloseEvent, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QFileDialog,
     QLabel,
@@ -23,6 +24,7 @@ from PySide6.QtWidgets import (
 from app.controllers.main_controller import MainController
 from app.controllers.playback_controller import PlaybackController
 from app.controllers.settings_controller import SettingsController
+from app.models.settings_model import SettingsModel
 from app.ui.processing_dialog import ProcessingDialog
 from app.ui.settings_dialog import SettingsDialog
 from app.widgets.file_drop_zone import FileDropZone
@@ -32,6 +34,19 @@ from app.widgets.track_mixer import TrackMixerWidget
 from app.widgets.track_selector import TrackSelector
 from app.widgets.waveform_view import WaveformView
 from app.workers.audio_load_worker import AudioLoadWorker
+
+
+def _styles_path(theme: str) -> Path:
+    """Resolve the stylesheet path for dev and PyInstaller builds (regression A8).
+
+    Frozen builds bundle ``app/resources`` under ``sys._MEIPASS``; in dev the
+    app package lives at ``<project_root>/app``.
+    """
+    if getattr(sys, "frozen", False):
+        base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    else:
+        base = Path(__file__).resolve().parent.parent  # <root>/app
+    return base / "resources" / "styles" / f"{theme}.qss"
 
 
 class MainWindow(QMainWindow):
@@ -170,6 +185,8 @@ class MainWindow(QMainWindow):
         """Connect signals from widgets and controllers."""
         self._file_drop_zone.file_dropped.connect(self._on_file_dropped)
         self._track_selector.stems_changed.connect(self._on_stems_changed)
+        # Sync initial stem selection with controller state
+        self._on_stems_changed(self._track_selector.selected_stems)
 
         self._playback_controls.play_clicked.connect(self._playback_controller.play)
         self._playback_controls.pause_clicked.connect(self._playback_controller.pause)
@@ -189,6 +206,7 @@ class MainWindow(QMainWindow):
         self._main_controller.separation_failed.connect(self._on_separation_failed)
         self._main_controller.separation_progress.connect(self._on_separation_progress)
         self._main_controller.thermal_warning.connect(self._on_thermal_warning)
+        self._settings_controller.settings_changed.connect(self._on_settings_changed)
 
         self._playback_controller.position_changed.connect(
             self._on_playback_position_changed
@@ -214,18 +232,13 @@ class MainWindow(QMainWindow):
         self._track_mixer.muted_changed.connect(self._on_track_muted_changed)
 
     def _load_stylesheet(self) -> None:
-        """Load the application stylesheet."""
-        self._change_theme("dark")
+        """Load the persisted theme's stylesheet (regression A8)."""
+        self._change_theme(self._settings_controller.settings.theme)
 
     def _change_theme(self, theme: str) -> None:
         """Change the application theme."""
         try:
-            style_path = Path(__file__).parent / "resources" / "styles" / f"{theme}.qss"
-            if not style_path.exists():
-                style_path = (
-                    Path("/home/mint/Desktop/descombinator/app/resources/styles")
-                    / f"{theme}.qss"
-                )
+            style_path = _styles_path(theme)
             with open(style_path) as f:
                 stylesheet = f.read()
             self.setStyleSheet(stylesheet)
@@ -233,6 +246,10 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             logger.warning(f"Stylesheet not found for theme: {theme}")
             self.setStyleSheet("")
+
+    def _on_settings_changed(self, settings: SettingsModel) -> None:
+        """Re-apply the theme when settings change."""
+        self._change_theme(settings.theme)
 
     # --- Menu actions ---
 
@@ -479,3 +496,26 @@ class MainWindow(QMainWindow):
             file_path = url.toLocalFile()
             self._on_file_dropped(file_path)
             event.acceptProposedAction()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Safely shut down workers and controllers before closing."""
+        logger.info("Application closing, shutting down...")
+
+        # Cancel any running separation
+        if self._main_controller._current_worker is not None:
+            self._main_controller.cancel_separation()
+
+        # Stop playback
+        self._playback_controller.stop()
+
+        # Close processing dialog if open
+        if self._processing_dialog is not None:
+            self._processing_dialog.close()
+            self._processing_dialog = None
+
+        # Wait for thread pool to finish (max 3 seconds)
+        pool = QThreadPool.globalInstance()
+        if pool is not None:
+            pool.waitForDone(3000)
+
+        event.accept()

@@ -143,10 +143,16 @@ class DemucsSeparator:
             raise SeparationError("Separator not initialized. Call initialize() first.")
 
         if audio is None or audio.size == 0:
-            raise InvalidAudioError("Input audio is empty or None")
+            err = InvalidAudioError("Input audio is empty or None")
+            self._set_state(SeparationState.ERROR)
+            self._error = err
+            raise err
 
         if audio.ndim not in (1, 2):
-            raise InvalidAudioError(f"Audio must be 1D or 2D, got {audio.ndim}D")
+            err = InvalidAudioError(f"Audio must be 1D or 2D, got {audio.ndim}D")
+            self._set_state(SeparationState.ERROR)
+            self._error = err
+            raise err
 
         self._set_state(SeparationState.PROCESSING)
         self._report_progress(25)
@@ -169,8 +175,9 @@ class DemucsSeparator:
             logger.info(f"Separation complete: {list(result.keys())}")
             return result
 
-        except SeparationError:
+        except SeparationError as e:
             self._set_state(SeparationState.ERROR)
+            self._error = e
             raise
         except Exception as e:
             self._set_state(SeparationState.ERROR)

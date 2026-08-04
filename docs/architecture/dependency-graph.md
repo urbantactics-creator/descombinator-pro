@@ -6,7 +6,7 @@ This document describes the dependency graph between modules in Descombinator Pr
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    app/ (Presentation)                   │
+│               app/ (Presentation)                       │
 │  ┌──────────┐  ┌──────────────┐  ┌────────────┐         │
 │  │   ui/    │  │ controllers/ │  │  widgets/  │         │
 │  └──────────┘  └──────────────┘  └────────────┘         │
@@ -14,20 +14,20 @@ This document describes the dependency graph between modules in Descombinator Pr
 │         └──────────────┼───────────────┘                │
 │                        │                                │
 │  ┌──────────────────────────────────┐                   │
-│  │       app/services/ (Orchestration)                 │
-│  │  ┌─────────────────┐  ┌──────────────┐              │
-│  │  │ separation_     │  │ playback_    │              │
-│  │  │ service.py      │  │ service.py   │              │
-│  │  └─────────────────┘  └──────────────┘              │
-│  │  ┌─────────────────┐  ┌──────────────┐              │
-│  │  │ export_service  │  │ settings_    │              │
-│  │  │ .py             │  │ controller   │              │
-│  │  └─────────────────┘  └──────────────┘              │
+│  │       app/services/ (Orchestration)                  │
+│  │  ┌─────────────────┐  ┌──────────────┐               │
+│  │  │ separation_     │  │ playback_    │               │
+│  │  │ service.py      │  │ service.py   │               │
+│  │  └─────────────────┘  └──────────────┘               │
+│  │  ┌─────────────────┐  ┌──────────────┐               │
+│  │  │ export_service  │  │ settings_    │               │
+│  │  │ .py             │  │ controller   │               │
+│  │  └─────────────────┘  └──────────────┘               │
 │  └──────────────────────────────────┘                   │
-└────────────────────────┬───────────────────────────────┘
+└────────────────────────┬────────────────────────────────┘
                          │
-┌────────────────────────▼───────────────────────────────┐
-│                    engine/ (Processing)                │
+┌────────────────────────▼────────────────────────────────┐
+│                    engine/ (Processing)                 │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐         │
 │  │  audio/    │  │ inference/ │  │  export/   │         │
 │  └────────────┘  └────────────┘  └────────────┘         │
@@ -36,12 +36,12 @@ This document describes the dependency graph between modules in Descombinator Pr
 │  │  demucs/   │  │  weights/  │  │  errors/   │         │
 │  └────────────┘  └────────────┘  └────────────┘         │
 │         │              │               │                │
-│  ┌──────────────────────────────────┐                   │
-│  │       engine/performance/        │                   │
-│  │  ┌────────────┐  ┌────────────┐  │                   │
-│  │  │ profiler   │  │ monitor    │  │                   │
-│  │  └────────────┘  └────────────┘  │                   │
-│  └──────────────────────────────────┘                   │
+│       ┌──────────────────────────────────┐              │
+│       │       engine/performance/        │              │
+│       │  ┌────────────┐  ┌────────────┐  │              │
+│       │  │ profiler   │  │ monitor    │  │              │
+│       │  └────────────┘  └────────────┘  │              │
+│       └──────────────────────────────────┘              │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -49,7 +49,7 @@ This document describes the dependency graph between modules in Descombinator Pr
 
 ### app/ Layer
 
-```
+```text
 app/ui/main_window.py
   → app/controllers/main_controller.py
   → app/controllers/settings_controller.py
@@ -89,7 +89,7 @@ app/widgets/track_selector.py
 
 ### app/services/ Layer (Orchestration)
 
-```
+```text
 app/services/separation_service.py
   → engine/audio/loader.py (AudioLoader)
   → engine/inference/pipeline.py (InferencePipeline)
@@ -109,7 +109,7 @@ app/services/export_service.py
 
 ### engine/ Layer
 
-```
+```text
 engine/demucs/separator.py
   → engine/inference/pipeline.py (InferencePipeline)
   → engine/audio/preprocessor.py (AudioPreprocessor)
@@ -184,39 +184,39 @@ engine/performance/profiler.py
 
 ### Core Dependencies
 
-| Package | Used By | Purpose |
-|---------|---------|---------|
-| `torch` | inference/demucs_agent, inference/openunmix_agent | ML backend |
-| `torchaudio` | inference/demucs_agent | Audio tensor operations |
-| `demucs` | inference/demucs_agent | Demucs separation model |
-| `openunmix` | inference/openunmix_agent | Open-Unmix separation model |
-| `librosa` | audio/loader | Audio file loading |
-| `soundfile` | audio/loader, audio/metadata, export/writer | WAV/FLAC reading/writing |
-| `audioread` | audio/loader | Audio format decoding |
-| `resampy` | audio/resampler | Audio resampling |
-| `numpy` | audio/*, inference/*, export/* | Numerical computing |
-| `scipy` | audio/preprocessor, audio/postprocessor | Signal processing |
-| `mutagen` | audio/metadata, export/metadata | Metadata reading/writing |
-| `PySide6` | app/ui, app/widgets, app/controllers | GUI framework |
-| `pyqtgraph` | app/widgets/waveform_view | Waveform visualization |
-| `aiofiles` | app/services/* | Async file I/O |
-| `pydantic` | app/models/*, engine/inference/config, engine/export/config | Data models |
-| `loguru` | all modules | Logging |
-| `psutil` | engine/performance/monitor | System resource monitoring |
+| Package      | Used By                                                     | Purpose                     |
+|--------------|-------------------------------------------------------------|-----------------------------|
+| `torch`      | inference/demucs_agent, inference/openunmix_agent           | ML backend                  |
+| `torchaudio` | inference/demucs_agent                                      | Audio tensor operations     |
+| `demucs`     | inference/demucs_agent                                      | Demucs separation model     |
+| `openunmix`  | inference/openunmix_agent                                   | Open-Unmix separation model |
+| `librosa`    | audio/loader                                                | Audio file loading          |
+| `soundfile`  | audio/loader, audio/metadata, export/writer                 | WAV/FLAC reading/writing    |
+| `audioread`  | audio/loader                                                | Audio format decoding       |
+| `resampy`    | audio/resampler                                             | Audio resampling            |
+| `numpy`      | audio/*, inference/*, export/*                              | Numerical computing         |
+| `scipy`      | audio/preprocessor, audio/postprocessor                     | Signal processing           |
+| `mutagen`    | audio/metadata, export/metadata                             | Metadata reading/writing    |
+| `PySide6`    | app/ui, app/widgets, app/controllers                        | GUI framework               |
+| `pyqtgraph`  | app/widgets/waveform_view                                   | Waveform visualization      |
+| `aiofiles`   | app/services/*                                              | Async file I/O              |
+| `pydantic`   | app/models/*, engine/inference/config, engine/export/config | Data models                 |
+| `loguru`     | all modules                                                 | Logging                     |
+| `psutil`     | engine/performance/monitor                                  | System resource monitoring  |
 
 ### Dev Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| `pytest` | Test framework |
-| `pytest-asyncio` | Async test support |
-| `pytest-qt` | Qt UI testing |
-| `pytest-cov` | Coverage reporting |
+| Package            | Purpose                  |
+|--------------------|--------------------------|
+| `pytest`           | Test framework           |
+| `pytest-asyncio`   | Async test support       |
+| `pytest-qt`        | Qt UI testing            |
+| `pytest-cov`       | Coverage reporting       |
 | `pytest-benchmark` | Performance benchmarking |
-| `ruff` | Linting and formatting |
-| `mypy` | Type checking |
-| `pre-commit` | Git hooks |
-| `pyinstaller` | Packaging |
-| `memory-profiler` | Memory profiling |
-| `py-spy` | CPU profiling |
-| `snakeviz` | Profile visualization |
+| `ruff`             | Linting and formatting   |
+| `mypy`             | Type checking            |
+| `pre-commit`       | Git hooks                |
+| `pyinstaller`      | Packaging                |
+| `memory-profiler`  | Memory profiling         |
+| `py-spy`           | CPU profiling            |
+| `snakeviz`         | Profile visualization    |

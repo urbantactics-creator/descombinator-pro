@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 
-from app.services.separation_service import SeparationService
+from app.services.separation_service import ConcurrentSeparationError, SeparationService
 from engine.demucs.config import SeparationConfig
 from engine.demucs.errors import InvalidAudioError, ProcessingError, SeparationError
 from engine.demucs.separator import SeparationState
@@ -219,3 +220,53 @@ class TestSeparateLoadedMonitor:
             result = await service.separate_loaded(sample_audio, 44100)
 
         assert "vocals" in result
+
+
+class TestSeparationServiceConcurrency:
+    """Tests for the non-reentrancy guard (regression for C3)."""
+
+    @pytest.mark.asyncio
+    async def test_second_separation_rejected_while_busy(
+        self,
+        config: SeparationConfig,
+        mock_separator: MagicMock,
+        sample_audio: np.ndarray,
+    ) -> None:
+        """A concurrent separate_loaded call is rejected while one is in flight."""
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def blocking_separate(audio: np.ndarray, sample_rate: int) -> dict:
+            started.set()
+            await release.wait()
+            return {"vocals": np.ones(44100, dtype=np.float32)}
+
+        mock_separator.separate = AsyncMock(side_effect=blocking_separate)
+        service = SeparationService(config)
+        with patch.object(service, "_separator", mock_separator):
+            task = asyncio.create_task(service.separate_loaded(sample_audio, 44100))
+            await started.wait()
+            with pytest.raises(ConcurrentSeparationError):
+                await service.separate_loaded(sample_audio, 44100)
+            release.set()
+            result = await task
+
+        assert "vocals" in result
+        assert mock_separator.separate.await_count == 1
+
+    @pytest.mark.asyncio
+    async def test_lock_released_after_completion(
+        self,
+        config: SeparationConfig,
+        mock_separator: MagicMock,
+        sample_audio: np.ndarray,
+    ) -> None:
+        """The busy lock is released once separation completes."""
+        service = SeparationService(config)
+        with patch.object(service, "_separator", mock_separator):
+            await service.separate_loaded(sample_audio, 44100)
+            # A second sequential call succeeds, proving the lock was released.
+            result = await service.separate_loaded(sample_audio, 44100)
+
+        assert "vocals" in result
+        assert mock_separator.separate.await_count == 2

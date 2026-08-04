@@ -6,6 +6,7 @@ import asyncio
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
+from openunmix import predict
 
 from engine.inference.config import DeviceType, InferenceConfig
 from engine.inference.errors import DeviceError, InferenceError, ModelLoadError
@@ -21,6 +22,7 @@ class OpenUnmixAgent:
     def __init__(self, config: InferenceConfig) -> None:
         self._config = config
         self._separator: Any | None = None
+        self._model: Any | None = None
 
     async def initialize(self) -> None:
         """Load the Open-Unmix model. Must be called before separate()."""
@@ -29,9 +31,13 @@ class OpenUnmixAgent:
         if self._config.device == DeviceType.CUDA and not torch.cuda.is_available():
             raise DeviceError("CUDA requested but no GPU is available on this machine")
         try:
-            from openunmix import predict
-
             self._separator = predict
+            self._model = await asyncio.to_thread(
+                predict.utils.load_separator,
+                model_str_or_path=self._config.model_name.value,
+                targets=self._config.target_stems,
+                device=self._config.device.value,
+            )
             logger.info(
                 f"Open-Unmix initialized: model={self._config.model_name.value}"
             )
@@ -57,6 +63,12 @@ class OpenUnmixAgent:
                 and not audio.is_cuda
             ):
                 audio = audio.pin_memory()
+            # Open-Unmix models are stereo-only: upmix mono input
+            # (1, N) to stereo (2, N) before inference. (Regression A7.)
+            if audio.ndim == 1:
+                audio = audio.unsqueeze(0)
+            if audio.shape[0] == 1:
+                audio = audio.repeat(2, 1)
             with (
                 torch.inference_mode(),
                 TorchRuntimeOptimizer.autocast_ctx(
@@ -65,13 +77,17 @@ class OpenUnmixAgent:
                     "cuda",
                 ),
             ):
+                kwargs: dict[str, Any] = {
+                    "rate": sample_rate,
+                    "targets": self._config.target_stems,
+                    "device": self._config.device.value,
+                }
+                if self._model is not None:
+                    kwargs["separator"] = self._model
+                else:
+                    kwargs["model_str_or_path"] = self._config.model_name.value
                 stems_dict = await asyncio.to_thread(
-                    self._separator.separate,
-                    audio,
-                    rate=sample_rate,
-                    model_str_or_path=self._config.model_name.value,
-                    targets=self._config.target_stems,
-                    device=self._config.device.value,
+                    self._separator.separate, audio, **kwargs
                 )
             result = {name: tensor.squeeze(0) for name, tensor in stems_dict.items()}
             logger.info(f"Open-Unmix separation complete: {list(result.keys())}")

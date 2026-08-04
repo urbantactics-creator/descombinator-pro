@@ -8,6 +8,7 @@ __pycache__/
 dist/
 build/
 *.spec
+!descombinator.spec
 .DS_Store
 
 # Logs

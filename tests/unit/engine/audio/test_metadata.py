@@ -1,6 +1,7 @@
 """Tests for MetadataReader and MetadataWriter."""
 
 from pathlib import Path
+from unittest.mock import patch
 
 import mutagen
 import pytest
@@ -12,6 +13,12 @@ from engine.audio.metadata import AudioMetadata, MetadataReader, MetadataWriter
 @pytest.fixture
 def reader() -> MetadataReader:
     return MetadataReader()
+
+
+@pytest.fixture
+def test_metadata_mp3_path() -> Path:
+    """Path to the MP3 metadata fixture."""
+    return Path("tests/fixtures/test_metadata.mp3")
 
 
 @pytest.fixture
@@ -39,6 +46,20 @@ class TestMetadataReader:
     async def test_read_missing_file(self, reader: MetadataReader) -> None:
         with pytest.raises(MetadataError):
             await reader.read(Path("nonexistent.wav"))
+
+    @pytest.mark.asyncio
+    async def test_read_mp3_via_mutagen(
+        self, reader: MetadataReader, test_metadata_mp3_path: Path
+    ) -> None:
+        """MP3 metadata is read via the mutagen fallback (regression A6)."""
+        with patch(
+            "engine.audio.metadata.sf.info",
+            side_effect=RuntimeError("libsndfile cannot parse MP3"),
+        ):
+            metadata = await reader.read(test_metadata_mp3_path)
+        assert metadata.format == "MP3"
+        assert metadata.duration > 0.0
+        assert metadata.sample_rate > 0
 
 
 class TestMetadataWriter:

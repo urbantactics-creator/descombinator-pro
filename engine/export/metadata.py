@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
+from loguru import logger
 from mutagen.flac import FLAC
 from mutagen.id3 import ID3, TALB, TCON, TIT2, TPE1
 from mutagen.mp4 import MP4
 
 from engine.export.errors import MetadataError
-
-logger = logging.getLogger(__name__)
 
 
 class MetadataEmbedder:
@@ -45,7 +43,10 @@ class MetadataEmbedder:
         """Embed ID3 tags for MP3."""
         try:
             audio = ID3(str(path))
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                f"ID3 read failed for {path.name}, creating fresh tags: {exc}"
+            )
             audio = ID3()
 
         if meta.get("title"):
