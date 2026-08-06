@@ -3,7 +3,7 @@
 > **Agent Instructions for Descombinator Pro**
 >
 > This file provides guidance for AI agents working on the Descombinator Pro codebase.
-> It is **not** a user-facing document. Refer to `readme.md` for user documentation.
+> It is **not** a user-facing document. Refer to `README.md` for user documentation.
 
 ## Project Overview
 
@@ -11,7 +11,7 @@ Descombinator Pro is a desktop application that separates audio into **vocals** 
 
 ## Architecture
 
-```
+```text
 descombinator/
 ├── app/                    # Presentation layer
 │   ├── ui/                 # Layout definitions
@@ -24,15 +24,17 @@ descombinator/
 │   ├── demucs/             # Demucs separation backend
 │   ├── inference/          # Model inference pipeline
 │   ├── audio/              # Audio loading and processing
-│   └── export/             # Result export and file writing
+│   ├── export/             # Result export and file writing
+│   └── performance/        # Profiling, monitoring, runtime optimization
+├── benchmarks/             # Performance benchmark suite + baselines.json
+├── scripts/                # Dev tooling (bench regression gate, profiling)
 ├── tests/                  # Unit, integration, and UI tests
 ├── docs/                   # Documentation
 ├── assets/                 # Project assets
 ├── .kilo/skills/           # Specialized agent skills
 ├── main.py                 # Application entry point
-├── requirements.txt        # Python dependencies
-├── pyproject.toml          # Project configuration
-└── .envrc                # direnv auto-activation
+├── pyproject.toml          # Project configuration (single source of truth for dependencies)
+└── .envrc                  # direnv auto-activation
 ```
 
 ## Module Boundaries
@@ -92,7 +94,8 @@ except DemucsError as e:
 ## Testing
 
 - **Framework**: `pytest` with `pytest-asyncio` and `pytest-qt`
-- **Coverage**: 85% minimum for engine, 70% for UI
+- **Coverage**: 85% minimum for engine, 70% for UI (Phase 9 will raise these)
+- **Current status**: 308 unit/integration tests passing, 17 UI tests passing
 - **Test data**: Store in `tests/fixtures/`, use small files (< 1 MB)
 - **Mocking**: Mock external dependencies (file system, network, models)
 
@@ -109,6 +112,31 @@ pytest tests/unit/
 # Run only UI tests
 pytest tests/ui/
 ```
+
+## Phase Status
+
+| Phase | Name                             | Status         |
+|-------|----------------------------------|----------------|
+| 1     | Project Foundation               | ✅ Complete    |
+| 2     | Audio I/O & DSP Pipeline         | ✅ Complete    |
+| 3     | ML Model Integration & Inference | ✅ Complete    |
+| 4     | Separation Engine Core           | ✅ Complete    |
+| 5     | Export Pipeline                  | ✅ Complete    |
+| 6     | PySide6 UI Development           | ✅ Complete    |
+| 7     | Media Playback & Visualization   | ✅ Complete    |
+| 8     | Performance Optimization         | ✅ Complete    |
+| 9     | Testing & Quality Assurance      | ⚠️ Partial     |
+| 10    | Packaging & Distribution         | ❌ Not Started |
+| 11    | Documentation & Release          | ❌ Not Started |
+
+## CI (GitHub Actions)
+
+- **Workflow**: `.github/workflows/ci.yml` — two jobs: `lint-and-test` and `benchmark` (benchmark `needs: lint-and-test`).
+- **System dependencies** (PySide6/QtMultimedia on Ubuntu runners): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg xvfb`.
+- **Headless Qt**: unit/integration tests run with `QT_QPA_PLATFORM=offscreen`; UI tests run under `xvfb-run`.
+- **Coverage thresholds in CI**: unit/integration `--cov-fail-under=85`, UI `--cov-fail-under=70` (Phase 9 will raise them).
+- **Benchmark gate**: `benchmarks/` suite (16 non-slow gates) + `scripts/bench/check_regressions.py` fails on > 100 % median regression (REGRESSION_RATIO=2.0) vs `benchmarks/baselines.json` or a missed absolute target. Baselines are committed with worst-case observed values across multiple CI runs to absorb shared-runner variance.
+- **Mypy**: strict mode; pre-existing Phase 6/7 drift (Qt/Pydantic `Any` bases) is scoped via `[[tool.mypy.overrides]]` in `pyproject.toml`.
 
 ## Git Workflow
 
@@ -128,12 +156,12 @@ source activate.sh
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `LOG_FILE` | None | Log file path |
-| `MODEL_CACHE_DIR` | `~/.cache/descombinator` | Model weights cache |
-| `MAX_WORKERS` | CPU count | Parallel processing workers |
+| Variable           | Default                  | Description                 |
+|--------------------|--------------------------|-----------------------------|
+| `LOG_LEVEL`        | `INFO`                   | Logging level               |
+| `LOG_FILE`         | None                     | Log file path               |
+| `MODEL_CACHE_DIR`  | `~/.cache/descombinator` | Model weights cache         |
+| `MAX_WORKERS`      | CPU count                | Parallel processing workers |
 
 ## Skills
 
@@ -143,12 +171,22 @@ This project includes specialized agent skills in `.kilo/skills/`. Each skill pr
 - **python-backend-engineer** — Python coding standards and patterns
 - **ai-ml-engineer** — ML model integration and optimization
 - **audio-dsp-engineer** — Audio processing and DSP
+- **audio-separation-specialist** — Audio source separation techniques and quality evaluation
 - **pyside6-ui-engineer** — PySide6 UI development
-- **qa-automation-engineer** — Testing strategy and automation
+- **media-playback-engineer** — Audio playback, media controls, and state management
+- **export-pipeline-engineer** — Export pipeline design, format conversion, metadata embedding
+- **qa-automation-engineer** — Testing strategy, framework setup, coverage gates
+- **testing-engineer** — Test automation, test data management, CI testing
 - **code-reviewer** — Code review checklist and standards
 - **security-auditor** — Security best practices and auditing
 - **devops-engineer** — CI/CD and deployment
-- **documentation-writer** — Documentation standards
+- **performance-engineer** — Profiling, benchmarking, and optimization
+- **documentation-writer** — Technical documentation and user guides
+- **technical-writer** — Specifications, release notes, and technical communication
+- **configuration-manager** — Application configuration and environment management
+- **dependency-manager** — Python dependency management and security auditing
+- **packaging-distribution-engineer** — Application packaging and distribution
+- **cross-platform-engineer** — Cross-platform compatibility and platform-specific builds
 
 ## Useful Commands
 
@@ -157,7 +195,7 @@ This project includes specialized agent skills in `.kilo/skills/`. Each skill pr
 source activate.sh
 
 # Install dependencies
-pip install -r requirements.txt
+pip install .[dev]
 
 # Run the application
 python main.py
@@ -171,6 +209,19 @@ pyinstaller --onefile --windowed descombinator.spec
 # Lint and format
 ruff check .
 ruff format .
+
+# Security audit
+pip-audit
+
+# Run benchmarks (non-slow gates)
+pytest benchmarks/ -m "not slow" --benchmark-only
+
+# Check benchmark regressions vs baselines
+python -m scripts.bench.check_regressions --baseline benchmarks/baselines.json --result bench_results.json --min-rounds 10 --max-time 1.0 --warmup on --calibration-precision 3
+
+# Profile memory / torch (slow, real model)
+python -m scripts.profiling.profile_memory
+python -m scripts.profiling.profile_torch
 ```
 
 ## Resources

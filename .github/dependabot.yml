@@ -1,0 +1,55 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "descombinator"
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      dev-dependencies:
+        patterns:
+          - "pytest*"
+          - "pytest-*"
+          - "pytest-qt"
+          - "pytest-asyncio"
+          - "pytest-cov"
+          - "pytest-benchmark"
+          - "pre-commit"
+          - "mypy"
+          - "ruff"
+          - "pip-audit"
+          - "memory-profiler"
+          - "py-spy"
+          - "snakeviz"
+          - "pyinstaller"
+      ml-dependencies:
+        patterns:
+          - "torch"
+          - "torchaudio"
+          - "onnxruntime"
+          - "demucs"
+          - "openunmix"
+      audio-dependencies:
+        patterns:
+          - "librosa"
+          - "soundfile"
+          - "audioread"
+          - "resampy"
+          - "numpy"
+          - "scipy"
+          - "mutagen"
+      gui-dependencies:
+        patterns:
+          - "PySide6"
+          - "pyqtgraph"
+      github-actions:
+        patterns:
+          - "actions/*"

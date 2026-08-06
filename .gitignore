@@ -8,6 +8,7 @@ __pycache__/
 dist/
 build/
 *.spec
+!descombinator.spec
 .DS_Store
 
 # Logs
@@ -30,3 +31,10 @@ coverage.xml
 
 # OS
 Thumbs.db
+
+# Agent planning artifacts
+.kilo/plans/
+
+# Backup files
+*.bak
+*.backup
