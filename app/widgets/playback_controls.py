@@ -95,28 +95,35 @@ class PlaybackControls(QWidget):
     # --- Internal handlers ---
 
     def _on_play_clicked(self) -> None:
+        """Emit play_clicked when the play button is pressed."""
         self.play_clicked.emit()
 
     def _on_pause_clicked(self) -> None:
+        """Emit pause_clicked when the pause button is pressed."""
         self.pause_clicked.emit()
 
     def _on_stop_clicked(self) -> None:
+        """Emit stop_clicked when the stop button is pressed."""
         self.stop_clicked.emit()
 
     def _on_slider_pressed(self) -> None:
+        """Mark the seek slider as being dragged."""
         self._dragging = True
 
     def _on_position_slider_moved(self, position: int) -> None:
+        """Update position while the user drags the seek slider."""
         if self._dragging:
             self.set_current_time(position)
             self.position_changed.emit(position)
 
     def _on_slider_released(self) -> None:
+        """Emit the final position when the user releases the seek slider."""
         if self._dragging:
             self._dragging = False
             self.position_changed.emit(self._position_slider.value())
 
     def _on_volume_changed(self, value: int) -> None:
+        """Emit volume_changed when the volume slider moves."""
         if self._updating:
             return
         self.volume_changed.emit(value / 100.0)

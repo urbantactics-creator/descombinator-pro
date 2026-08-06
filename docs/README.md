@@ -49,6 +49,6 @@ See [ADR-001](architecture/adr-001-modular-monolith.md) for details.
 
 ## Project Status
 
-- **Phases 1-9 complete**; **Phase 10 (Packaging)** in progress — only platform icons pending (needs SVG conversion); **Phase 11 (Documentation & Release)** in progress.
+- **Phases 1-9 complete**; **Phase 10 (Packaging)** in progress — platform icon PNG integrated into PyInstaller spec, ICO/ICNS pending SVG conversion; **Phase 11 (Documentation & Release)** in progress.
 - **Tests:** 665 total = 564 unit/integration @ 87.69% coverage (gate >= 85%) + 101 UI @ 78.27% coverage (gate >= 70%).
 - **CI:** fully green on run #45 (commit `094a3f9`) — `lint-and-test`, `benchmark`, and `security-audit` all succeeded. ruff clean; mypy strict clean (0 issues, 155 source files).

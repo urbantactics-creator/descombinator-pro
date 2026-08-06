@@ -263,5 +263,5 @@ ffmpeg -i input.mp4 -ar 44100 -ac 2 output.wav
 If you encounter an issue not covered here:
 
 1. Check the [GitHub Issues](https://github.com/descombinator/descombinator-pro/issues)
-2. Review the [AGENTS.md](../AGENTS.md) for development guidelines
-3. Check the [Performance Guide](performance.md) for optimization tips
+2. Review the `AGENTS.md` file at the project root for development guidelines
+3. Check the [Performance Guide](../development/performance.md) for optimization tips

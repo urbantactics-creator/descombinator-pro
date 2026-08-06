@@ -79,6 +79,7 @@ exe = EXE(
     a.datas,
     [],
     name="descombinator",
+    icon=str(root / "assets/icons/icon.png"),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

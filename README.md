@@ -1,6 +1,13 @@
 # Descombinator Pro
 
-Desktop application that separates a song into two AI-powered tracks — **vocals** and **instrumental** — entirely on-device. No files are uploaded to the internet.
+Separate any song into vocals and instrumental tracks — fast, free, and private.
+No internet required, no file uploads. Studio-quality results in seconds.
+
+## Who is this for?
+
+- 🎵 **Musicians** wanting stems for remixing
+- 🎬 **Content creators** needing clean instrumentals
+- 🎛️ **Producers** needing high-quality stems
 
 ## Project Status
 
@@ -85,22 +92,23 @@ descombinator/
 - pip
 - System dependencies (Linux): `libegl1 libgl1 libopengl0 libpulse0 ffmpeg`
 
-### Setup
+### Quick Install
 
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd descombinator
-
 # Create and activate the virtual environment
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows
 
 # Install dependencies
 pip install .[dev]
 ```
 
 > **Tip:** If you have [direnv](https://direnv.net/) installed, the `.envrc` file will auto-activate the venv when you enter the project directory.
+
+### Download
+
+Prebuilt installers are available on the [Releases](https://github.com/descombinator/descombinator/releases) page. No Python or command line required.
 
 ## Usage
 

@@ -52,12 +52,14 @@ class WaveformView(QWidget):
     """Widget for displaying audio waveform."""
 
     def __init__(self) -> None:
+        """Initialize the waveform view widget."""
         super().__init__()
         self._audio_data: np.ndarray | None = None
         self._position_line = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
+        """Set up the plot widget and position indicator."""
         layout = QVBoxLayout(self)
         self.setLayout(layout)
 

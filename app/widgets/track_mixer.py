@@ -143,11 +143,13 @@ class TrackMixerWidget(QGroupBox):
     # --- Internal handlers ---
 
     def _on_volume_changed(self, name: str, value: int) -> None:
+        """Emit volume_changed when a track slider moves (unless updating)."""
         if self._updating:
             return
         self.volume_changed.emit(name, value / 100.0)
 
     def _on_mute_clicked(self, name: str, checked: bool) -> None:
+        """Emit muted_changed when a mute button is toggled."""
         if self._updating:
             return
         self._muted[name] = checked
@@ -155,6 +157,7 @@ class TrackMixerWidget(QGroupBox):
         self.muted_changed.emit(name, checked)
 
     def _update_button_text(self, name: str) -> None:
+        """Update the mute button label to reflect current state."""
         row = self._rows.get(name)
         if row is None:
             return

@@ -28,6 +28,11 @@ class ModelManager:
     """Manage model lifecycle: load, cache, switch."""
 
     def __init__(self, config: InferenceConfig | None = None) -> None:
+        """Initialize the model manager.
+
+        Args:
+            config: Inference configuration. Uses default InferenceConfig if None.
+        """
         self._config = config or InferenceConfig()
         self._models: dict[str, SeparationModel] = {}
         self._current_name: str | None = None

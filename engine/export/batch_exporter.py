@@ -22,6 +22,12 @@ class BatchExporter:
         config: ExportConfig | None = None,
         progress_callback: Callable[[int, int], None] | None = None,
     ) -> None:
+        """Initialize the batch exporter.
+
+        Args:
+            config: Export configuration. Uses default ExportConfig if None.
+            progress_callback: Optional callback receiving (completed, total).
+        """
         self._config = config or ExportConfig()
         self._writer = ExportWriter(self._config)
         self._progress_callback = progress_callback

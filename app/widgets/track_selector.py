@@ -48,6 +48,7 @@ class TrackSelector(QWidget):
         layout.addStretch()
 
     def _on_state_changed(self) -> None:
+        """Emit stems_changed with the currently selected stems."""
         selected_stems = [
             stem for stem, checkbox in self._checkboxes.items() if checkbox.isChecked()
         ]
@@ -55,6 +56,7 @@ class TrackSelector(QWidget):
 
     @property
     def selected_stems(self) -> list[str]:
+        """Currently selected stem names."""
         return [
             stem for stem, checkbox in self._checkboxes.items() if checkbox.isChecked()
         ]
@@ -65,5 +67,6 @@ class TrackSelector(QWidget):
             checkbox.setChecked(stem in stems)
 
     def clear_selection(self) -> None:
+        """Uncheck all stem checkboxes."""
         for checkbox in self._checkboxes.values():
             checkbox.setChecked(False)

@@ -47,6 +47,12 @@ class DemucsSeparator:
         config: SeparationConfig,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
+        """Initialize the separator with configuration and optional progress reporting.
+
+        Args:
+            config: Separation configuration.
+            progress_callback: Optional callback receiving progress percentage.
+        """
         self._config = config
         self._progress_callback = progress_callback
         self._state = SeparationState.IDLE
@@ -66,14 +72,25 @@ class DemucsSeparator:
         return self._error
 
     def _set_state(self, state: SeparationState) -> None:
+        """Update the current separation state and log the transition."""
         self._state = state
         logger.debug(f"Separation state: {state}")
 
     def _report_progress(self, percent: int) -> None:
+        """Report progress to the optional progress callback.
+
+        Args:
+            percent: Progress percentage clamped to 0-100.
+        """
         if self._progress_callback is not None:
             self._progress_callback(max(0, min(100, percent)))
 
     def _build_inference_config(self) -> InferenceConfig:
+        """Build an InferenceConfig from the current separation configuration.
+
+        Returns:
+            InferenceConfig derived from SeparationConfig.
+        """
         return InferenceConfig(
             model_name=ModelName(self._config.model_name.value),
             device=self._config.device,

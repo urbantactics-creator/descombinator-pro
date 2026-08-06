@@ -47,6 +47,13 @@ class SeparationService:
         monitor: ResourceMonitor | None = None,
         thermal_monitor: ThermalMonitor | None = None,
     ) -> None:
+        """Initialize the separation service.
+
+        Args:
+            config: Separation configuration.
+            monitor: Optional resource monitor for tracking CPU/memory.
+            thermal_monitor: Optional thermal monitor for temperature-aware throttling.
+        """
         self._config = config
         self._loader = AudioLoader()
         self._postprocessor = AudioPostprocessor()
@@ -202,6 +209,15 @@ class SeparationService:
             self._busy_lock.release()
 
     def _state_message(self, state: SeparationState, percent: int) -> str:
+        """Map separation state and progress to a human-readable status message.
+
+        Args:
+            state: Current separation state.
+            percent: Progress percentage.
+
+        Returns:
+            Status message string.
+        """
         from engine.demucs.separator import SeparationState
 
         messages = {

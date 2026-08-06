@@ -19,6 +19,7 @@ class SettingsController(QObject):
     settings_loaded = Signal(bool)  # Success flag
 
     def __init__(self) -> None:
+        """Initialize the settings controller and create the settings directory."""
         super().__init__()
         self._settings_file = Path.home() / ".descombinator" / "settings.json"
         self._settings_file.parent.mkdir(parents=True, exist_ok=True)

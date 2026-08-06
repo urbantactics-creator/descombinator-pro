@@ -35,12 +35,14 @@ class FileDropZone(QWidget):
         layout.addWidget(self._label)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """Accept drag events that contain local audio file URLs."""
         if self._has_valid_urls(event):
             event.acceptProposedAction()
         else:
             event.ignore()
 
     def dropEvent(self, event: QDropEvent) -> None:
+        """Handle dropped files and emit file_dropped for supported audio."""
         urls = event.mimeData().urls()
         if urls:
             file_path = urls[0].toLocalFile()
@@ -51,12 +53,15 @@ class FileDropZone(QWidget):
         event.acceptProposedAction()
 
     def _has_valid_urls(self, event: QDragEnterEvent) -> bool:
+        """Check whether the drag event contains local file URLs."""
         urls = event.mimeData().urls()
         return len(urls) > 0 and urls[0].isLocalFile()
 
     def _is_supported(self, file_path: str) -> bool:
+        """Check whether the file extension is a supported audio format."""
         path = Path(file_path)
         return path.suffix.lower() in self.SUPPORTED_FORMATS
 
     def set_message(self, message: str) -> None:
+        """Update the drop zone prompt text."""
         self._label.setText(message)

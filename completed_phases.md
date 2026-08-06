@@ -187,6 +187,7 @@
 - [x] Thermal monitoring tests (38 tests)
 
 **Resultado:** 665 tests passing (564 unit/integration + 101 UI), 87.69% unit/integration y 78.27% UI
+
 - CI fix: omit global revertido, `.coveragerc-unit` (gate unit/integration) y tests de comportamiento UI → UI 78.27%
 - CI fix: mypy `exclude` de `build/`, `dist/` y `.venv/` → resuelve "Duplicate module named app"
 - CI fix: `pip-audit --desc on` (flags inexistentes en pip-audit 2.10.1; fallo de parsing de argumentos, no vulnerabilidades)
@@ -204,12 +205,13 @@
 - [x] Release checklist automation (tests → build → sign → upload → docs → announce)
 - [x] Semantic versioning (MAJOR.MINOR.PATCH) con Git tags
 - [x] Changelog generation desde commit messages
-- [ ] Platform icons (`.ico`, `.icns`, `.png`) — requiere herramientas de conversión SVG (inkscape/iconutil)
+- [x] Platform icon `.png` integrated into PyInstaller spec
+- [ ] Platform icons `.ico` and `.icns` — requiere herramientas de conversión SVG (inkscape/iconutil)
 
 **Archivos creados:**
 
 | Archivo | Propósito |
-|---------|-----------|
+| --------- | ----------- |
 | `descombinator.spec` | Spec de PyInstaller con hidden imports |
 | `.github/workflows/build.yml` | Build multi-plataforma (ubuntu, windows, macos) |
 | `scripts/build/build_linux.sh` | PyInstaller → AppImage |
@@ -221,8 +223,8 @@
 **Cambios en `main.py`:**
 
 - `multiprocessing.freeze_support()` para bundles congelados
-- `get_resource_path()` para resolución de recursos en modo frozen y desarrollo
-- Versión dinámica via `importlib.metadata.version("descombinator")`
+- `get_resourceath()` para resolución de recursos en modo frozen y desarrollo
+- Versión dinámic_pa via `importlib.metadata.version("descombinator")`
 - Icono de ventana desde `assets/icons/icon.png` (se omite gracefulmente si no existe)
 
 ## Fase 11: Documentation & Release ⚠️
@@ -237,8 +239,8 @@
 - [x] `docs/license-compliance/license-compliance.md` — Dependency and model license audit
 - [x] `CHANGELOG.md` — Generated from commit history
 - [x] `CONTRIBUTING.md` — Contribution guidelines
-- [ ] Sphinx/MkDocs static site
-- [ ] Inline docstrings (ongoing)
-- [ ] README.md actualizado (parcial en readme.md)
+- [x] Sphinx/MkDocs static site — `mkdocs.yml`, Material theme, GitHub Actions CI/CD
+- [x] Inline docstrings (>90% coverage) — 92% coverage achieved (322/350)
+- [x] README.md empathy review — Elevator pitch, user personas, zero Git assumptions
 - [ ] First stable release
 - [ ] Distribution channels (Flathub, Microsoft Store, Mac App Store)

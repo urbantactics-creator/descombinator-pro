@@ -35,7 +35,7 @@ git checkout -b feature/phase-XX-short-name
 
 ### 2. Make Changes
 
-Follow the coding standards in [AGENTS.md](../AGENTS.md):
+Follow the coding standards in `AGENTS.md` at the project root:
 
 - Python 3.12+ with modern type hints (`X | None`, not `Optional[X]`)
 - Async-first: all I/O operations use `async def`

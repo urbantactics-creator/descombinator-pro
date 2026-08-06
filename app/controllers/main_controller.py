@@ -49,6 +49,15 @@ class SeparationWorker(QRunnable):
         audio: np.ndarray | None = None,
         sample_rate: int = 44_100,
     ) -> None:
+        """Initialize the separation worker.
+
+        Args:
+            separation_service: Service to run separation.
+            file_path: Path to the audio file to separate.
+            progress_callback: Callback receiving (percent, message).
+            audio: Optional pre-decoded audio array.
+            sample_rate: Sample rate of the pre-decoded audio.
+        """
         super().__init__()
         self._separation_service = separation_service
         self._file_path = file_path
@@ -132,6 +141,14 @@ class ExportWorker(QRunnable):
         output_dir: Path,
         progress_callback: Callable[[int, str], None],
     ) -> None:
+        """Initialize the export worker.
+
+        Args:
+            export_service: Service to run export.
+            stems: Dictionary of separated stems.
+            output_dir: Directory to write exported files.
+            progress_callback: Callback receiving (percent, message).
+        """
         super().__init__()
         self._export_service = export_service
         self._stems = stems
@@ -175,6 +192,11 @@ class MainController(QObject):
     thermal_warning = Signal(str, float)  # state, cpu_temp_c
 
     def __init__(self, settings: SettingsModel | None = None) -> None:
+        """Initialize the main controller.
+
+        Args:
+            settings: Optional settings model. Uses default SettingsModel if None.
+        """
         super().__init__()
         self._app_state = AppState(settings=settings or SettingsModel())
         self._thermal_monitor = ThermalMonitor()

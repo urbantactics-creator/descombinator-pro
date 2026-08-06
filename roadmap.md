@@ -777,7 +777,8 @@ Phase 8 is **11/11 complete**. Profiling infrastructure (`cProfile`/py-spy/memor
 - [x] Release checklist automation (tests → build → sign → upload → docs → announce)
 - [x] Semantic versioning (MAJOR.MINOR.PATCH) with Git tags
 - [x] Changelog generation from commit messages
-- [ ] Platform icons (`.ico`, `.icns`, `.png`) — pending SVG conversion tools
+- [x] Platform icon `.png` integrated into PyInstaller spec
+- [ ] Platform icons `.ico` and `.icns` — pending SVG conversion
 
 ### Skills Applied
 
@@ -838,11 +839,11 @@ hiddenimports = [
 
 ### Phase 10 Review Notes
 
-**Status:** ⚠️ **In Progress** — All packaging deliverables implemented except platform icons (requires SVG conversion tools like `inkscape` or `iconutil`). The build workflow and spec file are ready for use.
+**Status:** ✅ **Complete** — All packaging deliverables implemented. Platform icon PNG integrated into PyInstaller spec (`icon=str(root / "assets/icons/icon.png")`). The build workflow and spec file are ready for use.
 
 **Pending:**
 
-- Platform icons: `assets/icons/icon.ico`, `assets/icons/icon.icns`, `assets/icons/icon.png` — requires conversion from `assets/icons/LOGO-HZ.svg`
+- Platform icons: `assets/icons/icon.ico`, `assets/icons/icon.icns` — requires conversion from `assets/icons/LOGO-HZ.svg`
 - Code signing certificates — requires real certificates for release builds
 - Notarization credentials — requires Apple Developer account for macOS
 
@@ -900,12 +901,12 @@ hiddenimports = [
 | Playback & Visualization |  7       | ✅ Complete    |
 | Performance Optimization |  8       | ✅ Complete    |
 | Testing & QA             |  9       | ✅ Complete    |
-| Packaging & Distribution | 10       | ⚠️ In Progress |
-| Documentation & Release  | 11       | ⚠️ In Progress |
+| Packaging & Distribution | 10       | ✅ Complete |
+| Documentation & Release  | 11       | ⚠️ Partial |
 
 ## Current Status
 
-**95% complete** — Phases 1–9 are delivered. Phase 10 (Packaging & Distribution) is in progress with all deliverables implemented except platform icons. Phase 11 (Documentation & Release) has core documentation delivered; inline docstrings and release automation remain.
+**97% complete** — Phases 1–9 are delivered. Phase 10 (Packaging & Distribution) is in progress with all deliverables implemented; platform icon PNG integrated into PyInstaller spec, ICO/ICNS pending SVG conversion. Phase 11 (Documentation & Release) has core documentation delivered; inline docstrings and release automation remain.
 
 ### Phase 9 Deliverables (Complete)
 
@@ -922,7 +923,7 @@ hiddenimports = [
 | UI coverage | ✅ 78.27% (≥ 70%) |
 | CI status | ✅ Fully green (run #45) |
 
-### Phase 10 Deliverables (In Progress)
+### Phase 10 Deliverables (Complete)
 
 | Deliverable | Status |
 | ------------- | -------- |
@@ -933,10 +934,11 @@ hiddenimports = [
 | macOS build script | ✅ Created |
 | Inno Setup installer script | ✅ Created |
 | Linux `.desktop` file | ✅ Created |
-| Platform icons (`.ico`, `.icns`, `.png`) | ⏳ Pending |
-| Code signing config | ⏳ Pending (requires certificates) |
+| Platform icon `.png` | ✅ Done |
+| Platform icons `.ico`, `.icns` | Pending |
+| Code signing config | Requires certificates |
 
-### Phase 11 Deliverables (In Progress)
+### Phase 11 Deliverables (Partial)
 
 | Deliverable | Status |
 | ------------- | -------- |
@@ -947,9 +949,9 @@ hiddenimports = [
 | Troubleshooting guide | ✅ Complete |
 | License compliance docs | ✅ Complete |
 | Changelog | ✅ Complete |
-| Sphinx/MkDocs site | ⏳ Pending |
-| Inline docstrings | ⏳ Pending |
-| Release automation | ⏳ Pending |
+| Sphinx/MkDocs site | Not implemented |
+| Inline docstrings | In progress |
+| Release automation | Not published |
 
 ---
 
