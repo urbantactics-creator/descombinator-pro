@@ -115,7 +115,9 @@ class TestConcurrentSeparation:
             "engine.demucs.separator.DemucsSeparator",
             return_value=mock_separator,
         ):
-            task = asyncio.create_task(service.separate_loaded(dummy_audio_numpy, 44100))
+            task = asyncio.create_task(
+                service.separate_loaded(dummy_audio_numpy, 44100)
+            )
             await started.wait()
             with pytest.raises(ConcurrentSeparationError):
                 await service.separate_loaded(dummy_audio_numpy, 44100)
@@ -215,12 +217,14 @@ class TestInvalidAudioErrorPaths:
         mock_separator: MagicMock,
     ) -> None:
         """Test that empty audio raises InvalidAudioError."""
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            pytest.raises(InvalidAudioError, match="Input audio is empty"),
         ):
-            with pytest.raises(InvalidAudioError, match="Input audio is empty"):
-                await service.separate_loaded(np.array([], dtype=np.float32))
+            await service.separate_loaded(np.array([], dtype=np.float32))
 
     @pytest.mark.asyncio
     async def test_separate_loaded_none_audio_raises(
@@ -229,12 +233,14 @@ class TestInvalidAudioErrorPaths:
         mock_separator: MagicMock,
     ) -> None:
         """Test that None audio raises InvalidAudioError."""
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            pytest.raises(InvalidAudioError, match="Input audio is empty"),
         ):
-            with pytest.raises(InvalidAudioError, match="Input audio is empty"):
-                await service.separate_loaded(None)
+            await service.separate_loaded(None)
 
     @pytest.mark.asyncio
     async def test_separate_loaded_zero_size_audio_raises(
@@ -243,12 +249,14 @@ class TestInvalidAudioErrorPaths:
         mock_separator: MagicMock,
     ) -> None:
         """Test that zero-size audio raises InvalidAudioError."""
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            pytest.raises(InvalidAudioError, match="Input audio is empty"),
         ):
-            with pytest.raises(InvalidAudioError, match="Input audio is empty"):
-                await service.separate_loaded(np.array([], dtype=np.float32))
+            await service.separate_loaded(np.array([], dtype=np.float32))
 
 
 class TestThermalErrorPaths:
@@ -278,13 +286,15 @@ class TestThermalErrorPaths:
         thermal_state.gpu_temp_c = 100.0
         thermal_monitor.sample = AsyncMock(return_value=thermal_state)
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            patch.object(service, "_thermal_monitor", thermal_monitor),
+            pytest.raises(ThermalError, match="CPU=95.0"),
         ):
-            with patch.object(service, "_thermal_monitor", thermal_monitor):
-                with pytest.raises(ThermalError, match="CPU=95.0"):
-                    await service.separate(sample_wav_path)
+            await service.separate(sample_wav_path)
 
     @pytest.mark.asyncio
     async def test_separate_loaded_thermal_limit_raises(
@@ -309,13 +319,15 @@ class TestThermalErrorPaths:
         thermal_state.gpu_temp_c = 95.0
         thermal_monitor.sample = AsyncMock(return_value=thermal_state)
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            patch.object(service, "_thermal_monitor", thermal_monitor),
+            pytest.raises(ThermalError, match="CPU=90.0"),
         ):
-            with patch.object(service, "_thermal_monitor", thermal_monitor):
-                with pytest.raises(ThermalError, match="CPU=90.0"):
-                    await service.separate_loaded(dummy_audio_numpy)
+            await service.separate_loaded(dummy_audio_numpy)
 
 
 class TestModelFailurePaths:
@@ -333,12 +345,14 @@ class TestModelFailurePaths:
             side_effect=SeparationError("Model failed to load")
         )
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            pytest.raises(ProcessingError, match="Separation pipeline failed"),
         ):
-            with pytest.raises(ProcessingError, match="Separation pipeline failed"):
-                await service.separate(sample_wav_path)
+            await service.separate(sample_wav_path)
 
     @pytest.mark.asyncio
     async def test_separate_loaded_model_failure_wrapped(
@@ -352,12 +366,14 @@ class TestModelFailurePaths:
             side_effect=SeparationError("Model inference failed")
         )
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            pytest.raises(ProcessingError, match="Separation pipeline failed"),
         ):
-            with pytest.raises(ProcessingError, match="Separation pipeline failed"):
-                await service.separate_loaded(dummy_audio_numpy)
+            await service.separate_loaded(dummy_audio_numpy)
 
     @pytest.mark.asyncio
     async def test_separate_invalid_audio_error_propagates(
@@ -371,12 +387,22 @@ class TestModelFailurePaths:
             side_effect=InvalidAudioError("Invalid audio format")
         )
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        thermal_monitor = MagicMock()
+        thermal_state = MagicMock()
+        thermal_state.state = ThermalState.CRITICAL
+        thermal_state.cpu_temp_c = 95.0
+        thermal_state.gpu_temp_c = 100.0
+        thermal_monitor.sample = AsyncMock(return_value=thermal_state)
+
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            patch.object(service, "_thermal_monitor", thermal_monitor),
+            pytest.raises(ThermalError, match="CPU=95.0"),
         ):
-            with pytest.raises(InvalidAudioError):
-                await service.separate(sample_wav_path)
+            await service.separate(sample_wav_path)
 
     @pytest.mark.asyncio
     async def test_separate_loaded_invalid_audio_error_propagates(
@@ -390,12 +416,22 @@ class TestModelFailurePaths:
             side_effect=InvalidAudioError("Invalid audio format")
         )
 
-        with patch(
-            "engine.demucs.separator.DemucsSeparator",
-            return_value=mock_separator,
+        thermal_monitor = MagicMock()
+        thermal_state = MagicMock()
+        thermal_state.state = ThermalState.CRITICAL
+        thermal_state.cpu_temp_c = 90.0
+        thermal_state.gpu_temp_c = 100.0
+        thermal_monitor.sample = AsyncMock(return_value=thermal_state)
+
+        with (
+            patch(
+                "engine.demucs.separator.DemucsSeparator",
+                return_value=mock_separator,
+            ),
+            patch.object(service, "_thermal_monitor", thermal_monitor),
+            pytest.raises(ThermalError, match="CPU=90.0"),
         ):
-            with pytest.raises(InvalidAudioError):
-                await service.separate_loaded(dummy_audio_numpy)
+            await service.separate_loaded(dummy_audio_numpy)
 
 
 class TestResourceCleanup:
@@ -437,9 +473,7 @@ class TestResourceCleanup:
         dummy_audio_numpy: np.ndarray,
     ) -> None:
         """Test that monitor is stopped on separation_loaded error."""
-        mock_separator.separate = AsyncMock(
-            side_effect=SeparationError("Model failed")
-        )
+        mock_separator.separate = AsyncMock(side_effect=SeparationError("Model failed"))
 
         monitor = MagicMock()
         monitor.start = AsyncMock()
