@@ -178,7 +178,7 @@ class MainController(QObject):
     # Signals for updating the UI
     state_changed = Signal(object)  # AppState
     separation_started = Signal()
-    separation_completed = Signal(tuple)  # (stems_dict, sample_rate)
+    separation_completed = Signal(tuple)  # dict of stem_name -> np.ndarray
     separation_failed = Signal(str)  # error message
     separation_cancelled = Signal()
     separation_progress = Signal(int, str)  # percent, message
@@ -353,7 +353,7 @@ class MainController(QObject):
         """Handle successful separation completion.
 
         The worker emits whatever its service returned. The real contract is a
-        ``(stems_dict, sample_rate)`` tuple, but be defensive and accept a bare
+        stems dict, but be defensive and accept a bare
         ``dict`` too so a malformed worker result cannot crash the UI thread.
         """
         if isinstance(result, tuple) and len(result) == 2:
