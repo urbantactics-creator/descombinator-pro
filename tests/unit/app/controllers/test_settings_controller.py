@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.controllers.settings_controller import SettingsController
 from app.models.settings_model import SettingsModel
 from engine.export.config import ExportConfig, ExportFormat
-from engine.inference.config import InferenceConfig, DeviceType
-from engine.inference.config import ModelName
+from engine.inference.config import DeviceType, InferenceConfig, ModelName
 
 
 class TestSettingsController:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import pytest
@@ -17,9 +17,7 @@ class TestExportServiceErrorHandling:
     """Tests for ExportService error handling."""
 
     @pytest.mark.asyncio
-    async def test_export_stems_write_error_propagates(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_write_error_propagates(self, tmp_path: Path) -> None:
         """Test that WriteError from writer is propagated."""
         svc = ExportService()
         stems = {"vocals": np.zeros(100, dtype=np.float32)}
@@ -31,9 +29,7 @@ class TestExportServiceErrorHandling:
                 await svc.export_stems(stems, tmp_path)
 
     @pytest.mark.asyncio
-    async def test_export_stems_unsupported_format_error(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_unsupported_format_error(self, tmp_path: Path) -> None:
         """Test that UnsupportedFormatError is propagated."""
         svc = ExportService()
         stems = {"vocals": np.zeros(100, dtype=np.float32)}
@@ -45,9 +41,7 @@ class TestExportServiceErrorHandling:
                 await svc.export_stems(stems, tmp_path)
 
     @pytest.mark.asyncio
-    async def test_export_stems_empty_stems_dict(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_empty_stems_dict(self, tmp_path: Path) -> None:
         """Test exporting empty stems dict returns empty result."""
         svc = ExportService()
         stems: dict[str, np.ndarray] = {}
@@ -60,9 +54,7 @@ class TestExportServiceErrorHandling:
         mock_write.assert_awaited_once_with(stems, tmp_path)
 
     @pytest.mark.asyncio
-    async def test_export_stems_creates_output_dir(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_creates_output_dir(self, tmp_path: Path) -> None:
         """Test that output directory is created if it doesn't exist."""
         svc = ExportService()
         stems = {"vocals": np.zeros(100, dtype=np.float32)}
@@ -76,26 +68,26 @@ class TestExportServiceErrorHandling:
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_multiple_formats(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_multiple_formats(self, tmp_path: Path) -> None:
         """Test exporting with different formats."""
         for fmt in ExportFormat:
             config = ExportConfig(format=fmt)
             svc = ExportService(config=config)
             stems = {"vocals": np.zeros(100, dtype=np.float32)}
 
-            with patch.object(svc._writer, "write", new_callable=AsyncMock) as mock_write:
-                mock_write.return_value = {f"vocals.{fmt.value}": tmp_path / f"vocals.{fmt.value}"}
+            with patch.object(
+                svc._writer, "write", new_callable=AsyncMock
+            ) as mock_write:
+                mock_write.return_value = {
+                    f"vocals.{fmt.value}": tmp_path / f"vocals.{fmt.value}"
+                }
                 result = await svc.export_stems(stems, tmp_path)
 
             assert "vocals" in result or f"vocals.{fmt.value}" in result
             mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_large_audio_array(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_large_audio_array(self, tmp_path: Path) -> None:
         """Test exporting large audio arrays (10 minutes at 44.1kHz)."""
         svc = ExportService()
         # 10 minutes of audio at 44.1kHz
@@ -110,9 +102,7 @@ class TestExportServiceErrorHandling:
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_stereo_audio(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_stereo_audio(self, tmp_path: Path) -> None:
         """Test exporting stereo audio (2 channels)."""
         svc = ExportService()
         # Stereo audio: 2 channels, 1 second
@@ -127,9 +117,7 @@ class TestExportServiceErrorHandling:
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_invalid_audio_values(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_invalid_audio_values(self, tmp_path: Path) -> None:
         """Test exporting audio with values outside [-1, 1] range."""
         svc = ExportService()
         # Audio with values > 1.0 (should be clipped by writer)
@@ -144,9 +132,7 @@ class TestExportServiceErrorHandling:
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_nan_audio(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_nan_audio(self, tmp_path: Path) -> None:
         """Test exporting audio with NaN values."""
         svc = ExportService()
         nan_audio = np.full(100, np.nan, dtype=np.float32)
@@ -159,9 +145,7 @@ class TestExportServiceErrorHandling:
                 await svc.export_stems(stems, tmp_path)
 
     @pytest.mark.asyncio
-    async def test_export_stems_inf_audio(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_inf_audio(self, tmp_path: Path) -> None:
         """Test exporting audio with Inf values."""
         svc = ExportService()
         inf_audio = np.full(100, np.inf, dtype=np.float32)
@@ -204,7 +188,6 @@ class TestExportServiceConfigUpdate:
     def test_update_config_changes_sample_rate(self) -> None:
         """Test that updating config changes the sample rate."""
         svc = ExportService()
-        original_sr = svc._config.sample_rate
 
         new_config = ExportConfig(sample_rate=48000)
         svc.update_config(new_config)
@@ -218,6 +201,7 @@ class TestExportServiceConfigUpdate:
         assert svc._config.metadata is None
 
         from engine.export.config import ExportMetadata
+
         metadata = ExportMetadata(title="Test", artist="Artist")
         new_config = ExportConfig(metadata=metadata)
         svc.update_config(new_config)
@@ -243,18 +227,14 @@ class TestExportServiceEdgeCases:
         }
 
         with patch.object(svc._writer, "write", new_callable=AsyncMock) as mock_write:
-            mock_write.return_value = {
-                k: tmp_path / f"{k}.wav" for k in stems.keys()
-            }
+            mock_write.return_value = {k: tmp_path / f"{k}.wav" for k in stems}
             result = await svc.export_stems(stems, tmp_path)
 
         assert len(result) == 3
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_unicode_names(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_unicode_names(self, tmp_path: Path) -> None:
         """Test exporting stems with unicode names."""
         svc = ExportService()
         stems = {
@@ -264,18 +244,14 @@ class TestExportServiceEdgeCases:
         }
 
         with patch.object(svc._writer, "write", new_callable=AsyncMock) as mock_write:
-            mock_write.return_value = {
-                k: tmp_path / f"{k}.wav" for k in stems.keys()
-            }
+            mock_write.return_value = {k: tmp_path / f"{k}.wav" for k in stems}
             result = await svc.export_stems(stems, tmp_path)
 
         assert len(result) == 3
         mock_write.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_export_stems_very_long_name(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_export_stems_very_long_name(self, tmp_path: Path) -> None:
         """Test exporting stem with very long name."""
         svc = ExportService()
         long_name = "a" * 255  # Max filename length on most filesystems

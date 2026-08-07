@@ -3,14 +3,13 @@
 This package contains the UI layer of the application, including:
 - Controllers: MainController, PlaybackController, SettingsController
 - Services: ExportService, PlaybackService, PlaybackStateStore, SeparationService
-- Widgets: FileDropZone, PlaybackControls, ProgressBar, TrackMixerWidget, TrackSelector, WaveformView
+- Widgets: FileDropZone, PlaybackControls, ProgressBar, TrackMixerWidget,
+  TrackSelector, WaveformView
 - UI Layouts: MainWindow, ProcessingDialog, SettingsDialog
 - Audio: AudioMixer, MixerTrack, PlaybackState
 - Workers: AudioLoadWorker
 - Models: AppState, ProcessingState, SettingsModel
 """
-
-from app import controllers, models, resources, services, ui, widgets, workers, audio
 
 __all__ = [
     # Controllers

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from app.controllers.playback_controller import PlaybackController
 from app.audio.mixer import PlaybackState
+from app.controllers.playback_controller import PlaybackController
 
 
 class TestPlaybackController:
@@ -63,7 +63,7 @@ class TestPlaybackController:
         """Test setting audio stems."""
         stems = {
             "vocals": np.zeros(44100, dtype=np.float32),
-            "drums": np.zeros(44100, dtype=np.float32)
+            "drums": np.zeros(44100, dtype=np.float32),
         }
         playback_controller.set_stems(stems)
         mock_service.set_stems.assert_called_once_with(stems)
