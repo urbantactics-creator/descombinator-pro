@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal
-from PySide6.QtGui import QDragEnterEvent, QDragEvent, QDropEvent
+from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QVBoxLayout, QWidget
 
 
@@ -42,6 +42,7 @@ class FileDropZone(QWidget):
         super().__init__()
         self._setup_ui()
         self._is_drag_enter = False
+        self._reduced_motion = False
         self._setup_animations()
 
     def _setup_ui(self) -> None:
@@ -107,6 +108,10 @@ class FileDropZone(QWidget):
             )
             self._label.setText("Drag & drop an audio file here")
 
+        if self._reduced_motion:
+            self._opacity_effect.setOpacity(1.0)
+            return
+
         self._enter_anim.stop()
         self._exit_anim.stop()
         anim = self._enter_anim if entered else self._exit_anim
@@ -118,6 +123,10 @@ class FileDropZone(QWidget):
         self._opacity_anim.setStartValue(self._opacity_effect.opacity())
         self._opacity_anim.setEndValue(1.0)
         self._opacity_anim.start()
+
+    def set_reduced_motion(self, enabled: bool) -> None:
+        """Disable animations when enabled (accessibility: reduced motion)."""
+        self._reduced_motion = bool(enabled)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept drag events that contain local audio file URLs.
@@ -152,7 +161,7 @@ class FileDropZone(QWidget):
                 self._label.setText("Unsupported file format")
         event.acceptProposedAction()
 
-    def dragLeaveEvent(self, event: QDragEvent) -> None:
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """Reset visual state when drag leaves.
 
         Args:

@@ -39,6 +39,25 @@ class TestSettingsModelDefaults:
         assert m.pin_memory is False
 
 
+class TestSettingsModelAccessibility:
+    def test_defaults_reduced_motion_false(self) -> None:
+        m = SettingsModel()
+        assert m.reduced_motion is False
+
+    def test_defaults_high_contrast_false(self) -> None:
+        m = SettingsModel()
+        assert m.high_contrast is False
+
+    def test_model_dump_includes_accessibility(self) -> None:
+        m = SettingsModel(reduced_motion=True, high_contrast=True)
+        data = m.model_dump()
+        assert data["reduced_motion"] is True
+        assert data["high_contrast"] is True
+        restored = SettingsModel(**data)
+        assert restored.reduced_motion is True
+        assert restored.high_contrast is True
+
+
 class TestSettingsModelCustom:
     def test_custom_values(self) -> None:
         m = SettingsModel(

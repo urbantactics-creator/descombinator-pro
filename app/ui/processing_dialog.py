@@ -40,6 +40,7 @@ class ProcessingDialog(QDialog):
         self.setFixedSize(300, 150)
         self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self._reduced_motion = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -59,6 +60,13 @@ class ProcessingDialog(QDialog):
 
         self._start_animation()
 
+    def set_reduced_motion(self, enabled: bool) -> None:
+        """Disable looping animations (accessibility: reduced motion)."""
+        self._reduced_motion = bool(enabled)
+        if self._reduced_motion:
+            self._progress_anim.stop()
+            self._icon_timer.stop()
+
     def _start_animation(self) -> None:
         """Start loading animations."""
         self._progress_anim = QPropertyAnimation(self._progress_bar, b"value")
@@ -67,12 +75,14 @@ class ProcessingDialog(QDialog):
         self._progress_anim.setEndValue(100)
         self._progress_anim.setLoopCount(-1)
         self._progress_anim.setEasingCurve(QEasingCurve.InOutQuad)
-        self._progress_anim.start()
 
         self._icon_timer = QTimer(self)
         self._icon_timer.setInterval(100)
         self._icon_timer.timeout.connect(self._rotate_icon)
-        self._icon_timer.start()
+
+        if not self._reduced_motion:
+            self._progress_anim.start()
+            self._icon_timer.start()
 
     def _rotate_icon(self) -> None:
         """Rotate loading icon."""

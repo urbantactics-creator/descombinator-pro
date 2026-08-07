@@ -251,14 +251,18 @@ class MainWindow(QMainWindow):
     def _load_stylesheet(self) -> None:
         """Load the persisted theme's stylesheet (regression A8)."""
         self._change_theme(self._settings_controller.settings.theme)
+        self._apply_accessibility()
 
     def _change_theme(self, theme: str) -> None:
         """Change the application theme."""
         try:
             style_path = _styles_path(theme)
-            with open(style_path) as f:
-                stylesheet = f.read()
-            self.setStyleSheet(stylesheet)
+            sheet = style_path.read_text(encoding="utf-8")
+            if getattr(self._settings_controller.settings, "high_contrast", False):
+                hc_path = style_path.parent / "high_contrast.qss"
+                if hc_path.exists():
+                    sheet += "\n" + hc_path.read_text(encoding="utf-8")
+            self.setStyleSheet(sheet)
             logger.info(f"Applied {theme} theme")
             # Update waveform theme
             self._waveform_view.set_theme(theme)
@@ -269,6 +273,16 @@ class MainWindow(QMainWindow):
     def _on_settings_changed(self, settings: SettingsModel) -> None:
         """Re-apply the theme when settings change."""
         self._change_theme(settings.theme)
+        self._apply_accessibility()
+
+    def _apply_accessibility(self) -> None:
+        reduced = getattr(self._settings_controller.settings, "reduced_motion", False)
+        for attr in ("_file_drop_zone", "_processing_dialog", "_export_dialog"):
+            widget = getattr(self, attr, None)
+            if widget is not None and hasattr(widget, "set_reduced_motion"):
+                widget.set_reduced_motion(reduced)
+        if getattr(self._settings_controller.settings, "high_contrast", False):
+            self._change_theme(self._settings_controller.settings.theme)
 
     # --- Menu actions ---
 

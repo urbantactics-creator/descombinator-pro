@@ -141,6 +141,18 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(appearance_group)
 
+        # --- Accessibility group ---
+        accessibility_group = QGroupBox("Accessibility")
+        accessibility_layout = QVBoxLayout(accessibility_group)
+
+        self._reduced_motion_check = QCheckBox("Reduce motion (disable animations)")
+        accessibility_layout.addWidget(self._reduced_motion_check)
+
+        self._high_contrast_check = QCheckBox("High contrast")
+        accessibility_layout.addWidget(self._high_contrast_check)
+
+        layout.addWidget(accessibility_group)
+
         # --- Buttons ---
         self._button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Save
@@ -179,6 +191,9 @@ class SettingsDialog(QDialog):
         if theme_idx >= 0:
             self._theme_combo.setCurrentIndex(theme_idx)
 
+        self._reduced_motion_check.setChecked(getattr(s, "reduced_motion", False))
+        self._high_contrast_check.setChecked(getattr(s, "high_contrast", False))
+
     def _browse_output_dir(self) -> None:
         """Open a directory chooser for the output directory."""
         current = self._output_dir_label.text()
@@ -199,6 +214,8 @@ class SettingsDialog(QDialog):
             self._settings.segment = segment if segment > 0 else None
             self._settings.mixed_precision = self._mixed_precision_check.isChecked()
             self._settings.pin_memory = self._pin_memory_check.isChecked()
+            self._settings.reduced_motion = self._reduced_motion_check.isChecked()
+            self._settings.high_contrast = self._high_contrast_check.isChecked()
 
             self._settings_controller.save_settings(self._settings)
             self._settings_controller._settings = SettingsModel(

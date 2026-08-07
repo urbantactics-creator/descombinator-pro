@@ -17,6 +17,8 @@ class SettingsModel(BaseModel):
     default_model: ModelName = Field(default=ModelName.HTDEMUCS_FT)
     default_format: ExportFormat = Field(default=ExportFormat.WAV)
     theme: str = Field(default="dark")
+    reduced_motion: bool = False
+    high_contrast: bool = False
     segment: int | None = None
     mixed_precision: bool = False
     pin_memory: bool = False

@@ -1,0 +1,11 @@
+/* High-contrast accessibility override, layered on top of the active theme. */
+QMainWindow, QDialog, QWidget { background-color: #000000; color: #ffffff; }
+QLabel { color: #ffffff; }
+QPushButton { background-color: #1a1a1a; color: #ffffff; border: 2px solid #ffffff; }
+QPushButton:disabled { color: #666666; border-color: #666666; }
+QLineEdit, QComboBox { background-color: #000000; color: #ffffff; border: 2px solid #ffffff; }
+QProgressBar { background-color: #000000; color: #ffffff; border: 2px solid #ffffff; }
+QMenuBar, QMenu { background-color: #000000; color: #ffffff; }
+QSlider::groove:horizontal { background-color: #ffffff; }
+QSlider::sub-page:horizontal { background-color: #00ff00; }
+QSlider::handle:horizontal { background-color: #00ff00; }
