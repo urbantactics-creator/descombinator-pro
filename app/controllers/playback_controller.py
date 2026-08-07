@@ -21,7 +21,6 @@ class PlaybackController(QObject):
     position_changed = Signal(int)  # Position in milliseconds
     duration_changed = Signal(int)  # Duration in milliseconds
     state_changed = Signal(str)  # Playback state value (e.g. "playing")
-    volume_changed = Signal(float)  # Master volume (legacy alias)
     master_volume_changed = Signal(float)  # Master volume (0.0-1.0)
     error_occurred = Signal(str)  # Error message
     tracks_changed = Signal(list)  # list[str] of loaded stem names
@@ -121,7 +120,6 @@ class PlaybackController(QObject):
     def set_volume(self, volume: float) -> None:
         """Set the master output volume (legacy alias)."""
         self.set_master_volume(volume)
-        self.volume_changed.emit(volume)
 
     def record_last_file(self, file_path: str) -> None:
         """Record the last loaded file and persist immediately."""

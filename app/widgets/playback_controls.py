@@ -109,18 +109,28 @@ class PlaybackControls(QWidget):
     def _on_slider_pressed(self) -> None:
         """Mark the seek slider as being dragged."""
         self._dragging = True
+        self._last_seek_position: int | None = None
 
     def _on_position_slider_moved(self, position: int) -> None:
         """Update position while the user drags the seek slider."""
         if self._dragging:
             self.set_current_time(position)
+            self._last_seek_position = position
             self.position_changed.emit(position)
 
     def _on_slider_released(self) -> None:
-        """Emit the final position when the user releases the seek slider."""
+        """Emit the final position when the user releases the seek slider.
+
+        Only emits if the position differs from the last position already
+        emitted during the drag, so a drag that ended on ``sliderMoved`` is not
+        reported twice.
+        """
         if self._dragging:
             self._dragging = False
-            self.position_changed.emit(self._position_slider.value())
+            value = self._position_slider.value()
+            if value != self._last_seek_position:
+                self._last_seek_position = value
+                self.position_changed.emit(value)
 
     def _on_volume_changed(self, value: int) -> None:
         """Emit volume_changed when the volume slider moves."""

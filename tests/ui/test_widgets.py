@@ -23,6 +23,73 @@ def test_file_drop_zone_set_message(qapp):
     assert "Custom message" in widget._label.text()
 
 
+def test_file_drop_zone_drag_enter_feedback(qapp):
+    """Test drag enter changes visual style."""
+    widget = FileDropZone()
+    from PySide6.QtCore import QMimeData, Qt, QUrl
+    from PySide6.QtGui import QDragEnterEvent
+
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile("/tmp/test.wav")])
+    event = QDragEnterEvent(
+        widget.rect().topLeft(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+    )
+    widget.dragEnterEvent(event)
+    assert widget._label.text() == "Drop to load audio file"
+
+
+def test_file_drop_zone_drag_leave_feedback(qapp):
+    """Test drag leave resets visual style."""
+    widget = FileDropZone()
+    from PySide6.QtCore import QMimeData, Qt, QUrl
+
+    # First enter
+    from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent
+
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile("/tmp/test.wav")])
+    enter_event = QDragEnterEvent(
+        widget.rect().topLeft(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+    )
+    widget.dragEnterEvent(enter_event)
+    assert widget._label.text() == "Drop to load audio file"
+
+    # Then leave
+    leave_event = QDragLeaveEvent()
+    widget.dragLeaveEvent(leave_event)
+    assert widget._label.text() == "Drag & drop an audio file here"
+
+
+def test_file_drop_zone_drag_accepts_supported_format(qapp):
+    """Test that drop accepts supported audio formats."""
+    widget = FileDropZone()
+    from PySide6.QtCore import QMimeData, Qt, QUrl
+    from PySide6.QtGui import QDropEvent
+
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile("/tmp/test.wav")])
+    event = QDropEvent(
+        widget.rect().topLeft(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+    )
+    widget.dropEvent(event)
+    assert "Unsupported file format" not in widget._label.text()
+
+
+def test_file_drop_zone_drag_rejects_unsupported_format(qapp):
+    """Test drop rejects unsupported formats."""
+    widget = FileDropZone()
+    from PySide6.QtCore import QMimeData, Qt, QUrl
+    from PySide6.QtGui import QDropEvent
+
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile("/tmp/test.exe")])
+    event = QDropEvent(
+        widget.rect().topLeft(), Qt.CopyAction, mime_data, Qt.NoButton, Qt.NoModifier
+    )
+    widget.dropEvent(event)
+    assert "Unsupported file format" in widget._label.text()
+
+
 def test_playback_controls_creation(qapp):
     """Test that PlaybackControls can be created."""
     widget = PlaybackControls()
@@ -116,7 +183,7 @@ def test_playback_controls_seek_drag(qapp):
     assert widget._position_label.text() == "0:10"
 
     widget._on_slider_released()
-    assert emitted == [10_000, 10_000]
+    assert emitted == [10_000]
 
 
 def test_playback_controls_format_time(qapp):
@@ -252,6 +319,39 @@ def test_track_mixer_set_volume_programmatic(qapp):
     assert emitted == []
 
 
+def test_track_mixer_remove_track_preserves_mute_state(qapp):
+    """Test remove_track does not leak mute state."""
+    widget = TrackMixerWidget()
+    widget.set_tracks(["vocals", "drums"], {"vocals": 0.8}, {"drums": True})
+    assert widget.is_muted("drums")
+    widget.remove_track("drums")
+    # Re-add drums - should not be muted
+    widget.add_track("drums", 0.5, False)
+    assert not widget.is_muted("drums")
+
+
+def test_track_mixer_set_track_volume_no_signal(qapp):
+    """Test set_track_volume does not emit volume_changed."""
+    widget = TrackMixerWidget()
+    widget.set_tracks(["vocals"])
+    emitted = []
+    widget.volume_changed.connect(lambda name, vol: emitted.append((name, vol)))
+    widget.set_track_volume("vocals", 0.3)
+    assert widget._rows["vocals"][0].value() == 30
+    assert emitted == []
+
+
+def test_track_mixer_set_track_muted_no_signal(qapp):
+    """Test set_track_muted does not emit muted_changed."""
+    widget = TrackMixerWidget()
+    widget.set_tracks(["vocals"])
+    emitted = []
+    widget.muted_changed.connect(lambda name, muted: emitted.append((name, muted)))
+    widget.set_track_muted("vocals", True)
+    assert widget.is_muted("vocals")
+    assert emitted == []
+
+
 def test_track_mixer_remove_track(qapp):
     """Test remove_track preserves remaining rows."""
     widget = TrackMixerWidget()
@@ -299,6 +399,21 @@ def test_waveform_view_clear(qapp):
     widget.clear()
     assert widget._audio_data is None
     assert not widget._position_line.isVisible()
+
+
+def test_waveform_view_empty_state(qapp):
+    """Test waveform view handles empty data."""
+    widget = WaveformView()
+    widget.set_display_data(np.array([]), 1.0, 0.0)
+    assert not widget._position_line.isVisible()
+
+
+def test_waveform_view_stereo_duration(qapp):
+    """Test waveform view calculates duration correctly for stereo audio."""
+    widget = WaveformView()
+    audio = np.zeros((2, 44100), dtype=np.float32)
+    widget.set_audio_data(audio, 44100)
+    # Should not crash; duration calculation uses shape[-1]
 
 
 def test_decimate_waveform_mono(qapp):

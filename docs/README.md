@@ -23,6 +23,7 @@
 - [Dependency Graph](architecture/dependency-graph.md) — Module dependency graph
 - [Module Contracts](architecture/module-contracts.md) — Public interface definitions
 - [Mypy Strict Debt Tracker](technical-debt/mypy-strict-coverage.md) — Modules excluded from strict checking
+- [Changelog](changelog.md) — Release history and notable changes
 
 ## Architecture Overview
 

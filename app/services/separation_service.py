@@ -101,7 +101,7 @@ class SeparationService:
         self,
         file_path: Path,
         progress_callback: ProgressCallback | None = None,
-    ) -> dict[str, np.ndarray]:
+    ) -> tuple[dict[str, np.ndarray], int]:
         """Run full separation pipeline on an audio file.
 
         Args:
@@ -109,7 +109,7 @@ class SeparationService:
             progress_callback: Optional callback receiving (percent, message).
 
         Returns:
-            Dict of stem_name -> numpy array.
+            Tuple of (dict of stem_name -> numpy array, sample rate).
         """
         if not self._busy_lock.acquire(blocking=False):
             logger.warning("Separation requested while already in progress; rejecting")
@@ -154,7 +154,7 @@ class SeparationService:
         audio: np.ndarray,
         sample_rate: int = 44_100,
         progress_callback: ProgressCallback | None = None,
-    ) -> dict[str, np.ndarray]:
+    ) -> tuple[dict[str, np.ndarray], int]:
         """Separate audio that is already decoded, avoiding a second decode.
 
         Reuses the audio loaded by the UI for waveform display, so a large file
@@ -166,7 +166,7 @@ class SeparationService:
             progress_callback: Optional callback receiving (percent, message).
 
         Returns:
-            Dict of stem_name -> numpy array.
+            Tuple of (dict of stem_name -> numpy array, sample rate).
         """
         if audio is None or audio.size == 0:
             raise InvalidAudioError("Input audio is empty or None")

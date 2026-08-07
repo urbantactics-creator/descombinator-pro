@@ -1,0 +1,193 @@
+[project]
+name = "descombinator"
+version = "0.1.0"
+description = "Audio source separation and processing engine"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.13.0",
+    "torchaudio>=2.11.0",
+    "onnxruntime>=1.28.0",
+    "demucs>=4.1.0",
+    "openunmix>=1.3.0",
+    "librosa>=0.11.0",
+    "soundfile>=0.14.0",
+    "audioread>=3.1.0",
+    "resampy>=0.4.3",
+    "numpy>=2.4.6",
+    "scipy>=1.18.0",
+    "mutagen>=1.48.1",
+    "PySide6>=6.11.1",
+    "pyqtgraph>=0.14.0",
+    "aiofiles>=25.1.0",
+    "tqdm>=4.70.0",
+    "psutil>=7.2.2",
+    "rich>=15.0.0",
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0.3",
+    "pydantic>=2.13.4",
+    "loguru>=0.7.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-qt>=4.5.0",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "pytest-benchmark>=5.2.3",
+    "pre-commit>=4.6.0",
+    "mypy>=2.3.0",
+    "ruff>=0.16.1",
+    "pip-audit>=2.9.0",
+    "detect-secrets>=1.5.0",
+    "memory_profiler>=0.61.0",
+    "py-spy>=0.4.2",
+    "snakeviz>=2.2.2",
+    "pyinstaller>=6.21.0",
+]
+
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocs-minify-plugin>=0.7.0",
+    "mkdocstrings[python]>=0.25.0",
+    "mkdocs-autorefs>=1.4.0",
+]
+
+[project.scripts]
+descombinator = "main:main"
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*", "engine*"]
+exclude = ["assets*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = [".kilo", "docs", "assets"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+exclude = [
+    "^build/",
+    "^dist/",
+    "^\\.venv/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "demucs.*",
+    "PySide6.*",
+    "librosa.*",
+    "soundfile.*",
+    "loguru.*",
+    "pydantic.*",
+    "numpy.*",
+    "scipy.*",
+    "pyqtgraph.*",
+    "mutagen.*",
+    "rich.*",
+    "psutil.*",
+    "tqdm.*",
+    "resampy.*",
+    "audioread.*",
+    "openunmix.*",
+    "onnxruntime.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Dev tooling (benchmarks and profiling scripts) — not type-strict by design.
+module = ["benchmarks.*", "scripts.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# Pre-existing drift (Phase 6/7-era): Qt enum/attr typing gaps and untyped
+# mutagen calls. Kept out of the Phase 8 scope; see PR #4 description.
+module = [
+    "app.ui.*",
+    "app.widgets.*",
+    "app.audio.mixer",
+    "app.controllers.settings_controller",
+    "app.controllers.main_controller",
+    "app.services.playback_service",
+    "engine.audio.metadata",
+    "engine.audio.postprocessor",
+    "engine.audio.resampler",
+    "engine.export.metadata",
+    "engine.export.writer",
+    "engine.demucs.separator",
+    "engine.inference.pipeline",
+    "tests.ui.*",
+    "tests.unit.app.widgets.*",
+    "tests.unit.app.audio.*",
+    "tests.unit.app.controllers.*",
+    "tests.unit.app.services.*",
+    "tests.unit.engine.export.*",
+    "tests.unit.engine.inference.*",
+    "tests.unit.engine.performance.*",
+    "tests.unit.engine.demucs.*",
+    "tests.unit.engine.audio.test_errors",
+    "tests.unit.app.models.*",
+    "tests.integration.test_separator",
+    "tests.integration.test_export_pipeline",
+    "tests.integration.test_full_pipeline",
+    "engine.inference.config",
+    "engine.export.config",
+    "engine.demucs.config",
+    "app.models.settings_model",
+    "app.models.app_state",
+    "engine.performance.monitor",
+    "app.controllers.playback_controller",
+    "app.workers.audio_load_worker",
+    "tests.unit.engine.audio.test_metadata"
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py", "bench_*.py"]
+asyncio_mode = "auto"
+qt_api = "pyside6"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "ui: UI tests",
+    "slow: Slow tests",
+]
+
+[tool.coverage.run]
+source = ["app", "engine"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@\\w+.*\\s+\\.\\.\\.",
+]
+
+# Per-layer coverage gates are enforced in .github/workflows/ci.yml
+# (unit/integration: --cov-fail-under=85; UI: --cov-fail-under=70).
+# The global threshold below applies to bare local `pytest --cov` runs.

@@ -84,9 +84,12 @@ def test_file_drop_zone_rejects_invalid_files(qapp):
             Qt.NoModifier,
         )
 
-        # Accept the drag event (it's still a valid file, just not audio)
+        # Non-audio files are rejected at drag-enter (the drop zone ignores
+        # them so the OS does not offer the copy action) and the label
+        # switches to the red "Unsupported format" state.
         widget.dragEnterEvent(event)
-        assert event.isAccepted()
+        assert not event.isAccepted()
+        assert widget._label.text() == "Unsupported format"
 
         # Create a drop event
         drop_event = QDropEvent(
@@ -97,12 +100,10 @@ def test_file_drop_zone_rejects_invalid_files(qapp):
             Qt.NoModifier,
         )
 
-        # Accept the drop event
+        # The drop itself is accepted but reports the unsupported format.
         widget.dropEvent(drop_event)
         assert drop_event.isAccepted()
-
-        # The label should show "Unsupported file format"
-        # Note: This is harder to test without accessing the internal label
+        assert widget._label.text() == "Unsupported file format"
 
     finally:
         # Clean up temp file

@@ -77,9 +77,15 @@ Select the model in **Settings** → **Model**.
 ### Process
 
 1. Load an audio file (drag-and-drop or file dialog)
+   - **Enhanced drag-and-drop feedback:** The drop zone changes color and displays helpful hints when dragging files over it
+   - Green background indicates a supported audio file
+   - Red background indicates an unsupported file format
 2. The waveform is displayed for both the original and separated tracks
 3. Click **Separate** to start processing
 4. A progress dialog shows the status and estimated time remaining
+   - **Animated progress bar** with smooth transitions
+   - **Status bar progress indicator** with color-changing background (green to red as processing advances)
+   - **Progress icon** in the status bar for visual feedback
 5. You can cancel the separation at any time
 
 ## Playback Controls
@@ -166,6 +172,31 @@ Set the default export format:
 
 - **Light** — Light theme
 - **Dark** (default) — Dark theme
+
+## UI Enhancements
+
+### Drag-and-Drop Feedback
+
+The file drop zone provides enhanced visual feedback:
+- **Idle state:** Dashed gray border with "Drag & drop an audio file here"
+- **Valid file dragged over:** Solid green border, light green background, "Drop to load audio file"
+- **Invalid file dragged over:** Solid red border, light red background, "Unsupported format"
+- Smooth animated transitions between states
+
+### Processing Animations
+
+During audio separation, the UI provides multiple visual indicators:
+- **Progress dialog:** Animated progress bar with smooth easing
+- **Status bar progress:** Color-changing background (green → yellow → red) based on completion percentage
+- **Status bar icon:** Animated hourglass icon during processing
+- **Screen transition:** Subtle fade effect when separation starts/completes
+
+### Waveform Visualization
+
+- The waveform view shows the audio waveform with a playback position indicator
+- The position line updates in real-time during playback
+- Click on the waveform to seek to that position
+- Theme-aware colors (adapts to light/dark mode)
 
 ## Performance
 

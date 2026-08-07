@@ -1,5 +1,7 @@
 """Behavioral tests for the ProcessingDialog."""
 
+from PySide6.QtWidgets import QDialog
+
 from app.ui.processing_dialog import ProcessingDialog
 
 
@@ -11,76 +13,54 @@ def test_processing_dialog_creation(qapp):
     """Test that ProcessingDialog can be created."""
     dialog = _make_dialog(qapp)
     assert dialog is not None
-    assert dialog.windowTitle() == "Processing Audio"
-
-
-def test_processing_dialog_start(qapp):
-    """Test start resets the dialog state."""
-    dialog = _make_dialog(qapp)
-    dialog.start()
+    assert dialog.windowTitle() == "Processing..."
     assert dialog._progress_bar.value() == 0
-    assert dialog._message_label.text() == "Starting separation..."
-    assert "calculating" in dialog._eta_label.text()
-    assert dialog._cancel_btn.isEnabled()
 
 
 def test_processing_dialog_update_progress(qapp):
-    """Test update_progress updates the bar, message, and ETA."""
+    """Test update_progress updates the bar and message."""
     dialog = _make_dialog(qapp)
-    dialog.start()
-    dialog.update_progress(50, "Processing...")
+    dialog.update_progress(50, "Separating vocals...")
     assert dialog._progress_bar.value() == 50
-    assert dialog._message_label.text() == "Processing..."
-    assert "ETA" in dialog._eta_label.text()
-
-
-def test_processing_dialog_set_complete(qapp):
-    """Test set_complete displays the completion state."""
-    dialog = _make_dialog(qapp)
-    dialog.start()
-    dialog.set_complete()
-    assert dialog._progress_bar.value() == 100
-    assert dialog._eta_label.text() == "Done"
-    assert not dialog._cancel_btn.isEnabled()
+    assert dialog._loading_label.text() == "Separating vocals..."
 
 
 def test_processing_dialog_set_error(qapp):
     """Test set_error displays the error state."""
     dialog = _make_dialog(qapp)
-    dialog.start()
     dialog.set_error("Failed")
-    assert "Error: Failed" in dialog._message_label.text()
-    assert dialog._cancel_btn.text() == "Close"
+    assert "Error: Failed" in dialog._loading_label.text()
+    assert dialog._progress_bar.value() == 0
 
 
-def test_processing_dialog_cancel_emits(qapp):
-    """Test cancel button emits cancel_requested."""
+def test_processing_dialog_set_cancelled(qapp):
+    """Test set_cancelled displays the cancellation state."""
     dialog = _make_dialog(qapp)
-    dialog.start()
-    emitted = []
-    dialog.cancel_requested.connect(lambda: emitted.append(1))
-    dialog._on_cancel()
-    assert emitted == [1]
-    assert not dialog._cancel_btn.isEnabled()
-    assert dialog._message_label.text() == "Cancelling..."
+    dialog.set_cancelled()
+    assert dialog._loading_label.text() == "Operation cancelled"
+    assert dialog._progress_bar.value() == 0
 
 
-def test_processing_dialog_reject_after_complete(qapp):
-    """Test reject closes normally after completion without cancel flow."""
+def test_processing_dialog_set_complete_stops_animations(qapp):
+    """Test set_complete stops the looping animation and timer, then accepts."""
     dialog = _make_dialog(qapp)
-    dialog.start()
     dialog.set_complete()
-    emitted = []
-    dialog.cancel_requested.connect(lambda: emitted.append(1))
+    assert dialog.result() == QDialog.Accepted
+    assert dialog._icon_timer.isActive() is False
+
+
+def test_processing_dialog_close_stops_animations(qapp):
+    """Test closing the dialog stops the looping animation and timer."""
+    from PySide6.QtGui import QCloseEvent
+
+    dialog = _make_dialog(qapp)
+    dialog.closeEvent(QCloseEvent())
+    assert dialog._icon_timer.isActive() is False
+
+
+def test_processing_dialog_reject_stops_animations(qapp):
+    """Test reject stops animations and yields a Rejected result."""
+    dialog = _make_dialog(qapp)
     dialog.reject()
-    # Regression (C5): the previous `or True` made this a tautology.
-    assert dialog.result() == dialog.DialogCode.Rejected
-    assert emitted == []
-
-
-def test_processing_dialog_format_time(qapp):
-    """Test the human-readable time formatting."""
-    assert ProcessingDialog._format_time(0) == "0s"
-    assert ProcessingDialog._format_time(30_000) == "30s"
-    assert ProcessingDialog._format_time(90_000) == "1m 30s"
-    assert ProcessingDialog._format_time(3_600_000) == "60m 00s"
+    assert dialog.result() == QDialog.Rejected
+    assert dialog._icon_timer.isActive() is False

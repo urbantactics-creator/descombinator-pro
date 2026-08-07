@@ -42,7 +42,10 @@ class TestMainControllerLoadedAudio:
 
         mock_service = MagicMock()
         mock_service.separate_loaded = AsyncMock(
-            return_value={"vocals": np.zeros(44100, dtype=np.float32)}
+            return_value=(
+                {"vocals": np.zeros(44100, dtype=np.float32)},
+                44100,
+            )
         )
         with patch.object(ctrl, "_separation_service", mock_service):
             ctrl.handle_separate_requested()

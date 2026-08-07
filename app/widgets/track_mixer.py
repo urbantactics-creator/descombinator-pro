@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -28,7 +28,6 @@ class TrackMixerWidget(QGroupBox):
         super().__init__("Tracks")
         self._rows: dict[str, tuple[QSlider, QPushButton]] = {}
         self._muted: dict[str, bool] = {}
-        self._updating = False
         self._layout = QVBoxLayout(self)
         self.setEnabled(False)
 
@@ -57,6 +56,7 @@ class TrackMixerWidget(QGroupBox):
         slider = QSlider(Qt.Horizontal)
         slider.setRange(0, 100)
         slider.setValue(int(volume * 100))
+        slider.setToolTip(f"Volume: {int(volume * 100)}%")
         slider.valueChanged.connect(
             lambda value, track_name=name: self._on_volume_changed(track_name, value)
         )
@@ -87,6 +87,7 @@ class TrackMixerWidget(QGroupBox):
             for track_name in self._rows
             if track_name != name
         }
+        self._muted.pop(name, None)
         self.clear()
         for track_name, (volume, muted) in state.items():
             self.add_track(track_name, volume, muted)
@@ -117,18 +118,18 @@ class TrackMixerWidget(QGroupBox):
         row = self._rows.get(name)
         if row is None:
             return
-        self._updating = True
-        row[0].setValue(int(volume * 100))
-        self._updating = False
+        with QSignalBlocker(row[0]):
+            row[0].setValue(int(volume * 100))
+        self._muted[name] = False  # Reset mute state when volume changes
+        self._update_button_text(name)
 
     def set_track_muted(self, name: str, muted: bool) -> None:
         """Set a track mute flag programmatically (no signal emitted)."""
         row = self._rows.get(name)
         if row is None:
             return
-        self._updating = True
-        row[1].setChecked(muted)
-        self._updating = False
+        with QSignalBlocker(row[1]):
+            row[1].setChecked(muted)
         self._muted[name] = muted
         self._update_button_text(name)
 
@@ -144,14 +145,10 @@ class TrackMixerWidget(QGroupBox):
 
     def _on_volume_changed(self, name: str, value: int) -> None:
         """Emit volume_changed when a track slider moves (unless updating)."""
-        if self._updating:
-            return
         self.volume_changed.emit(name, value / 100.0)
 
     def _on_mute_clicked(self, name: str, checked: bool) -> None:
         """Emit muted_changed when a mute button is toggled."""
-        if self._updating:
-            return
         self._muted[name] = checked
         self._update_button_text(name)
         self.muted_changed.emit(name, checked)

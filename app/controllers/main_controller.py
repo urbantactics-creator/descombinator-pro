@@ -31,6 +31,14 @@ class SeparationWorkerSignals(QObject):
     progress = Signal(int, str)
 
 
+class ExportWorkerSignals(QObject):
+    """Signals for the export worker."""
+
+    finished = Signal(dict)
+    error = Signal(Exception)
+    progress = Signal(int, str)
+
+
 class WorkerCancelledError(SeparationError):
     """Raised from the progress callback to abort a cancelled separation."""
 
@@ -110,7 +118,7 @@ class SeparationWorker(QRunnable):
                 self.signals.cancelled.emit()
             else:
                 self._result = result
-                self.signals.finished.emit(self._result)
+                self.signals.finished.emit(result)
         except Exception as e:
             if self._cancelled.is_set():
                 logger.info("Separation cancelled")
@@ -123,23 +131,14 @@ class SeparationWorker(QRunnable):
             loop.close()
 
 
-class ExportWorkerSignals(QObject):
-    """Signals for the export worker."""
-
-    finished = Signal(dict)
-    error = Signal(Exception)
-    progress = Signal(int, str)
-
-
 class ExportWorker(QRunnable):
-    """Worker thread for exporting stems without blocking the UI (regression A3)."""
+    """Worker thread for exporting separated stems without blocking the UI."""
 
     def __init__(
         self,
         export_service: ExportService,
         stems: dict[str, Any],
         output_dir: Path,
-        progress_callback: Callable[[int, str], None],
     ) -> None:
         """Initialize the export worker.
 
@@ -147,13 +146,11 @@ class ExportWorker(QRunnable):
             export_service: Service to run export.
             stems: Dictionary of separated stems.
             output_dir: Directory to write exported files.
-            progress_callback: Callback receiving (percent, message).
         """
         super().__init__()
         self._export_service = export_service
         self._stems = stems
         self._output_dir = output_dir
-        self._progress_callback = progress_callback
         self.signals = ExportWorkerSignals()
 
     def run(self) -> None:
@@ -165,7 +162,6 @@ class ExportWorker(QRunnable):
                 self._export_service.export_stems(
                     self._stems,
                     self._output_dir,
-                    progress_callback=self._progress_callback,
                 )
             )
             self.signals.finished.emit(result)
@@ -182,7 +178,7 @@ class MainController(QObject):
     # Signals for updating the UI
     state_changed = Signal(object)  # AppState
     separation_started = Signal()
-    separation_completed = Signal(dict)  # stems dict
+    separation_completed = Signal(tuple)  # (stems_dict, sample_rate)
     separation_failed = Signal(str)  # error message
     separation_cancelled = Signal()
     separation_progress = Signal(int, str)  # percent, message
@@ -191,11 +187,16 @@ class MainController(QObject):
     export_failed = Signal(str)  # error message
     thermal_warning = Signal(str, float)  # state, cpu_temp_c
 
-    def __init__(self, settings: SettingsModel | None = None) -> None:
+    def __init__(
+        self,
+        settings: SettingsModel | None = None,
+        export_service: ExportService | None = None,
+    ) -> None:
         """Initialize the main controller.
 
         Args:
             settings: Optional settings model. Uses default SettingsModel if None.
+            export_service: Optional export service. Uses default ExportService if None.
         """
         super().__init__()
         self._app_state = AppState(settings=settings or SettingsModel())
@@ -204,9 +205,10 @@ class MainController(QObject):
             self._build_separation_config(),
             thermal_monitor=self._thermal_monitor,
         )
-        self._export_service = ExportService()
+        self._export_service = export_service or ExportService()
         self._thread_pool = QThreadPool.globalInstance()
         self._current_worker: SeparationWorker | None = None
+        self._export_worker: ExportWorker | None = None
         self._loaded_audio: np.ndarray | None = None
         self._loaded_sample_rate: int = 44_100
 
@@ -321,31 +323,51 @@ class MainController(QObject):
 
         # Create export worker
         def export_progress_callback(percent: int, message: str) -> None:
-            # For now, we don't have progress reporting in export
-            pass
+            self.export_progress.emit(percent, message)
 
-        # Run export in a separate thread to avoid blocking UI
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        self._export_worker = ExportWorker(
+            self._export_service,
+            stems,
+            Path(output_dir),
+        )
 
-        try:
-            # Run the export
-            result = loop.run_until_complete(
-                self._export_service.export_stems(stems, Path(output_dir))
-            )
-            self.export_completed.emit(result)
-        except Exception as e:
-            logger.error(f"Export failed: {e}")
-            self.export_failed.emit(str(e))
-        finally:
-            loop.close()
+        # Connect worker signals
+        self._export_worker.signals.finished.connect(self._on_export_finished)
+        self._export_worker.signals.error.connect(self._on_export_error)
+
+        # Start the worker
+        self._thread_pool.start(self._export_worker)
+
+    @Slot(dict)
+    def _on_export_finished(self, result: dict[str, Path]) -> None:
+        """Handle successful export completion."""
+        self.export_completed.emit(result)
+
+    @Slot(Exception)
+    def _on_export_error(self, error: Exception) -> None:
+        """Handle export error."""
+        self.export_failed.emit(str(error))
 
     @Slot(object)
-    def _on_separation_finished(self, result: dict[str, Any]) -> None:
-        """Handle successful separation completion."""
+    def _on_separation_finished(self, result: object) -> None:
+        """Handle successful separation completion.
+
+        The worker emits whatever its service returned. The real contract is a
+        ``(stems_dict, sample_rate)`` tuple, but be defensive and accept a bare
+        ``dict`` too so a malformed worker result cannot crash the UI thread.
+        """
+        if isinstance(result, tuple) and len(result) == 2:
+            stems = result[0]
+        elif isinstance(result, dict):
+            stems = result
+        else:
+            logger.warning(
+                "Unexpected separation result type: %s", type(result).__name__
+            )
+            stems = result
         self._app_state.processing_status = ProcessingState.COMPLETE
         self.state_changed.emit(self._app_state)
-        self.separation_completed.emit(result)
+        self.separation_completed.emit(stems)
         self._current_worker = None
 
     @Slot(Exception)
@@ -356,12 +378,20 @@ class MainController(QObject):
         self.separation_failed.emit(str(error))
         self._current_worker = None
 
+    def is_processing(self) -> bool:
+        """Return True if a separation or export is currently in progress."""
+        return (
+            self._current_worker is not None
+            and not self._current_worker.cancelled.is_set()
+        ) or (
+            self._export_worker is not None
+            and not self._export_worker.cancelled.is_set()
+        )
+
     def cancel_separation(self) -> None:
         """Cancel the ongoing separation process."""
         if self._current_worker:
-            # In a real implementation, we'd need to properly cancel the worker
-            # For now, we'll just reset the state
-            pass
+            self._current_worker.cancel()
         self._app_state.processing_status = ProcessingState.IDLE
         self.state_changed.emit(self._app_state)
         self._current_worker = None

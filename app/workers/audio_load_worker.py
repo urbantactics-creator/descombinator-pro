@@ -30,23 +30,20 @@ class AudioLoadWorker(QRunnable):
 
     def run(self) -> None:
         """Load audio file and emit result."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         try:
             from engine.audio.loader import AudioLoader
 
             loader = AudioLoader()
-            audio = loop.run_until_complete(
-                loader.load(self._file_path, sr=self._sample_rate)
-            )
+            audio = asyncio.run(loader.load(self._file_path, sr=self._sample_rate))
             self.signals.finished.emit((audio, self._sample_rate))
             from app.widgets.waveform_view import decimate_waveform
 
             points, time_step = decimate_waveform(audio, sample_rate=self._sample_rate)
             total = len(audio) / self._sample_rate
             self.signals.display_ready.emit((points, time_step, total))
+        except asyncio.CancelledError:
+            logger.info("AudioLoadWorker cancelled")
+            self.signals.error.emit("Cancelled")
         except Exception as e:
             logger.error(f"Failed to load audio: {e}")
             self.signals.error.emit(str(e))
-        finally:
-            loop.close()

@@ -65,7 +65,6 @@ class WaveformView(QWidget):
 
         # Create plot widget
         self._plot_widget = pg.PlotWidget()
-        self._plot_widget.setBackground("w")  # White background
         self._plot_widget.showGrid(x=True, y=True, alpha=0.3)
         self._plot_widget.setLabel("left", "Amplitude")
         self._plot_widget.setLabel("bottom", "Time", "s")
@@ -78,6 +77,22 @@ class WaveformView(QWidget):
         # Position indicator line
         self._position_line = self._plot_widget.addLine(x=0, pen=pg.mkPen("r", width=2))
         self._position_line.hide()
+
+        # Apply theme after all plot elements are initialized
+        self._apply_theme("dark")
+
+    def _apply_theme(self, theme: str) -> None:
+        """Apply theme colors to the plot widget."""
+        if theme == "light":
+            self._plot_widget.setBackground("#ffffff")
+            self._plot_data.setPen(pg.mkPen("#1f77b4", width=1.5))
+        else:  # dark
+            self._plot_widget.setBackground("#1e1e1e")
+            self._plot_data.setPen(pg.mkPen("#00e5ff", width=1.5))
+
+    def set_theme(self, theme: str) -> None:
+        """Set the theme for the waveform view."""
+        self._apply_theme(theme)
 
     def set_display_data(
         self,
@@ -92,6 +107,11 @@ class WaveformView(QWidget):
             time_step: Seconds per bucket.
             total_time: Total audio duration in seconds.
         """
+        if len(points) == 0:
+            # Show empty state placeholder
+            self._plot_data.setData([], [])
+            self._position_line.hide()
+            return
         times = np.arange(len(points)) * time_step
         self._plot_data.setData(times, points)
         self._plot_widget.setXRange(0, total_time)
@@ -111,7 +131,7 @@ class WaveformView(QWidget):
         total_time = (
             len(audio_data) / sample_rate
             if audio_data.ndim == 1
-            else len(audio_data[0]) / sample_rate
+            else audio_data.shape[-1] / sample_rate
         )
         self.set_display_data(display_data, time_step, total_time)
 
@@ -129,3 +149,12 @@ class WaveformView(QWidget):
         self._audio_data = None
         self._plot_data.setData([], [])
         self._position_line.hide()
+
+    def set_empty_state(self, visible: bool = True) -> None:
+        """Show or hide the empty state placeholder."""
+        if visible:
+            self._plot_data.setData([], [])
+            self._position_line.hide()
+        else:
+            self._plot_data.setData([], [])
+            self._position_line.hide()

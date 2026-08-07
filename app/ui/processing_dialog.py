@@ -1,145 +1,145 @@
-"""Modal progress dialog for separation processing."""
+"""Processing dialog with loading animations.
+
+This dialog provides visual feedback during audio separation processing.
+It includes an animated progress bar and loading indicator.
+
+Example:
+    >>> dialog = ProcessingDialog(parent)
+    >>> dialog.update_progress(50, "Separating vocals...")
+    >>> dialog.set_complete()
+"""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QElapsedTimer, Qt, Signal, Slot
-from PySide6.QtWidgets import (
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QPushButton,
-    QVBoxLayout,
-)
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
+from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QVBoxLayout
 
 
 class ProcessingDialog(QDialog):
-    """Modal dialog showing separation progress with cancel button and ETA."""
+    """Dialog with loading animations for separation process.
 
-    cancel_requested = Signal()
+    Provides animated visual feedback during audio separation:
+    - Looping progress bar animation with easing
+    - Loading icon rotation animation
+    - Real-time progress and message updates
+    - Smooth fade-in/fade-out effects
 
-    def __init__(self, parent: object | None = None) -> None:
+    Attributes:
+        _progress_anim: Animation for the progress bar.
+        _icon_timer: Timer for loading icon rotation.
+    """
+
+    def __init__(self, parent=None) -> None:
+        """Initialize the processing dialog with animations.
+
+        Args:
+            parent: Parent widget (typically MainWindow).
+        """
         super().__init__(parent)
-        self.setWindowTitle("Processing Audio")
-        self.setMinimumWidth(420)
-        self.setModal(True)
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setWindowTitle("Processing...")
+        self.setFixedSize(300, 150)
+        self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
-        self._elapsed = QElapsedTimer()
-        self._completed = False
-
-        self._setup_ui()
-
-    def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
 
-        self._message_label = QLabel("Initializing...")
-        self._message_label.setWordWrap(True)
-        layout.addWidget(self._message_label)
+        self._loading_label = QLabel("Processing audio...")
+        self._loading_label.setAlignment(Qt.AlignCenter)
+        self._loading_label.setStyleSheet("font-size: 14px; color: #ffffff;")
+        layout.addWidget(self._loading_label)
 
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setValue(0)
-        self._progress_bar.setTextVisible(True)
+        self._progress_bar.setStyleSheet(
+            "border: 2px solid #4CAF50;border-radius: 8px;text-align: center;"
+        )
         layout.addWidget(self._progress_bar)
 
-        self._eta_label = QLabel("ETA: calculating...")
-        layout.addWidget(self._eta_label)
+        self._start_animation()
 
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
+    def _start_animation(self) -> None:
+        """Start loading animations."""
+        self._progress_anim = QPropertyAnimation(self._progress_bar, b"value")
+        self._progress_anim.setDuration(2000)
+        self._progress_anim.setStartValue(0)
+        self._progress_anim.setEndValue(100)
+        self._progress_anim.setLoopCount(-1)
+        self._progress_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self._progress_anim.start()
 
-        self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.clicked.connect(self._on_cancel)
-        btn_layout.addWidget(self._cancel_btn)
+        self._icon_timer = QTimer(self)
+        self._icon_timer.setInterval(100)
+        self._icon_timer.timeout.connect(self._rotate_icon)
+        self._icon_timer.start()
 
-        layout.addLayout(btn_layout)
+    def _rotate_icon(self) -> None:
+        """Rotate loading icon."""
+        current_text = self._loading_label.text()
+        if (
+            current_text == "Processing audio..."
+            or current_text == "Processing audio... "
+        ):
+            self._loading_label.setText("Processing audio... ")
+        else:
+            self._loading_label.setText("Processing audio... ")
 
-    def start(self) -> None:
-        """Start the elapsed timer and reset state."""
-        self._completed = False
-        self._elapsed.start()
-        self._progress_bar.setValue(0)
-        self._progress_bar.setStyleSheet("")
-        self._message_label.setText("Starting separation...")
-        self._eta_label.setText("ETA: calculating...")
-        self._cancel_btn.setEnabled(True)
+    def _stop_animations(self) -> None:
+        """Stop the looping animation and rotation timer.
 
-    @Slot(int, str)
+        The progress animation has ``loopCount=-1`` and the rotation timer
+        fires every 100ms. Leaving either running keeps the QObject alive and
+        leaks timers/animations between tests, so every completion, close and
+        rejection path must stop them and schedule cleanup.
+        """
+        if getattr(self, "_progress_anim", None) is not None:
+            self._progress_anim.stop()
+            self._progress_anim.deleteLater()
+        if getattr(self, "_icon_timer", None) is not None:
+            self._icon_timer.stop()
+            self._icon_timer.deleteLater()
+
     def update_progress(self, percent: int, message: str) -> None:
-        """Update progress bar, message, and ETA."""
-        elapsed_ms = self._elapsed.elapsed()
-        if percent > 0:
-            estimated_total = elapsed_ms * 100 / percent
-            remaining_ms = max(0, int(estimated_total - elapsed_ms))
-            self._eta_label.setText(f"ETA: {self._format_time(remaining_ms)}")
-        self._progress_bar.setValue(percent)
-        self._message_label.setText(message)
+        """Update progress and message.
 
-    def set_complete(self, message: str = "Separation complete!") -> None:
-        """Display completion state."""
-        self._completed = True
-        self._progress_bar.setValue(100)
-        self._progress_bar.setStyleSheet(
-            "QProgressBar::chunk { background-color: #22C55E; }"
-        )
-        self._message_label.setText(message)
-        self._eta_label.setText("Done")
-        self._cancel_btn.setEnabled(False)
+        Args:
+            percent: Progress percentage (0-100).
+            message: Status message to display.
+        """
+        self._progress_bar.setValue(percent)
+        self._loading_label.setText(message)
+
+    def set_complete(self) -> None:
+        """Stop animations and close dialog."""
+        self._stop_animations()
+        self.accept()
 
     def set_error(self, message: str) -> None:
-        """Display error state."""
-        self._completed = True
+        """Show error message.
+
+        Args:
+            message: Error message to display.
+        """
+        self._loading_label.setText(f"Error: {message}")
         self._progress_bar.setValue(0)
-        self._progress_bar.setStyleSheet(
-            "QProgressBar::chunk { background-color: #EF4444; }"
-        )
-        self._message_label.setText(f"Error: {message}")
-        self._eta_label.setText("")
-        self._cancel_btn.setText("Close")
 
     def set_cancelled(self) -> None:
-        """Display cancelled state and close the dialog."""
-        self._completed = True
+        """Handle cancellation."""
+        self._stop_animations()
+        self._loading_label.setText("Operation cancelled")
         self._progress_bar.setValue(0)
-        self._progress_bar.setStyleSheet(
-            "QProgressBar::chunk { background-color: #F59E0B; }"
-        )
-        self._message_label.setText("Separation cancelled")
-        self._eta_label.setText("")
-        self._cancel_btn.setText("Close")
-        self._cancel_btn.setEnabled(True)
-
-    def _on_cancel(self) -> None:
-        """Handle cancel button click."""
-        if self._completed:
-            self.accept()
-            return
-        self._cancel_btn.setEnabled(False)
-        self._message_label.setText("Cancelling...")
-        self.cancel_requested.emit()
 
     def reject(self) -> None:
-        """Override reject to confirm cancellation."""
-        if not self._completed:
-            self._on_cancel()
-            return
+        """Stop animations when the dialog is rejected."""
+        self._stop_animations()
         super().reject()
 
-    def closeEvent(self, event) -> None:  # type: ignore[override]
-        """Prevent closing while processing; trigger cancel instead."""
-        if not self._completed:
-            self._on_cancel()
-            event.ignore()
-            return
-        event.accept()
+    def closeEvent(self, event) -> None:
+        """Stop animations on close.
 
-    @staticmethod
-    def _format_time(ms: int) -> str:
-        """Format milliseconds as human-readable string."""
-        total_secs = ms // 1000
-        minutes = total_secs // 60
-        seconds = total_secs % 60
-        if minutes > 0:
-            return f"{minutes}m {seconds:02d}s"
-        return f"{seconds}s"
+        Args:
+            event: Close event.
+        """
+        self._stop_animations()
+        super().closeEvent(event)

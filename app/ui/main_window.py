@@ -64,6 +64,9 @@ class MainWindow(QMainWindow):
         self._settings_controller = settings_controller
         self._separated_stems: dict[str, np.ndarray] = {}
         self._processing_dialog: ProcessingDialog | None = None
+        self._export_dialog: ProcessingDialog | None = None
+        self._export_worker: object | None = None
+        self._thread_pool = QThreadPool.globalInstance()
 
         self.setWindowTitle("Descombinator Pro")
         self.setMinimumSize(800, 600)
@@ -96,6 +99,7 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self._progress_bar)
 
         self._separate_btn = QPushButton("Separate")
+        self._separate_btn.setObjectName("primaryButton")
         self._separate_btn.setEnabled(False)
         self._separate_btn.clicked.connect(self._on_separate_clicked)
         left_layout.addWidget(self._separate_btn)
@@ -124,7 +128,17 @@ class MainWindow(QMainWindow):
         self._status_bar = QStatusBar()
         self.setStatusBar(self._status_bar)
         self._status_label = QLabel("Ready")
+        self._status_label.setObjectName("statusLabel")
         self._status_bar.addWidget(self._status_label)
+        self._file_info_label = QLabel("")
+        self._status_bar.addPermanentWidget(self._file_info_label)
+
+        # Progress icon for separation animations
+        self._progress_icon = QLabel("⏳")
+        self._progress_icon.setObjectName("progressIcon")
+        self._progress_icon.setStyleSheet("color: #666; font-size: 12px;")
+        self._progress_icon.hide()
+        self._status_bar.addPermanentWidget(self._progress_icon)
 
         self._create_menu_bar()
 
@@ -133,7 +147,7 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
 
         # File menu
-        file_menu = menubar.addMenu("File")
+        file_menu = menubar.addMenu("&File")
 
         open_action = QAction("Open...", self)
         open_action.setShortcut("Ctrl+O")
@@ -156,7 +170,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
 
         # View menu
-        view_menu = menubar.addMenu("View")
+        view_menu = menubar.addMenu("&View")
 
         theme_menu = view_menu.addMenu("Theme")
 
@@ -175,7 +189,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(settings_action)
 
         # Help menu
-        help_menu = menubar.addMenu("Help")
+        help_menu = menubar.addMenu("&Help")
 
         about_action = QAction("About", self)
         about_action.triggered.connect(self._show_about)
@@ -207,6 +221,9 @@ class MainWindow(QMainWindow):
         self._main_controller.separation_progress.connect(self._on_separation_progress)
         self._main_controller.thermal_warning.connect(self._on_thermal_warning)
         self._settings_controller.settings_changed.connect(self._on_settings_changed)
+        self._main_controller.export_progress.connect(self._on_export_progress)
+        self._main_controller.export_completed.connect(self._on_export_completed)
+        self._main_controller.export_failed.connect(self._on_export_failed)
 
         self._playback_controller.position_changed.connect(
             self._on_playback_position_changed
@@ -215,7 +232,7 @@ class MainWindow(QMainWindow):
             self._on_playback_duration_changed
         )
         self._playback_controller.state_changed.connect(self._on_playback_state_changed)
-        self._playback_controller.volume_changed.connect(
+        self._playback_controller.master_volume_changed.connect(
             self._on_playback_volume_changed
         )
         self._playback_controller.error_occurred.connect(self._on_playback_error)
@@ -243,6 +260,8 @@ class MainWindow(QMainWindow):
                 stylesheet = f.read()
             self.setStyleSheet(stylesheet)
             logger.info(f"Applied {theme} theme")
+            # Update waveform theme
+            self._waveform_view.set_theme(theme)
         except FileNotFoundError:
             logger.warning(f"Stylesheet not found for theme: {theme}")
             self.setStyleSheet("")
@@ -279,18 +298,56 @@ class MainWindow(QMainWindow):
             return
 
         file_dialog = QFileDialog()
-        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
         file_dialog.setFileMode(QFileDialog.Directory)
 
         if file_dialog.exec():
             selected_dir = file_dialog.selectedFiles()[0]
-            output_dir = Path(selected_dir)
+            Path(selected_dir)
 
-            QMessageBox.information(
-                self,
-                "Export",
-                f"Exporting {len(self._separated_stems)} stems to {output_dir}",
-            )
+            # Show progress dialog
+            self._export_dialog = ProcessingDialog(self)
+            self._export_dialog.setWindowTitle("Exporting Audio")
+            self._export_dialog.cancel_requested.connect(self._on_export_cancelled)
+            self._export_dialog.show()
+
+            # Create and start export worker
+            def export_progress_callback(percent: int, message: str) -> None:
+                self._export_dialog.update_progress(percent, message)
+
+            self._export_worker = self._main_controller._export_worker
+            self._export_worker.signals.progress.connect(export_progress_callback)
+            self._export_worker.signals.finished.connect(self._on_export_finished)
+            self._export_worker.signals.error.connect(self._on_export_error)
+
+            self._thread_pool.start(self._export_worker)
+
+    @Slot()
+    def _on_export_cancelled(self) -> None:
+        """Handle export cancellation."""
+        if self._export_worker:
+            self._export_worker.cancel()
+            self._export_dialog.set_cancelled()
+
+    @Slot(dict)
+    def _on_export_finished(self, result: dict[str, Path]) -> None:
+        """Handle successful export completion."""
+        stem_names = ", ".join(result.keys())
+        QMessageBox.information(
+            self,
+            "Export Complete",
+            f"Successfully exported {len(result)} stem(s):\n\n{stem_names}",
+        )
+        if self._export_dialog:
+            self._export_dialog.set_complete()
+            self._export_dialog = None
+
+    @Slot(str)
+    def _on_export_error(self, error_message: str) -> None:
+        """Handle export error."""
+        QMessageBox.critical(self, "Export Error", error_message)
+        if self._export_dialog:
+            self._export_dialog.set_error(error_message)
+            self._export_dialog = None
 
     @Slot()
     def _show_about(self) -> None:
@@ -367,6 +424,28 @@ class MainWindow(QMainWindow):
     @Slot(object)
     def _on_state_changed(self, app_state: object) -> None:
         """Handle application state changes."""
+        from app.models.processing_state import ProcessingState
+
+        if hasattr(app_state, "processing_status"):
+            status = app_state.processing_status
+            is_processing = status in (
+                ProcessingState.LOADING,
+                ProcessingState.PROCESSING,
+            )
+            self._separate_btn.setEnabled(
+                not is_processing
+                and self._main_controller._app_state.current_file is not None
+            )
+            self._file_drop_zone.setEnabled(not is_processing)
+            self._track_selector.setEnabled(not is_processing)
+            if is_processing:
+                self._status_label.setText(f"Processing: {status.value}")
+            elif status == ProcessingState.COMPLETE:
+                self._status_label.setText("Ready")
+            elif status == ProcessingState.ERROR:
+                self._status_label.setText("Error")
+            elif status == ProcessingState.CANCELLED:
+                self._status_label.setText("Cancelled")
 
     # --- Separation signals ---
 
@@ -378,10 +457,6 @@ class MainWindow(QMainWindow):
         self._progress_bar.set_progress(0, "Initializing...")
 
         self._processing_dialog = ProcessingDialog(self)
-        self._processing_dialog.cancel_requested.connect(
-            self._main_controller.cancel_separation
-        )
-        self._processing_dialog.start()
         self._processing_dialog.show()
 
     @Slot(dict)
@@ -400,7 +475,8 @@ class MainWindow(QMainWindow):
         self._playback_controller.set_stems(stems)
 
         # Update waveform with first stem (vocals preferred)
-        sample_rate = 44100
+        # Use the sample rate from the loaded audio (stored in controller)
+        sample_rate = self._main_controller._loaded_sample_rate
         if "vocals" in stems:
             self._waveform_view.set_audio_data(stems["vocals"], sample_rate)
         elif stems:
@@ -425,6 +501,34 @@ class MainWindow(QMainWindow):
 
         if self._processing_dialog:
             self._processing_dialog.update_progress(percent, message)
+
+    @Slot(int, str)
+    def _on_export_progress(self, percent: int, message: str) -> None:
+        """Handle export progress updates."""
+        self._status_label.setText(message)
+        if self._export_dialog:
+            self._export_dialog.update_progress(percent, message)
+
+    @Slot(dict)
+    def _on_export_completed(self, result: dict[str, Path]) -> None:
+        """Handle successful export completion."""
+        stem_names = ", ".join(result.keys())
+        QMessageBox.information(
+            self,
+            "Export Complete",
+            f"Successfully exported {len(result)} stem(s):\n\n{stem_names}",
+        )
+        if self._export_dialog:
+            self._export_dialog.set_complete()
+            self._export_dialog = None
+
+    @Slot(str)
+    def _on_export_failed(self, error_message: str) -> None:
+        """Handle export error."""
+        QMessageBox.critical(self, "Export Error", error_message)
+        if self._export_dialog:
+            self._export_dialog.set_error(error_message)
+            self._export_dialog = None
 
     @Slot(str, float)
     def _on_thermal_warning(self, state: str, cpu_temp: float) -> None:
@@ -512,6 +616,11 @@ class MainWindow(QMainWindow):
         if self._processing_dialog is not None:
             self._processing_dialog.close()
             self._processing_dialog = None
+
+        # Close export dialog if open
+        if self._export_dialog is not None:
+            self._export_dialog.close()
+            self._export_dialog = None
 
         # Wait for thread pool to finish (max 3 seconds)
         pool = QThreadPool.globalInstance()
