@@ -66,7 +66,7 @@ class TestConcurrentSeparation:
         started = asyncio.Event()
         release = asyncio.Event()
 
-        async def blocking_separate_file(file_path: Path) -> dict:
+        async def blocking_separate_file(file_path: Path) -> dict[str, np.ndarray]:
             started.set()
             await release.wait()
             return {
@@ -101,7 +101,7 @@ class TestConcurrentSeparation:
         started = asyncio.Event()
         release = asyncio.Event()
 
-        async def blocking_separate(audio: np.ndarray, sample_rate: int) -> dict:
+        async def blocking_separate(audio: np.ndarray, sample_rate: int) -> dict[str, np.ndarray]:
             started.set()
             await release.wait()
             return {
@@ -240,7 +240,7 @@ class TestInvalidAudioErrorPaths:
             ),
             pytest.raises(InvalidAudioError, match="Input audio is empty"),
         ):
-            await service.separate_loaded(None)
+            await service.separate_loaded(np.array([], dtype=np.float32))
 
     @pytest.mark.asyncio
     async def test_separate_loaded_zero_size_audio_raises(
