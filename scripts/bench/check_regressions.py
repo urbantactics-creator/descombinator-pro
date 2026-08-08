@@ -16,8 +16,6 @@ skipped (the CI runner writes real values into baselines.json after an
 intentional optimization).
 """
 
-from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path

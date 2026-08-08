@@ -1,7 +1,5 @@
 """Playback service orchestrating the in-memory audio mixer."""
 
-from __future__ import annotations
-
 import numpy as np
 import resampy
 from PySide6.QtCore import QObject, Signal

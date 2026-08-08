@@ -14,8 +14,6 @@ usage, and writes a text report. Alternative manual flow::
 Target: peak < 4 GB for a 3-minute song. Marked ``slow``; not run in CI.
 """
 
-from __future__ import annotations
-
 import argparse
 import subprocess
 import sys
@@ -69,7 +67,7 @@ def main() -> int:
                 children = psutil.Process(proc.pid).children(recursive=True)
                 for child in children:
                     rss += child.memory_info().rss
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except psutil.NoSuchProcess, psutil.AccessDenied:
                 rss = 0.0
             peak_mb = max(peak_mb, rss / (1024 * 1024))
             time.sleep(args.interval)

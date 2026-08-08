@@ -5,8 +5,6 @@ Heavy module imports (soundfile, mutagen) are deferred with PEP 562
 ``config`` and ``errors`` stay eager.
 """
 
-from __future__ import annotations
-
 import importlib
 from typing import TYPE_CHECKING, Any
 

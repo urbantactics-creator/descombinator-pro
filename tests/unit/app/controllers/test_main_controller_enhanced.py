@@ -1,7 +1,5 @@
 """Enhanced tests for MainController to improve coverage."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 

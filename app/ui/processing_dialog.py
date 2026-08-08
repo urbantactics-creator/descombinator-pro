@@ -9,8 +9,6 @@ Example:
     >>> dialog.set_complete()
 """
 
-from __future__ import annotations
-
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
 from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QVBoxLayout
 

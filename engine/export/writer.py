@@ -1,7 +1,5 @@
 """Export writer for separated audio stems."""
 
-from __future__ import annotations
-
 import asyncio
 import subprocess
 import tempfile
@@ -116,7 +114,7 @@ class ExportWriter:
             else:
                 raise UnsupportedFormatError(f"Unsupported format: {suffix}")
 
-        except (WriteError, UnsupportedFormatError):
+        except WriteError, UnsupportedFormatError:
             raise
         except Exception as e:
             logger.error(f"Failed to write {path}: {e}")

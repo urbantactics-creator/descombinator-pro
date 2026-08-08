@@ -1,7 +1,5 @@
 """Batch export for multiple audio stems."""
 
-from __future__ import annotations
-
 import asyncio
 from collections.abc import Callable
 from pathlib import Path

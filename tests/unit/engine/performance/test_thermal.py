@@ -1,7 +1,5 @@
 """Unit tests for engine.performance.thermal — ThermalMonitor, ThermalState."""
 
-from __future__ import annotations
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

@@ -125,7 +125,7 @@ class TestMetadataEmbedder:
             ]
             await asyncio.to_thread(subprocess.run, cmd, check=True)
             temp_wav.unlink()
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except subprocess.CalledProcessError, FileNotFoundError:
             pytest.skip("ffmpeg not available for M4A test")
 
         metadata = {

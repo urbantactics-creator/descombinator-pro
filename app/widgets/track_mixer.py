@@ -1,7 +1,5 @@
 """Track mixer widget for per-track volume and mute control."""
 
-from __future__ import annotations
-
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QGroupBox,

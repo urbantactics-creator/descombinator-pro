@@ -9,8 +9,6 @@ text report sorted by cumulative time. Marked ``slow``; not run in CI by
 default.
 """
 
-from __future__ import annotations
-
 import argparse
 import asyncio
 import sys

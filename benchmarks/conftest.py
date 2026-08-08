@@ -5,8 +5,6 @@ not depend on network access or large fixture files. Heavy fixtures are
 cached per-session and marked ``slow`` where generation is expensive.
 """
 
-from __future__ import annotations
-
 import io
 from collections.abc import Iterator
 from pathlib import Path

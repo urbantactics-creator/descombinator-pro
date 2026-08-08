@@ -1,7 +1,5 @@
 """Unit tests for AudioMixer and MixerTrack."""
 
-from __future__ import annotations
-
 import numpy as np
 
 from app.audio.mixer import AudioMixer, MixerTrack, PlaybackState

@@ -1,7 +1,5 @@
 """Inference pipeline orchestrating model selection and separation."""
 
-from __future__ import annotations
-
 import time
 
 import numpy as np

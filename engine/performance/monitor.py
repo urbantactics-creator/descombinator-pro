@@ -6,8 +6,6 @@ never blocks the event loop. The first ``cpu_percent`` sample is primed on
 compare against.
 """
 
-from __future__ import annotations
-
 import asyncio
 import time
 from collections.abc import Awaitable, Callable

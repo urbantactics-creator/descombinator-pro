@@ -1,7 +1,5 @@
 """Worker for loading audio data in a background thread."""
 
-from __future__ import annotations
-
 import asyncio
 from pathlib import Path
 

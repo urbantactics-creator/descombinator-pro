@@ -1,7 +1,5 @@
 """Sample rate conversion and channel handling."""
 
-from __future__ import annotations
-
 import asyncio
 
 import numpy as np

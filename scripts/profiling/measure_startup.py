@@ -4,8 +4,6 @@ Runs ``import main`` in a fresh subprocess N times and reports the median
 wall-clock time. The startup gate is ``< 3000 ms``.
 """
 
-from __future__ import annotations
-
 import statistics
 import subprocess
 import sys

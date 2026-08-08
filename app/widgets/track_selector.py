@@ -1,7 +1,5 @@
 """Track selector widget for choosing separation stems."""
 
-from __future__ import annotations
-
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QButtonGroup,

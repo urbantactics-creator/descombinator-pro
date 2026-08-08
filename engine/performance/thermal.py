@@ -13,8 +13,6 @@ Thresholds:
     CRITICAL: CPU > 90 °C, GPU > 95 °C
 """
 
-from __future__ import annotations
-
 import asyncio
 import subprocess
 import sys
@@ -183,6 +181,6 @@ class ThermalMonitor:
             )
             if proc.returncode == 0 and proc.stdout.strip():
                 return float(proc.stdout.strip().split("\n")[0])
-        except (FileNotFoundError, subprocess.TimeoutExpired, ValueError):
+        except FileNotFoundError, subprocess.TimeoutExpired, ValueError:
             pass
         return None

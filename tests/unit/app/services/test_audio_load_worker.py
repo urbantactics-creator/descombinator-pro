@@ -1,7 +1,5 @@
 """Tests for the AudioLoadWorker."""
 
-from __future__ import annotations
-
 from app.workers.audio_load_worker import AudioLoadWorker
 
 

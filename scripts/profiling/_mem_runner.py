@@ -5,8 +5,6 @@ synchronous callable, so this module wraps the async pipeline in a plain
 function. It builds a mock pipeline so no real model weights are needed.
 """
 
-from __future__ import annotations
-
 import numpy as np
 
 

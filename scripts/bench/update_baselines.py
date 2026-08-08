@@ -18,8 +18,6 @@ Usage::
         --min-rounds 10 --max-time 1.0 --warmup on --calibration-precision 3
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

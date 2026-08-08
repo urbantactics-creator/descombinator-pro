@@ -4,8 +4,6 @@ Importable from ``scripts/profiling`` and ``scripts/bench``. Kept free of
 heavy third-party imports (torch/librosa) so it can load instantly.
 """
 
-from __future__ import annotations
-
 import os
 import sys
 from pathlib import Path

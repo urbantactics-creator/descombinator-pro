@@ -1,7 +1,5 @@
 """Unit tests for engine.inference.errors — exception hierarchy."""
 
-from __future__ import annotations
-
 import pytest
 
 from engine.inference.errors import (

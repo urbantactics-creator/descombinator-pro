@@ -1,7 +1,5 @@
 """Main window for the Descombinator Pro application."""
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
@@ -172,28 +170,28 @@ class MainWindow(QMainWindow):
         # View menu
         view_menu = menubar.addMenu("&View")
 
-        theme_menu = view_menu.addMenu("Theme")
+        self._theme_menu = view_menu.addMenu("Theme")
 
         light_action = QAction("Light", self)
         light_action.triggered.connect(lambda: self._change_theme("light"))
-        theme_menu.addAction(light_action)
+        self._theme_menu.addAction(light_action)
 
         dark_action = QAction("Dark", self)
         dark_action.setChecked(True)
         dark_action.triggered.connect(lambda: self._change_theme("dark"))
-        theme_menu.addAction(dark_action)
+        self._theme_menu.addAction(dark_action)
 
-        settings_action = QAction("Settings...", self)
-        settings_action.setShortcut("Ctrl+,")
-        settings_action.triggered.connect(self._open_settings)
-        view_menu.addAction(settings_action)
+        self._settings_action = QAction("Settings...", self)
+        self._settings_action.setShortcut("Ctrl+,")
+        self._settings_action.triggered.connect(self._open_settings)
+        view_menu.addAction(self._settings_action)
 
         # Help menu
-        help_menu = menubar.addMenu("&Help")
+        self._help_menu = menubar.addMenu("&Help")
 
         about_action = QAction("About", self)
         about_action.triggered.connect(self._show_about)
-        help_menu.addAction(about_action)
+        self._help_menu.addAction(about_action)
 
     def _connect_signals(self) -> None:
         """Connect signals from widgets and controllers."""

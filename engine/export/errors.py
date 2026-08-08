@@ -1,7 +1,5 @@
 """Export pipeline exceptions."""
 
-from __future__ import annotations
-
 
 class ExportError(Exception):
     """Base exception for all export operations."""

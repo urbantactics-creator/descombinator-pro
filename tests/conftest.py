@@ -1,7 +1,5 @@
 """Shared test fixtures and markers for the Descombinator Pro test suite."""
 
-from __future__ import annotations
-
 import pathlib
 from unittest.mock import AsyncMock, MagicMock
 

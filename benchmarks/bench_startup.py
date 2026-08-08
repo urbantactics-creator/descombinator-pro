@@ -4,8 +4,6 @@ Reuses ``scripts.profiling.measure_startup`` to time ``import main`` in a
 fresh subprocess. Target: median < 3000 ms.
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

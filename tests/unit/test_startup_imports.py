@@ -6,8 +6,6 @@ stack (torch, librosa, demucs, openunmix) — the PEP 562 lazy re-export
 gate for the < 3s startup target.
 """
 
-from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

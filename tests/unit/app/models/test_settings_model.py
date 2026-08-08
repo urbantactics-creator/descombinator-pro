@@ -1,7 +1,5 @@
 """Unit tests for app.models.settings_model — SettingsModel."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from app.models.settings_model import SettingsModel

@@ -6,8 +6,6 @@ Demucs runs with multiple ``jobs`` (process workers), each process should use a
 single thread so ``threads x processes`` stays near the core count.
 """
 
-from __future__ import annotations
-
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager

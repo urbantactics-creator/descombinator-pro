@@ -4,8 +4,6 @@ Heavy module imports (torch, demucs, openunmix) are deferred with PEP 562
 ``__getattr__`` so importing ``engine.inference`` does not load them.
 """
 
-from __future__ import annotations
-
 import importlib
 from typing import TYPE_CHECKING, Any
 

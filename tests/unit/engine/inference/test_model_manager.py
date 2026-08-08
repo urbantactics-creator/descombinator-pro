@@ -1,7 +1,5 @@
 """Unit tests for ModelManager."""
 
-from __future__ import annotations
-
 from unittest.mock import AsyncMock, patch
 
 import pytest

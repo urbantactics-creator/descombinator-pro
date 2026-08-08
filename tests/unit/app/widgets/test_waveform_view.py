@@ -1,7 +1,5 @@
 """Tests for the WaveformView widget."""
 
-from __future__ import annotations
-
 import numpy as np
 
 from app.widgets.waveform_view import WaveformView, decimate_waveform

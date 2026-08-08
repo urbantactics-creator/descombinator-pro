@@ -1,7 +1,5 @@
 """Unit tests for app.services.playback_service — PlaybackService with mock mixer."""
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock
 
 import numpy as np

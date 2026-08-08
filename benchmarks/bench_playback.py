@@ -5,8 +5,6 @@ is created (the known headless CI crash). ``PlaybackController``/persistence
 are exercised through their public APIs without playing audio.
 """
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

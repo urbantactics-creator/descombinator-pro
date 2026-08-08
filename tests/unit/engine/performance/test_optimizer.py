@@ -1,7 +1,5 @@
 """Tests for TorchRuntimeOptimizer CPU/GPU runtime configuration."""
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock
 
 import pytest

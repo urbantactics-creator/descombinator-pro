@@ -1,7 +1,5 @@
 """Unit tests for engine.export.config — ExportConfig and enums."""
 
-from __future__ import annotations
-
 import pytest
 from pydantic import ValidationError
 

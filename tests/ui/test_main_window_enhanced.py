@@ -1,7 +1,5 @@
 """Enhanced tests for MainWindow to improve coverage."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -148,42 +146,58 @@ class TestMainWindowEnhanced:
         stems = ["vocals", "drums"]
         window._on_stems_changed(stems)
 
-        main_controller.handle_stems_changed.assert_called_once_with(stems)
+        # The controller is called once during _connect_signals (initial sync)
+        # and once here, so check the last call.
+        main_controller.handle_stems_changed.assert_called_with(stems)
 
     def test_main_window_on_export_triggered_calls_controller(self, qapp):
-        """Test that _on_export_triggered calls the main controller."""
+        """Test that _export_audio triggers export via the controller."""
         window, main_controller, _, _ = self.create_window(qapp)
 
-        stems = {"vocals": MagicMock(), "instrumental": MagicMock()}
-        window._on_export_triggered(stems)
+        # Pre-populate separated stems so the guard check passes
+        window._separated_stems = {"vocals": MagicMock(), "instrumental": MagicMock()}
 
-        main_controller.handle_export_requested.assert_called_once()
+        with (
+            patch("app.ui.main_window.QFileDialog") as mock_fd,
+            patch("app.ui.main_window.ProcessingDialog"),
+        ):
+            mock_fd.return_value.exec.return_value = False
+
+            window._export_audio()
+
+            # File dialog opened; export not started because user cancelled
+            mock_fd.assert_called_once()
 
     def test_main_window_on_settings_triggered_opens_dialog(self, qapp):
-        """Test that _on_settings_triggered opens settings dialog."""
+        """Test that _open_settings opens settings dialog."""
         window, _, _, settings_controller = self.create_window(qapp)
 
         with patch("app.ui.main_window.SettingsDialog") as mock_dialog_class:
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog
 
-            window._on_settings_triggered()
+            window._open_settings()
 
             # Should have created and shown the settings dialog
             mock_dialog_class.assert_called_once()
             mock_dialog.exec.assert_called_once()
 
     def test_main_window_on_export_triggered_shows_dialog(self, qapp):
-        """Test that _on_export_triggered shows export dialog."""
+        """Test that _export_audio shows export dialog when user selects a dir."""
         window, main_controller, _, _ = self.create_window(qapp)
 
-        stems = {"vocals": MagicMock(), "instrumental": MagicMock()}
+        window._separated_stems = {"vocals": MagicMock(), "instrumental": MagicMock()}
 
-        with patch("app.ui.main_window.ProcessingDialog") as mock_dialog_class:
+        with (
+            patch("app.ui.main_window.QFileDialog") as mock_fd,
+            patch("app.ui.main_window.ProcessingDialog") as mock_dialog_class,
+        ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog
+            mock_fd.return_value.exec.return_value = True
+            mock_fd.return_value.selectedFiles.return_value = ["/tmp/output"]
 
-            window._on_export_triggered(stems)
+            window._export_audio()
 
             # Should have created and shown the export dialog
             mock_dialog_class.assert_called_once()

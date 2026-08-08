@@ -1,7 +1,5 @@
 """Demucs separation engine orchestrator."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path

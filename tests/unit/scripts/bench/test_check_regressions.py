@@ -1,7 +1,5 @@
 """Unit tests for the benchmark regression gate."""
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
 

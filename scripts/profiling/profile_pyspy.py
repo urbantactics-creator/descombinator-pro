@@ -9,8 +9,6 @@ process, then runs ``py-spy record`` against that PID. Also prints a live
 ``py-spy top`` snippet to the console. Requires py-spy on PATH.
 """
 
-from __future__ import annotations
-
 import argparse
 import subprocess
 import sys

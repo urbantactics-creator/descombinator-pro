@@ -1,7 +1,5 @@
 """Unit tests for app.models.app_state — AppState."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from app.models.app_state import AppState

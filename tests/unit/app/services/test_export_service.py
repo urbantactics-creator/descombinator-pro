@@ -1,7 +1,5 @@
 """Unit tests for app.services.export_service — ExportService."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 

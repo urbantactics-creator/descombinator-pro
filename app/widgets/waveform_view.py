@@ -1,7 +1,5 @@
 """Waveform view widget for audio visualization."""
 
-from __future__ import annotations
-
 import numpy as np
 import pyqtgraph as pg
 from PySide6.QtWidgets import QVBoxLayout, QWidget

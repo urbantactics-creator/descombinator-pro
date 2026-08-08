@@ -8,8 +8,6 @@ emits Qt signals; all shared state is protected by a ``QMutex``. A 100 ms
 GUI-thread ``QTimer`` emits position/state signals and handles end-of-stream.
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum

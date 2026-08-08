@@ -1,7 +1,5 @@
 """Tests for AudioLoader fast paths (WAV mmap, soundfile, fallbacks)."""
 
-from __future__ import annotations
-
 import asyncio
 import struct
 from pathlib import Path

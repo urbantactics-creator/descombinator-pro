@@ -1,7 +1,5 @@
 """Tests for the PlaybackControls widget."""
 
-from __future__ import annotations
-
 from app.widgets.playback_controls import PlaybackControls
 
 

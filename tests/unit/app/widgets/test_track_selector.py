@@ -1,7 +1,5 @@
 """Unit tests for app.widgets.track_selector — TrackSelector."""
 
-from __future__ import annotations
-
 from app.widgets.track_selector import TrackSelector
 
 

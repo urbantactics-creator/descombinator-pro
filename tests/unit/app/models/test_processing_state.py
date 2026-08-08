@@ -1,7 +1,5 @@
 """Unit tests for app.models.processing_state — ProcessingState."""
 
-from __future__ import annotations
-
 from app.models.processing_state import ProcessingState
 
 

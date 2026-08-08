@@ -1,7 +1,5 @@
 """Tests for the ProgressBar widget."""
 
-from __future__ import annotations
-
 from app.widgets.progress_bar import ProgressBar
 
 

@@ -4,8 +4,6 @@ All tests run on real CPU hardware; CUDA behavior is simulated by monkeypatching
 ``torch.cuda.is_available`` so the guarded code paths are exercised without a GPU.
 """
 
-from __future__ import annotations
-
 import gc
 from unittest.mock import MagicMock, patch
 

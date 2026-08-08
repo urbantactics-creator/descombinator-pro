@@ -1,7 +1,5 @@
 """Unit tests for engine.export.errors — exception hierarchy."""
 
-from __future__ import annotations
-
 import pytest
 
 from engine.export.errors import (

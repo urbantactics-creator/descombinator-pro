@@ -1,7 +1,5 @@
 """Audio metadata reading and writing."""
 
-from __future__ import annotations
-
 import asyncio
 from pathlib import Path
 from typing import Any
@@ -21,13 +19,13 @@ def _tag_text(tags: Any | None, *keys: str) -> str | None:
     for key in keys:
         try:
             value = tags[key]
-        except (KeyError, TypeError):
+        except KeyError, TypeError:
             continue
         if value is None:
             continue
         if hasattr(value, "text") and value.text:
             return str(value.text[0])
-        if isinstance(value, (list, tuple)) and value:
+        if isinstance(value, list | tuple) and value:
             return str(value[0])
         if value:
             return str(value)

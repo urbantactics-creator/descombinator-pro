@@ -4,8 +4,6 @@ Heavy module imports (torch, demucs) are deferred with PEP 562
 ``__getattr__`` so importing ``engine.demucs`` does not load them.
 """
 
-from __future__ import annotations
-
 import importlib
 from typing import TYPE_CHECKING, Any
 

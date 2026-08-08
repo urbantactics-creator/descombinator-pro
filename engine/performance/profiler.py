@@ -5,8 +5,6 @@ module scope so importing this module stays cheap; the heavy imports happen
 inside the context managers only when profiling is actually requested.
 """
 
-from __future__ import annotations
-
 import cProfile
 import pstats
 from collections.abc import Iterator

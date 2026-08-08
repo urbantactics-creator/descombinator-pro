@@ -1,7 +1,5 @@
 """Integration tests for full service pipeline: load → separation → export."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 

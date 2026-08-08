@@ -11,8 +11,6 @@ Every path returns float32 audio in [-1, 1]. ``librosa`` is imported
 function-local so it is not pulled into the process at import time.
 """
 
-from __future__ import annotations
-
 import asyncio
 import struct
 from pathlib import Path
@@ -158,7 +156,7 @@ class AudioLoader:
                     "data_offset": data_offset,
                     "data_size": data_size,
                 }
-        except (OSError, ValueError, struct.error):
+        except OSError, ValueError, struct.error:
             return None
 
     def _load_wav_pcm(

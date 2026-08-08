@@ -1,7 +1,5 @@
 """Playback controls widget with seek slider and time display."""
 
-from __future__ import annotations
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,

@@ -1,7 +1,5 @@
 """Unit tests for app.widgets.file_drop_zone — FileDropZone."""
 
-from __future__ import annotations
-
 from app.widgets.file_drop_zone import FileDropZone
 
 

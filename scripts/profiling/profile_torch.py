@@ -9,8 +9,6 @@ Runs the real htdemucs separation over a 3-minute synthetic song and writes a
 when torch is not available. Marked ``slow``; not run in CI by default.
 """
 
-from __future__ import annotations
-
 import argparse
 import asyncio
 import sys

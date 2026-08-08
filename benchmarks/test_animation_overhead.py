@@ -5,8 +5,6 @@ negligible compared to the actual separation work. Animations should
 consume < 50 ms for 500 ticks (< 5% of a 1-second simulated separation).
 """
 
-from __future__ import annotations
-
 import time
 
 import pytest

@@ -1,7 +1,5 @@
 """Tests for the TrackMixerWidget."""
 
-from __future__ import annotations
-
 from app.widgets.track_mixer import TrackMixerWidget
 
 

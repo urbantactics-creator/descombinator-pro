@@ -1,7 +1,5 @@
 """Unit tests for engine.performance.profiler — cpu_profile and torch_profile_trace."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from engine.performance.profiler import cpu_profile, torch_profile_trace

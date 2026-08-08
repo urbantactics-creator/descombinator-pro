@@ -10,8 +10,6 @@ Example:
     >>> drop_zone.set_message("Drop your audio file here")
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal

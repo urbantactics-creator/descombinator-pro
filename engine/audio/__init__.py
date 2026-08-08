@@ -5,8 +5,6 @@ with PEP 562 ``__getattr__`` so importing ``engine.audio`` does not load
 them. ``errors`` and the numpy-only ``postprocessor`` stay eager.
 """
 
-from __future__ import annotations
-
 import importlib
 from typing import TYPE_CHECKING, Any
 

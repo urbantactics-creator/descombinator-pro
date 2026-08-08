@@ -5,8 +5,6 @@ synthetic song. Run manually or in CI with ``-m slow``. Target on CPU:
 median < 30 s for a 3-minute song.
 """
 
-from __future__ import annotations
-
 import asyncio
 
 import numpy as np

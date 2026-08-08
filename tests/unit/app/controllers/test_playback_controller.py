@@ -1,7 +1,5 @@
 """Comprehensive tests for PlaybackController."""
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock
 
 import numpy as np
