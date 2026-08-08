@@ -1,7 +1,5 @@
 """Model lifecycle management."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Protocol
 
 from loguru import logger

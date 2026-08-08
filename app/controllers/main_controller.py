@@ -1,7 +1,5 @@
 """Main controller for coordinating UI and services."""
 
-from __future__ import annotations
-
 import asyncio
 import threading
 from collections.abc import Callable
@@ -88,19 +86,13 @@ class SeparationWorker(QRunnable):
             return
 
         def progress(percent: int, message: str) -> None:
-            # Cooperative cancellation: abort at the next engine progress tick.
             if self._cancelled.is_set():
                 raise WorkerCancelledError()
             self._progress_callback(percent, message)
 
-        # Create a new event loop for this thread
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
         try:
-            # Reuse pre-decoded audio to avoid a second decode when available.
             if self._audio is not None:
-                result = loop.run_until_complete(
+                result = asyncio.run(
                     self._separation_service.separate_loaded(
                         self._audio,
                         self._sample_rate,
@@ -108,7 +100,7 @@ class SeparationWorker(QRunnable):
                     )
                 )
             else:
-                result = loop.run_until_complete(
+                result = asyncio.run(
                     self._separation_service.separate(
                         self._file_path, progress_callback=progress
                     )
@@ -127,8 +119,6 @@ class SeparationWorker(QRunnable):
                 self._exception = e
                 logger.error(f"Separation failed: {e}")
                 self.signals.error.emit(e)
-        finally:
-            loop.close()
 
 
 class ExportWorker(QRunnable):
@@ -155,10 +145,8 @@ class ExportWorker(QRunnable):
 
     def run(self) -> None:
         """Run the export in a separate thread."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         try:
-            result = loop.run_until_complete(
+            result = asyncio.run(
                 self._export_service.export_stems(
                     self._stems,
                     self._output_dir,
@@ -168,8 +156,6 @@ class ExportWorker(QRunnable):
         except Exception as e:
             logger.error(f"Export failed: {e}")
             self.signals.error.emit(e)
-        finally:
-            loop.close()
 
 
 class MainController(QObject):

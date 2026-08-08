@@ -1,7 +1,5 @@
 """Benchmarks for the audio loading and preprocessing pipeline."""
 
-from __future__ import annotations
-
 import asyncio
 from pathlib import Path
 
@@ -16,11 +14,11 @@ from engine.audio.preprocessor import AudioPreprocessor
 # one per call (asyncio.run). Loop creation is a measurable, noisy overhead
 # on fast benchmarks and widens the median spread that the regression gate
 # compares against.
-_LOOP = asyncio.new_event_loop()
+_runner = asyncio.Runner()
 
 
 def _run(coro) -> object:
-    return _LOOP.run_until_complete(coro)
+    return _runner.run(coro)
 
 
 @pytest.fixture(scope="session")

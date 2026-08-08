@@ -1,7 +1,5 @@
 """Benchmarks for export writer and batch exporter."""
 
-from __future__ import annotations
-
 import asyncio
 from pathlib import Path
 
@@ -12,18 +10,18 @@ from engine.export.batch_exporter import BatchExporter
 from engine.export.config import ExportConfig, ExportFormat
 from engine.export.writer import ExportWriter
 
-_loop: asyncio.AbstractEventLoop | None = None
+_runner: asyncio.Runner | None = None
 
 
-def _get_loop() -> asyncio.AbstractEventLoop:
-    global _loop
-    if _loop is None or _loop.is_closed():
-        _loop = asyncio.new_event_loop()
-    return _loop
+def _get_runner() -> asyncio.Runner:
+    global _runner
+    if _runner is None:
+        _runner = asyncio.Runner()
+    return _runner
 
 
 def _run(coro) -> object:
-    return _get_loop().run_until_complete(coro)
+    return _get_runner().run(coro)
 
 
 @pytest.fixture
