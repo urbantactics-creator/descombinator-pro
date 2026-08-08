@@ -69,9 +69,9 @@ class TestMainController:
 
     def test_handle_separate_requested_no_file(self, main_controller):
         """Test handling separation request when no file is loaded.
-        
+
         Should emit separation_failed signal.
-        We can't easily test signals without qtbot, but we can verify 
+        We can't easily test signals without qtbot, but we can verify
         the method doesn't crash.
         """
         main_controller.handle_separate_requested()

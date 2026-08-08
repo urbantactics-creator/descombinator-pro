@@ -124,18 +124,12 @@ class TestPlaybackServiceConcurrency:
 
         # Start multiple mute/unmute operations
         tasks = [
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_track_muted, "vocals", True)
-            ),
+            asyncio.create_task(asyncio.to_thread(svc.set_track_muted, "vocals", True)),
             asyncio.create_task(
                 asyncio.to_thread(svc.set_track_muted, "vocals", False)
             ),
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_track_muted, "drums", True)
-            ),
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_track_muted, "drums", False)
-            ),
+            asyncio.create_task(asyncio.to_thread(svc.set_track_muted, "drums", True)),
+            asyncio.create_task(asyncio.to_thread(svc.set_track_muted, "drums", False)),
         ]
 
         # Wait for all to complete
@@ -160,18 +154,12 @@ class TestPlaybackServiceConcurrency:
 
         # Start multiple active stems operations
         tasks = [
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_active_stems, ["vocals"])
-            ),
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_active_stems, ["drums"])
-            ),
+            asyncio.create_task(asyncio.to_thread(svc.set_active_stems, ["vocals"])),
+            asyncio.create_task(asyncio.to_thread(svc.set_active_stems, ["drums"])),
             asyncio.create_task(
                 asyncio.to_thread(svc.set_active_stems, ["vocals", "drums"])
             ),
-            asyncio.create_task(
-                asyncio.to_thread(svc.set_active_stems, [])
-            ),
+            asyncio.create_task(asyncio.to_thread(svc.set_active_stems, [])),
         ]
 
         # Wait for all to complete
