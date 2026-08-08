@@ -101,7 +101,9 @@ class TestConcurrentSeparation:
         started = asyncio.Event()
         release = asyncio.Event()
 
-        async def blocking_separate(audio: np.ndarray, sample_rate: int) -> dict[str, np.ndarray]:
+        async def blocking_separate(
+            audio: np.ndarray, sample_rate: int
+        ) -> dict[str, np.ndarray]:
             started.set()
             await release.wait()
             return {
