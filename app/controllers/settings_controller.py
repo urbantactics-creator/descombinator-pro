@@ -88,7 +88,7 @@ class SettingsController(QObject):
             bool: True if successful, False otherwise
         """
         try:
-            if key not in self._settings.model_fields:
+            if key not in SettingsModel.model_fields:
                 logger.warning(f"Unknown setting: {key}")
                 return False
             setattr(self._settings, key, value)

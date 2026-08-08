@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-Descombinator Pro is a desktop application that separates audio into **vocals** and **instrumental** tracks using AI, entirely on-device. Built with Python 3.12+, PySide6, PyTorch, and Demucs.
+Descombinator Pro is a desktop application that separates audio into **vocals** and **instrumental** tracks using AI, entirely on-device. Built with Python 3.14+, PySide6, PyTorch, and Demucs.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ descombinator/
 
 ### Python
 
-- **Python 3.12+** — Use modern type hints (`X | None`, not `Optional[X]`)
+- **Python 3.14+** — Use modern type hints (`X | None`, not `Optional[X]`)
 - **Async-first** — All I/O operations use `async def`
 - **Type hints** — Required on all function signatures
 - **Docstrings** — Module-level and class-level docstrings required

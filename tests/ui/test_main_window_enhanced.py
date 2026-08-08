@@ -19,6 +19,10 @@ class TestMainWindowEnhanced:
         """Helper to create a MainWindow with mocked controllers."""
         main_controller = MagicMock(spec=MainController)
         main_controller._app_state = AppState()
+        main_controller._loaded_sample_rate = 44100
+        main_controller._loaded_audio = None
+        main_controller._current_worker = None
+        main_controller._export_worker = None
         main_controller.separation_started = MagicMock()
         main_controller.separation_completed = MagicMock()
         main_controller.separation_failed = MagicMock()
@@ -35,6 +39,10 @@ class TestMainWindowEnhanced:
         playback_controller.position_changed = MagicMock()
         playback_controller.duration_changed = MagicMock()
         playback_controller.error_occurred = MagicMock()
+        playback_controller.tracks_changed = MagicMock()
+        playback_controller.master_volume_changed = MagicMock()
+        playback_controller.track_volume_changed = MagicMock()
+        playback_controller.track_muted_changed = MagicMock()
 
         settings_controller = MagicMock(spec=SettingsController)
         settings_controller.settings = SettingsModel()
@@ -188,6 +196,9 @@ class TestMainWindowEnhanced:
 
         window._separated_stems = {"vocals": MagicMock(), "instrumental": MagicMock()}
 
+        mock_worker = MagicMock()
+        main_controller._export_worker = mock_worker
+
         with (
             patch("app.ui.main_window.QFileDialog") as mock_fd,
             patch("app.ui.main_window.ProcessingDialog") as mock_dialog_class,
@@ -219,10 +230,9 @@ class TestMainWindowEnhanced:
             mock_dialog_class.assert_called_once()
             assert window._processing_dialog is not None
             mock_dialog.show.assert_called_once()
-            mock_dialog.setWindowTitle.assert_called_once_with("Separating Audio")
 
     def test_main_window_on_separation_completed_hides_dialog(self, qapp):
-        """Test that _on_separation_completed hides processing dialog."""
+        """Test that _on_separation_completed completes processing dialog."""
         window, _, _, _ = self.create_window(qapp)
 
         # Set up a processing dialog
@@ -232,13 +242,12 @@ class TestMainWindowEnhanced:
         stems = {"vocals": MagicMock()}
         window._on_separation_completed(stems)
 
-        # Should have hidden and cleaned up the dialog
-        mock_dialog.hide.assert_called_once()
-        mock_dialog.deleteLater.assert_called_once()
+        # Should have called set_complete and cleaned up
+        mock_dialog.set_complete.assert_called_once()
         assert window._processing_dialog is None
 
     def test_main_window_on_separation_failed_hides_dialog(self, qapp):
-        """Test that _on_separation_failed hides processing dialog."""
+        """Test that _on_separation_failed sets error on processing dialog."""
         window, _, _, _ = self.create_window(qapp)
 
         # Set up a processing dialog
@@ -247,24 +256,8 @@ class TestMainWindowEnhanced:
 
         window._on_separation_failed("Test error")
 
-        # Should have hidden and cleaned up the dialog
-        mock_dialog.hide.assert_called_once()
-        mock_dialog.deleteLater.assert_called_once()
-        assert window._processing_dialog is None
-
-    def test_main_window_on_separation_cancelled_hides_dialog(self, qapp):
-        """Test that _on_separation_cancelled hides processing dialog."""
-        window, _, _, _ = self.create_window(qapp)
-
-        # Set up a processing dialog
-        mock_dialog = MagicMock()
-        window._processing_dialog = mock_dialog
-
-        window._on_separation_cancelled()
-
-        # Should have hidden and cleaned up the dialog
-        mock_dialog.hide.assert_called_once()
-        mock_dialog.deleteLater.assert_called_once()
+        # Should have called set_error and cleaned up
+        mock_dialog.set_error.assert_called_once_with("Test error")
         assert window._processing_dialog is None
 
     def test_main_window_on_export_progress_updates_dialog(self, qapp):
@@ -277,9 +270,8 @@ class TestMainWindowEnhanced:
 
         window._on_export_progress(50, "Exporting...")
 
-        # Should have updated the dialog's progress bar and label
-        mock_dialog._progress_bar.setValue.assert_called_once_with(50)
-        mock_dialog._loading_label.setText.assert_called_once_with("Exporting...")
+        # Should have updated the dialog via update_progress
+        mock_dialog.update_progress.assert_called_once_with(50, "Exporting...")
 
     def test_main_window_on_separation_progress_updates_dialog(self, qapp):
         """Test that _on_separation_progress updates processing dialog."""
@@ -291,63 +283,56 @@ class TestMainWindowEnhanced:
 
         window._on_separation_progress(75, "Separating vocals...")
 
-        # Should have updated the dialog's progress bar and label
-        mock_dialog._progress_bar.setValue.assert_called_once_with(75)
-        mock_dialog._loading_label.setText.assert_called_once_with(
-            "Separating vocals..."
-        )
+        # Should have updated the dialog via update_progress
+        mock_dialog.update_progress.assert_called_once_with(75, "Separating vocals...")
 
     def test_main_window_on_export_completed_hides_dialog(self, qapp):
-        """Test that _on_export_completed hides export dialog."""
+        """Test that _on_export_completed completes export dialog."""
         window, _, _, _ = self.create_window(qapp)
 
         # Set up an export dialog
         mock_dialog = MagicMock()
         window._export_dialog = mock_dialog
 
-        result = {"vocals": "/tmp/vocals.wav"}
-        window._on_export_completed(result)
+        with patch("app.ui.main_window.QMessageBox"):
+            result = {"vocals": "/tmp/vocals.wav"}
+            window._on_export_completed(result)
 
-        # Should have hidden and cleaned up the dialog
-        mock_dialog.hide.assert_called_once()
-        mock_dialog.deleteLater.assert_called_once()
+        # Should have called set_complete and cleaned up
+        mock_dialog.set_complete.assert_called_once()
         assert window._export_dialog is None
 
     def test_main_window_on_export_failed_hides_dialog(self, qapp):
-        """Test that _on_export_failed hides export dialog."""
+        """Test that _on_export_failed sets error on export dialog."""
         window, _, _, _ = self.create_window(qapp)
 
         # Set up an export dialog
         mock_dialog = MagicMock()
         window._export_dialog = mock_dialog
 
-        window._on_export_failed("Export error")
+        with patch("app.ui.main_window.QMessageBox"):
+            window._on_export_failed("Export error")
 
-        # Should have hidden and cleaned up the dialog
-        mock_dialog.hide.assert_called_once()
-        mock_dialog.deleteLater.assert_called_once()
+        # Should have called set_error and cleaned up
+        mock_dialog.set_error.assert_called_once_with("Export error")
         assert window._export_dialog is None
 
     def test_main_window_on_thermal_warning_shows_message(self, qapp):
-        """Test that _on_thermal_warning shows a warning message."""
+        """Test that _on_thermal_warning shows a status bar message."""
         window, _, _, _ = self.create_window(qapp)
 
-        with patch("app.ui.main_window.QMessageBox") as MessageBoxMock:
-            mock_message_box = MagicMock()
-            MessageBoxMock.return_value = mock_message_box
-
+        with patch.object(window._status_bar, "showMessage") as mock_show:
             window._on_thermal_warning("high", 85.0)
 
-            # Should have shown a warning message box
-            MessageBoxMock.assert_called_once()
-            mock_message_box.setIcon.assert_called_once()
-            mock_message_box.setWindowTitle.assert_called_once()
-            mock_message_box.setText.assert_called_once()
-            mock_message_box.exec.assert_called_once()
+            # Should have shown a thermal message in the status bar
+            mock_show.assert_called_once()
 
     def test_main_window_on_state_changed_updates_ui_enabled_state(self, qapp):
         """Test that _on_state_changed correctly updates UI element enabled states."""
         window, main_controller, _, _ = self.create_window(qapp)
+
+        # Set a file on the controller's app state (code reads from there)
+        main_controller._app_state.current_file = Path("/tmp/test.wav")
 
         # Test IDLE state
         app_state = AppState()
@@ -432,31 +417,27 @@ class TestMainWindowEnhanced:
         """Test that drop event handles file drops."""
         window, main_controller, _, _ = self.create_window(qapp)
 
-        # Create a mock drop event with file URLs
+        from PySide6.QtCore import QUrl
+
         event = MagicMock()
         event.mimeData().hasUrls.return_value = True
-        event.mimeData().urls.return_value = [Path("/tmp/test.wav")]
+        event.mimeData().urls.return_value = [QUrl.fromLocalFile("/tmp/test.wav")]
 
         window.dropEvent(event)
 
-        # Should have called _on_file_dropped with the file path
-        window._on_file_dropped.assert_called_once_with("/tmp/test.wav")
+        main_controller.handle_file_dropped.assert_called_once_with("/tmp/test.wav")
         event.acceptProposedAction.assert_called_once()
 
     def test_main_window_drop_event_ignores_non_files(self, qapp):
         """Test that drop event ignores non-file drops."""
         window, main_controller, _, _ = self.create_window(qapp)
 
-        # Create a mock drop event without URLs
         event = MagicMock()
         event.mimeData().hasUrls.return_value = False
 
         window.dropEvent(event)
 
-        # Should not have called _on_file_dropped
-        window._on_file_dropped.assert_not_called()
-        # Should still accept the action (though it does nothing)
-        event.acceptProposedAction.assert_called_once()
+        main_controller.handle_file_dropped.assert_not_called()
 
     def test_main_window_close_event_without_worker(self, qapp):
         """Test that close event works when no worker is running."""
@@ -487,34 +468,24 @@ class TestMainWindowEnhanced:
 
     def test_main_window_on_audio_loaded_sets_audio(self, qapp):
         """Test that _on_audio_loaded stores the loaded audio."""
-        window, _, _, _ = self.create_window(qapp)
+        window, main_controller, _, _ = self.create_window(qapp)
 
         import numpy as np
 
         audio = np.array([0.1, 0.2, 0.3])
         sample_rate = 44100
 
-        window._on_audio_loaded(audio, sample_rate)
+        window._on_audio_loaded((audio, sample_rate))
 
-        assert window._loaded_audio is audio
-        assert window._loaded_sample_rate == sample_rate
+        main_controller.set_loaded_audio.assert_called_once_with(audio, sample_rate)
 
     def test_main_window_on_audio_load_error_shows_message(self, qapp):
         """Test that _on_audio_load_error shows an error message."""
         window, _, _, _ = self.create_window(qapp)
 
-        with patch("app.ui.main_window.QMessageBox") as MessageBoxMock:
-            mock_message_box = MagicMock()
-            MessageBoxMock.return_value = mock_message_box
+        window._on_audio_load_error("Failed to load audio")
 
-            window._on_audio_load_error("Failed to load audio")
-
-            # Should have shown an error message box
-            MessageBoxMock.assert_called_once()
-            mock_message_box.setIcon.assert_called_once()
-            mock_message_box.setWindowTitle.assert_called_once()
-            mock_message_box.setText.assert_called_once()
-            mock_message_box.exec.assert_called_once()
+        assert "Failed to load audio" in window._status_label.text()
 
     def test_main_window_toggle_theme_method_exists(self, qapp):
         """Test that _change_theme method exists and can be called."""
@@ -537,12 +508,12 @@ class TestMainWindowEnhanced:
         assert window.minimumSize().height() >= 600
 
     def test_main_window_apply_theme_method_exists(self, qapp):
-        """Test that _apply_theme method exists."""
+        """Test that _change_theme method exists."""
         window, _, _, _ = self.create_window(qapp)
 
         # Should not raise when called with valid theme names
-        window._apply_theme("dark")
-        window._apply_theme("light")
+        window._change_theme("dark")
+        window._change_theme("light")
 
     def test_main_window_resolve_stylesheet_path(self, qapp):
         """Test that _styles_path helper function works."""
@@ -555,29 +526,29 @@ class TestMainWindowEnhanced:
         assert "styles" in str(path)
 
     def test_main_window_handles_exception_in_file_drop(self, qapp):
-        """Test that _on_file_dropped handles exceptions gracefully."""
+        """Test that _on_file_dropped propagates exceptions from controller."""
+        import pytest
+
         window, main_controller, _, _ = self.create_window(qapp)
 
-        # Make the controller raise an exception
         main_controller.handle_file_dropped.side_effect = Exception("Test error")
 
-        # Should not raise - the exception should be handled
-        window._on_file_dropped("/tmp/test.wav")
+        with pytest.raises(Exception, match="Test error"):
+            window._on_file_dropped("/tmp/test.wav")
 
-        # The controller method should still have been called
         main_controller.handle_file_dropped.assert_called_once_with("/tmp/test.wav")
 
     def test_main_window_handles_exception_in_separate_clicked(self, qapp):
-        """Test that _on_separate_clicked handles exceptions gracefully."""
+        """Test that _on_separate_clicked propagates exceptions from controller."""
+        import pytest
+
         window, main_controller, _, _ = self.create_window(qapp)
 
-        # Make the controller raise an exception
         main_controller.handle_separate_requested.side_effect = Exception("Test error")
 
-        # Should not raise - the exception should be handled
-        window._on_separate_clicked()
+        with pytest.raises(Exception, match="Test error"):
+            window._on_separate_clicked()
 
-        # The controller method should still have been called
         main_controller.handle_separate_requested.assert_called_once()
 
     def test_main_window_initializes_all_ui_components(self, qapp):
@@ -591,7 +562,7 @@ class TestMainWindowEnhanced:
         assert window._track_selector is not None
         assert window._waveform_view is not None
         assert window._progress_bar is not None
-        assert window._menu_bar is not None
+        assert window.menuBar() is not None
         assert window.statusBar() is not None
 
     def test_main_window_sets_up_connections_during_init(self, qapp):

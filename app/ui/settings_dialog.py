@@ -216,9 +216,7 @@ class SettingsDialog(QDialog):
             self._settings.high_contrast = self._high_contrast_check.isChecked()
 
             self._settings_controller.save_settings(self._settings)
-            self._settings_controller._settings = SettingsModel(
-                **self._settings.model_dump()
-            )
+            self._settings_controller._settings = self._settings.model_copy()
             self._settings_controller.settings_changed.emit(self._settings)
             self.accept()
         except Exception as e:
