@@ -176,43 +176,33 @@ class ExportWriter:
         sample_rate: int,
     ) -> None:
         """Write M4A file using ffmpeg."""
-
-        def _write_sync() -> None:
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
-                temp_path = temp_wav.name
-            try:
-                sf.write(str(temp_path), audio, sample_rate)
-
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    str(temp_path),
-                    "-c:a",
-                    "aac",
-                    "-b:a",
-                    f"{self._config.bitrate // 1000}k",
-                    "-ar",
-                    str(sample_rate),
-                    str(path),
-                ]
-
-                if path.exists():
-                    logger.info(f"Overwriting existing file: {path.name}")
-                subprocess.run(
-                    cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE
-                )
-                logger.debug(f"Wrote M4A: {path.name}")
-            except subprocess.CalledProcessError as e:
-                raise WriteError(f"FFmpeg failed to write M4A: {e}") from e
-            finally:
-                with suppress(OSError):
-                    Path(temp_path).unlink()
-
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
+            temp_path = temp_wav.name
         try:
-            await asyncio.to_thread(_write_sync)
-        except WriteError:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to write M4A {path}: {e}")
-            raise WriteError(f"Cannot write {path.name}: {e}") from e
+            sf.write(str(temp_path), audio, sample_rate)
+
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(temp_path),
+                "-c:a",
+                "aac",
+                "-b:a",
+                f"{self._config.bitrate // 1000}k",
+                "-ar",
+                str(sample_rate),
+                str(path),
+            ]
+
+            if path.exists():
+                logger.info(f"Overwriting existing file: {path.name}")
+            subprocess.run(
+                cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE
+            )
+            logger.debug(f"Wrote M4A: {path.name}")
+        except subprocess.CalledProcessError as e:
+            raise WriteError(f"FFmpeg failed to write M4A: {e}") from e
+        finally:
+            with suppress(OSError):
+                Path(temp_path).unlink()
