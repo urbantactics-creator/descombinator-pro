@@ -91,11 +91,19 @@ except DemucsError as e:
     raise SeparationError(str(e)) from e
 ```
 
+### Settings Model
+
+- `app/models/settings_model.py` — `SettingsModel` holds user preferences (model, format, theme, accessibility, and export options).
+- Uses `model_config = ConfigDict(use_enum_values=True)` so `StrEnum` fields (`default_model`, `default_format`) serialize to `str` and accept both `str` and enum members. This silences the Pydantic enum-serialization warning on `model_dump()` / JSON round-trips.
+- **Do not** add `use_enum_values=True` to engine configs (`InferenceConfig`, `ExportConfig`, `SeparationConfig`); the Demucs pipeline reads enum *members*, and converting them to `str` would break member access.
+- Export options (`sample_rate`, `bit_depth`, `bitrate` in bps, `normalize`, `fade_in`, `fade_out`) are stored in `SettingsModel` with constraints mirroring `ExportConfig`. The dialog displays `bitrate` in kbps and converts on load/save.
+- `MainController._build_export_config()` builds an `ExportConfig` from settings and applies it via `ExportService.update_config()` before export; `on_settings_changed()` rebuilds the separation config when settings change via the dialog.
+
 ## Testing
 
 - **Framework**: `pytest` with `pytest-asyncio` and `pytest-qt`
 - **Coverage**: 85% minimum for engine, 70% for UI (Phase 9 will raise these)
-- **Current status**: 308 unit/integration tests passing, 17 UI tests passing
+- **Current status**: 900+ unit/integration and UI tests passing (incl. settings/export wiring and offscreen validation suites); measured coverage ~90%
 - **Test data**: Store in `tests/fixtures/`, use small files (< 1 MB)
 - **Mocking**: Mock external dependencies (file system, network, models)
 

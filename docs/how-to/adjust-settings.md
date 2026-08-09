@@ -23,6 +23,18 @@ Set the default export format:
 - **MP3** — Lossy, smaller files
 - **M4A** — Lossy, Apple ecosystem
 
+## Export Options
+
+These settings control how separated tracks are written to disk and are **applied automatically at export time** (they were previously ignored — now wired through `SettingsModel` → `ExportConfig`).
+
+- **Sample Rate:** 8000–192000 Hz (default 44100 Hz).
+- **Bit Depth:** 8–32 bits for WAV/FLAC (default 16 bits).
+- **Bitrate:** 32–320 kbps for MP3/M4A (the dialog shows kbps; stored as bps). Default 192 kbps.
+- **Normalize:** Peak-normalize output to consistent volume.
+- **Fade In / Fade Out:** 0–10 seconds to avoid clicks at track boundaries.
+
+> The dialog shows bitrate in **kbps** and converts to **bps** when saving; `SettingsModel` stores bitrate in bps to match `ExportConfig`.
+
 ## Performance Settings
 
 ### Max Workers

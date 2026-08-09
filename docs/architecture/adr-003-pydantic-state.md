@@ -39,6 +39,21 @@ We use **Pydantic `BaseModel`** for all state models and **`enum.Enum`** for sta
 - Slight overhead from validation (negligible for this use case)
 - Learning curve for Pydantic v2 API
 
+
+### SettingsModel: `use_enum_values=True`
+
+`SettingsModel` opts into `ConfigDict(use_enum_values=True)` so its `StrEnum` fields
+(`default_model`, `default_format`) serialize to their `str` values and accept both
+`str` and enum members. This is required because settings can be mutated via `setattr`
+(e.g. `update_setting` / `update_settings`) with plain `str` values, which would
+otherwise trigger a Pydantic serialization warning on `model_dump()`.
+
+**Convention:** `use_enum_values=True` is applied **only** to `SettingsModel`. The
+engine configs (`InferenceConfig`, `ExportConfig`, `SeparationConfig`) deliberately do
+**not** use it — the Demucs pipeline reads enum *members* (e.g. `ModelName(str(...))`),
+and converting them to `str` would break member access. All comparisons use `StrEnum`
+equality (`str == ModelName.X` is `True`), so the `str` storage in `SettingsModel` is safe.
+
 ## Alternatives Considered
 
 - **Dataclasses:** Rejected — no runtime validation, no serialization helpers

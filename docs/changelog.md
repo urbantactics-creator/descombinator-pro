@@ -69,6 +69,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added UI tests for status bar progress indicator
 - Added integration tests for screen transitions
 
+### Fixed
+
+- **Settings enum serialization warning:** `SettingsModel` now uses `model_config = ConfigDict(use_enum_values=True)`, eliminating the `PydanticSerializationUnexpectedValue` warning on `model_dump()` / JSON round-trips (e.g. when saving settings with plain-`str` enum values).
+- **Export options were silently dropped:** `SettingsDialog` now loads and saves all six export options (sample rate, bit depth, bitrate, normalize, fade in/out) with correct kbps↔bps and seconds↔milliseconds conversion. Persisted export settings are now applied at export time via `MainController._build_export_config()` + `ExportService.update_config()`.
+
+### Changed
+
+- **Export settings take effect:** `MainController.on_settings_changed()` rebuilds the separation config when settings change through the dialog, so model/segment edits apply without a separate `update_settings()` call.
+- **Tests:** Added offscreen validation suites (`tests/ui/test_settings_validation.py`, `tests/unit/app/controllers/test_export_config_from_settings.py`) covering the settings/export wiring.
+
 ## [0.1.0] - 2026-08-02
 
 ### Added

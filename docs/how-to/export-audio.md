@@ -15,7 +15,7 @@ Learn how to export separated tracks in different formats and with custom settin
 
 ### Format Selection
 
-Choose the output format in the export dialog or set a default in **Settings** → **Output Format**.
+Choose the output format in the export dialog or set a default in **Settings** → **Output Format**. All export options (sample rate, bit depth, bitrate, normalization, fades) are configured in **Settings** and applied automatically at export time.
 
 ### Sample Rate
 
