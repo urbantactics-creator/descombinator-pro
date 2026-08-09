@@ -10,18 +10,9 @@ from engine.export.batch_exporter import BatchExporter
 from engine.export.config import ExportConfig, ExportFormat
 from engine.export.writer import ExportWriter
 
-_runner: asyncio.Runner | None = None
-
-
-def _get_runner() -> asyncio.Runner:
-    global _runner
-    if _runner is None:
-        _runner = asyncio.Runner()
-    return _runner
-
 
 def _run(coro) -> object:
-    return _get_runner().run(coro)
+    return asyncio.run(coro)
 
 
 @pytest.fixture
