@@ -2,7 +2,7 @@
 name = "descombinator"
 version = "0.1.0"
 description = "Audio source separation and processing engine"
-requires-python = ">=3.14"
+requires-python = ">=3.14.7"
 dependencies = [
     "torch>=2.13.0",
     "torchaudio>=2.11.0",
