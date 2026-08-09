@@ -219,6 +219,9 @@ class MainWindow(QMainWindow):
         self._main_controller.separation_progress.connect(self._on_separation_progress)
         self._main_controller.thermal_warning.connect(self._on_thermal_warning)
         self._settings_controller.settings_changed.connect(self._on_settings_changed)
+        self._settings_controller.settings_changed.connect(
+            self._main_controller.on_settings_changed
+        )
         self._main_controller.export_progress.connect(self._on_export_progress)
         self._main_controller.export_completed.connect(self._on_export_completed)
         self._main_controller.export_failed.connect(self._on_export_failed)

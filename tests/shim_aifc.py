@@ -14,9 +14,9 @@ if "aifc" in sys.modules:
 
 # Build a lightweight stub that mimics the attributes used by audioread.
 _stub = types.ModuleType("aifc")
-setattr(_stub, "open", open)  # passthrough to built‑in open
-setattr(_stub, "COMPRESS_CMP", 0x01)  # constants audioread expects
-setattr(_stub, "COMPRESS_MAX_SIZE_k", 512 * 1024)
-setattr(_stub, "COMPRESS_LEVEL", 6)
+_stub.open = open  # type: ignore[attr-defined]  # passthrough to built‑in open
+_stub.COMPRESS_CMP = 1  # type: ignore[attr-defined]  # constants audioread expects
+_stub.COMPRESS_MAX_SIZE_k = 512 * 1024  # type: ignore[attr-defined]
+_stub.COMPRESS_LEVEL = 6  # type: ignore[attr-defined]
 # Install the stub into sys.modules
 sys.modules["aifc"] = _stub

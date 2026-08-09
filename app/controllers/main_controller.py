@@ -17,6 +17,7 @@ from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
 from engine.demucs.config import ModelName, SeparationConfig
 from engine.demucs.errors import SeparationError
+from engine.export.config import ExportConfig, ExportFormat
 from engine.performance.thermal import ThermalMonitor
 
 
@@ -296,6 +297,24 @@ class MainController(QObject):
         self._app_state.selected_stems = stems
         # Note: We don't update processing status here as this is just selection
 
+    def _build_export_config(self) -> ExportConfig:
+        """Build an ExportConfig from the current app settings."""
+        s = self._app_state.settings
+        fmt = (
+            s.default_format
+            if isinstance(s.default_format, ExportFormat)
+            else ExportFormat(str(s.default_format))
+        )
+        return ExportConfig(
+            format=fmt,
+            sample_rate=s.sample_rate,
+            bit_depth=s.bit_depth,
+            bitrate=s.bitrate,
+            normalize=s.normalize,
+            fade_in=s.fade_in,
+            fade_out=s.fade_out,
+        )
+
     def handle_export_requested(self, output_dir: str, stems: dict[str, Any]) -> None:
         """Handle the user requesting to export separated stems.
 
@@ -320,6 +339,9 @@ class MainController(QObject):
         # Connect worker signals
         self._export_worker.signals.finished.connect(self._on_export_finished)
         self._export_worker.signals.error.connect(self._on_export_error)
+
+        # Apply persisted export settings so user choices drive the writer
+        self._export_service.update_config(self._build_export_config())
 
         # Start the worker
         self._thread_pool.start(self._export_worker)
@@ -395,6 +417,23 @@ class MainController(QObject):
 
         # Rebuild the separation service so new engine settings take effect.
         # Skip while a worker is running: it holds a reference to the old service.
+        if self._current_worker is None:
+            self._separation_service = SeparationService(
+                self._build_separation_config()
+            )
+        self.state_changed.emit(self._app_state)
+
+    def on_settings_changed(self, settings: SettingsModel) -> None:
+        """Rebuild engine configs when settings change via the dialog.
+
+        The SettingsDialog persists through SettingsController and emits
+        ``settings_changed``; this keeps the live separation config in sync
+        without requiring a separate ``update_settings()`` call.
+
+        Args:
+            settings: The newly persisted settings model.
+        """
+        self._app_state.settings = settings
         if self._current_worker is None:
             self._separation_service = SeparationService(
                 self._build_separation_config()

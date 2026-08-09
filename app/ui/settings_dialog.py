@@ -100,12 +100,12 @@ class SettingsDialog(QDialog):
         export_form.addRow(self._normalize_check)
 
         self._fade_in_spin = QSpinBox()
-        self._fade_in_spin.setRange(0, 1000)
+        self._fade_in_spin.setRange(0, 10000)
         self._fade_in_spin.setSuffix(" ms")
         export_form.addRow("Fade In:", self._fade_in_spin)
 
         self._fade_out_spin = QSpinBox()
-        self._fade_out_spin.setRange(0, 1000)
+        self._fade_out_spin.setRange(0, 10000)
         self._fade_out_spin.setSuffix(" ms")
         export_form.addRow("Fade Out:", self._fade_out_spin)
 
@@ -176,12 +176,12 @@ class SettingsDialog(QDialog):
         if fmt_idx >= 0:
             self._format_combo.setCurrentIndex(fmt_idx)
 
-        self._sample_rate_spin.setValue(44100)
-        self._bit_depth_combo.setCurrentText("16")
-        self._bitrate_spin.setValue(192)
-        self._normalize_check.setChecked(True)
-        self._fade_in_spin.setValue(0)
-        self._fade_out_spin.setValue(0)
+        self._sample_rate_spin.setValue(s.sample_rate)
+        self._bit_depth_combo.setCurrentText(str(s.bit_depth))
+        self._bitrate_spin.setValue(s.bitrate // 1000)
+        self._normalize_check.setChecked(s.normalize)
+        self._fade_in_spin.setValue(int(s.fade_in * 1000))
+        self._fade_out_spin.setValue(int(s.fade_out * 1000))
 
         self._output_dir_label.setText(str(s.output_dir))
 
@@ -214,6 +214,12 @@ class SettingsDialog(QDialog):
             self._settings.pin_memory = self._pin_memory_check.isChecked()
             self._settings.reduced_motion = self._reduced_motion_check.isChecked()
             self._settings.high_contrast = self._high_contrast_check.isChecked()
+            self._settings.sample_rate = self._sample_rate_spin.value()
+            self._settings.bit_depth = int(self._bit_depth_combo.currentText())
+            self._settings.bitrate = self._bitrate_spin.value() * 1000
+            self._settings.normalize = self._normalize_check.isChecked()
+            self._settings.fade_in = self._fade_in_spin.value() / 1000.0
+            self._settings.fade_out = self._fade_out_spin.value() / 1000.0
 
             self._settings_controller.save_settings(self._settings)
             self._settings_controller._settings = self._settings.model_copy()

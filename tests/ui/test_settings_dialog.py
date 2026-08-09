@@ -113,3 +113,59 @@ def test_settings_dialog_save_error(qapp):
         mock_warning.assert_called_once()
     finally:
         _cleanup(dialog)
+
+
+def test_settings_dialog_export_roundtrip(qapp):
+    """Test that export controls load and save with kbps<->bps conversion."""
+    dialog, controller = _make_dialog(qapp)
+    try:
+        # Change every export control
+        dialog._sample_rate_spin.setValue(48000)
+        dialog._bit_depth_combo.setCurrentText("24")
+        dialog._bitrate_spin.setValue(256)  # kbps
+        dialog._normalize_check.setChecked(False)
+        dialog._fade_in_spin.setValue(1500)  # ms
+        dialog._fade_out_spin.setValue(500)  # ms
+        dialog._on_save()
+
+        saved = controller._settings
+        assert saved.sample_rate == 48000
+        assert saved.bit_depth == 24
+        assert saved.bitrate == 256000  # kbps -> bps
+        assert saved.normalize is False
+        assert saved.fade_in == 1.5  # ms -> s
+        assert saved.fade_out == 0.5  # ms -> s
+    finally:
+        _cleanup(dialog)
+
+
+def test_settings_dialog_loads_export_values(qapp):
+    """Test that persisted export values are loaded into the controls."""
+    controller = MagicMock(spec=SettingsController)
+    controller._settings = MagicMock()
+    controller._settings.model_dump.return_value = {
+        "output_dir": Path("/tmp/out"),
+        "default_model": ModelName.HTDEMUCS_FT,
+        "default_format": ExportFormat.WAV,
+        "theme": "dark",
+        "segment": None,
+        "mixed_precision": False,
+        "pin_memory": False,
+        "sample_rate": 48000,
+        "bit_depth": 24,
+        "bitrate": 256000,
+        "normalize": False,
+        "fade_in": 1.5,
+        "fade_out": 0.5,
+    }
+    controller.settings_changed = MagicMock()
+    dialog = SettingsDialog(controller)
+    try:
+        assert dialog._sample_rate_spin.value() == 48000
+        assert dialog._bit_depth_combo.currentText() == "24"
+        assert dialog._bitrate_spin.value() == 256  # bps -> kbps
+        assert dialog._normalize_check.isChecked() is False
+        assert dialog._fade_in_spin.value() == 1500  # s -> ms
+        assert dialog._fade_out_spin.value() == 500  # s -> ms
+    finally:
+        _cleanup(dialog)
