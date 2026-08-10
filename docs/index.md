@@ -4,9 +4,28 @@ header h1,
 header p {
   display: none;
 }
+
+/* Center logo and intro */
+.logo-container {
+  text-align: center;
+  margin: 2em 0;
+}
+
+.logo-container img {
+  max-width: 359px;
+  height: auto;
+}
+
+.logo-container p {
+  margin-top: 1em;
+  font-size: 1.1em;
+}
+
+/* Navigation section */
 .docs-nav {
   margin: 2em 0;
 }
+
 .docs-nav h2 {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
@@ -14,30 +33,36 @@ header p {
   border-bottom: 1px solid #e0e0e0;
   padding-bottom: 0.3em;
 }
+
 .docs-nav ul {
   list-style: none;
   padding-left: 0;
   margin: 0.5em 0;
 }
+
 .docs-nav li {
   margin: 0.4em 0;
 }
+
 .docs-nav a {
   text-decoration: none;
 }
+
 .docs-nav a:hover {
   text-decoration: underline;
 }
 </style>
 
-<p><a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
-  <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" style="max-width: 359px; height: auto; display: block;" />
-</a></p>
+<div class="logo-container">
+  <a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
+    <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" />
+  </a>
+  <p>
+    <a href="#docs">📚 Documentation</a>
+  </p>
+</div>
 
-<p>Separate any song into vocals and instrumental tracks locally — fast, free, private.
-No internet required, no file uploads. Studio-quality results in seconds.</p>
-
-<div class="docs-nav">
+<div class="docs-nav" id="docs">
 
 ## 📚 Documentation
 
