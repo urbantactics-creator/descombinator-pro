@@ -1,15 +1,16 @@
 <style>
-/* Fixed top navigation */
+/* Fixed top navigation - clean style */
 .topnav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background: #1d1d1b;
-  color: #eee868;
+  background: #fff;
+  color: #000;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-bottom: 1px solid #eaeaea;
 }
 
 .topnav ul {
@@ -18,6 +19,7 @@
   padding: 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .topnav > ul > li {
@@ -28,28 +30,30 @@
 .topnav > ul > li > a {
   display: block;
   padding: 1em 1.2em;
-  color: #eee868;
+  color: #000;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95em;
-  border-right: 1px solid rgba(255,255,255,0.1);
-  transition: background 0.2s;
+  letter-spacing: 0.01em;
+  border-right: none;
+  transition: background 0.2s, color 0.2s;
 }
 
 .topnav > ul > li > a:hover {
-  background: rgba(255,255,255,0.05);
+  background: #f5f5f5;
+  color: #000;
 }
 
-/* Dropdown */
+/* Dropdown - clean style */
 .topnav .dropdown {
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
-  background: #1d1d1b;
+  background: #fff;
   min-width: 220px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  border-top: 2px solid #eee868;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-bottom: 2px solid #000;
 }
 
 .topnav li:hover .dropdown {
@@ -62,14 +66,15 @@
 
 .topnav .dropdown a {
   padding: 0.8em 1.2em;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid #f0f0f0;
   font-size: 0.9em;
-  color: #fff;
+  color: #000;
+  font-weight: 500;
 }
 
 .topnav .dropdown a:hover {
-  background: rgba(255,255,255,0.08);
-  color: #eee868;
+  background: #f5f5f5;
+  color: #000;
 }
 
 /* Mobile hamburger */
@@ -77,7 +82,8 @@
   display: none;
   background: none;
   border: none;
-  color: #eee868;
+  color: #000;
+  font-weight: 700;
   font-size: 1.5em;
   padding: 0.5em 1em;
   cursor: pointer;
@@ -103,13 +109,13 @@ body {
   }
   .topnav > ul > li > a {
     border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid #f0f0f0;
   }
   .topnav .dropdown {
     position: static;
     box-shadow: none;
-    border-top: none;
-    background: rgba(255,255,255,0.03);
+    border-bottom: 2px solid #000;
+    background: #fafafa;
   }
 }
 </style>
