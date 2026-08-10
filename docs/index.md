@@ -1,118 +1,48 @@
-<style>
-/* Hide default theme header content */
-header h1,
-header p {
-  display: none;
-}
+# Descombinator Pro
 
-/* Center logo and intro */
-.logo-container {
-  text-align: center;
-  margin: 2em 0;
-}
+Separate any song into vocals and instrumental tracks locally — fast, free, private.
+No internet required, no file uploads. Studio-quality results in seconds.
 
-.logo-container img {
-  max-width: 359px;
-  height: auto;
-}
+## What is Descombinator Pro?
 
-.logo-container p {
-  margin-top: 1em;
-  font-size: 1.1em;
-}
+Descombinator Pro is a desktop application that uses AI to separate audio tracks into **vocals** and **instrumental** stems. All processing happens on your machine — your files never leave your computer.
 
-/* Navigation section */
-.docs-nav {
-  margin: 2em 0;
-}
+## Key Features
 
-.docs-nav h2 {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  font-size: 1.2em;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 0.3em;
-}
+- **High-quality separation** powered by Demucs (htdemucs_ft, mdx_extra) and Open-Unmix (umxhq)
+- **Modern, minimal UI** built with PySide6 — dark/light theme support
+- **Fast local processing** with PyTorch acceleration
+- **On-device privacy** — no files uploaded to the internet
+- **Synchronized multi-track playback** with per-track volume/mute, seek, and gapless mixing
+- **Waveform visualization** with playback position tracking
+- **Multi-format export** — WAV, FLAC, MP3, M4A with metadata embedding
+- **Performance-tested** — 16 benchmark gates enforced in CI
+- **Thermal monitoring** — cross-platform CPU/GPU temperature sampling
+- **Cross-platform** support (Linux, macOS, Windows)
 
-.docs-nav ul {
-  list-style: none;
-  padding-left: 0;
-  margin: 0.5em 0;
-}
+## Who is this for?
 
-.docs-nav li {
-  margin: 0.4em 0;
-}
+- 🎵 **Musicians** wanting stems for remixing
+- 🎬 **Content creators** needing clean instrumentals
+- 🎛️ **Producers** needing high-quality stems
 
-.docs-nav a {
-  text-decoration: none;
-}
+## Quick Links
 
-.docs-nav a:hover {
-  text-decoration: underline;
-}
-</style>
+- [Installation](tutorials/installation.md) — Get up and running in minutes
+- [Quick Start](tutorials/quick-start.md) — Your first separation in 3 steps
+- [How-to Guides](how-to/export-audio.md) — Export, playback, and settings
+- [Architecture](explanations/architecture/overview.md) — How it works under the hood
+- [API Reference](api/python.md) — Python API documentation
 
-<div class="logo-container">
-  <a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
-    <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" />
-  </a>
-  <p>
-    <a href="#docs">📚 Documentation</a>
-  </p>
-</div>
+## Project Status
 
-<div class="docs-nav" id="docs">
-
-## 📚 Documentation
-
-### Getting Started
-- [Installation](tutorials/installation.md)
-- [Quick Start](tutorials/quick-start.md)
-- [Feature Walkthrough](tutorials/feature-walkthrough.md)
-
-### User Guides
-- [User Guide](guides/user-guide.md)
-- [How-to: Export Audio](how-to/export-audio.md)
-- [How-to: Play Mixed Tracks](how-to/play-mixed-tracks.md)
-- [How-to: Adjust Settings](how-to/adjust-settings.md)
-
-### Architecture
-- [Architecture Overview](explanations/architecture/overview.md)
-- [ADRs Index](architecture/README.md)
-- [ADR-001: Modular Monolith](architecture/adr-001-modular-monolith.md)
-- [ADR-002: Async-First](architecture/adr-002-async-first.md)
-- [ADR-003: Pydantic State](architecture/adr-003-pydantic-state.md)
-- [ADR-004: Service Layer](architecture/adr-004-service-layer.md)
-- [ADR-005: Separation Backends](architecture/adr-005-separation-backends.md)
-- [ADR-006: Benchmark Regression Gate](architecture/adr-006-benchmark-regression-gate.md)
-- [Dependency Graph](architecture/dependency-graph.md)
-- [Module Contracts](architecture/module-contracts.md)
-
-### Explanations
-- [Tech Stack](explanations/tech-stack.md)
-- [Separation Engine](explanations/architecture/separation-engine.md)
-- [Performance Optimization](explanations/architecture/performance-optimization.md)
-- [Design Decisions: Async-First](explanations/design-decisions/async-first-adr.md)
-- [Design Decisions: Modular Monolith](explanations/design-decisions/modular-monolith-adr.md)
-
-### API Reference
-- [API Overview](api/README.md)
-- [Python API](api/python.md)
-- [API Guides](api/guides.md)
-
-### Development
-- [Development Guide](development/development.md)
-- [Performance Guide](development/performance.md)
-- [Performance Tuning](development/performance/tuning.md)
-
-### Support
-- [FAQ](faq.md)
-- [Troubleshooting](troubleshooting/troubleshooting.md)
-
-### Project Info
-- [License Compliance](license-compliance/license-compliance.md)
-- [Technical Debt: Mypy Strict Coverage](technical-debt/mypy-strict-coverage.md)
-- [Changelog](changelog.md)
-
-</div>
+| Milestone | Status |
+| ----------- | -------- |
+| Vocal ↔ Instrumental separation | ✅ Complete |
+| Multi-instrument separation (Demucs) | ✅ Complete |
+| Playback & waveform visualization | ✅ Complete |
+| Export pipeline (WAV, FLAC, MP3, M4A) | ✅ Complete |
+| Performance optimization | ✅ Complete |
+| Testing & QA (665 tests) | ✅ Complete |
+| Packaging & distribution | ⚠️ In Progress |
+| Documentation & release | ⚠️ In Progress |
