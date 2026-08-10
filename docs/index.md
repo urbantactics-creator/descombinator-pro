@@ -1,23 +1,8 @@
 <style>
-/* Hide default theme h1 title */
-header h1 {
-  font-size: 0;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-header h1 a {
-  display: block;
-  width: 359px;
-  height: 63px;
-  background: url('assets/icons/LOGO-HZ.svg') no-repeat;
-  text-indent: -9999px;
-  overflow: hidden;
-}
+/* Hide default theme header content */
+header h1,
 header p {
-  clear: both;
-  margin-top: 1em;
+  display: none;
 }
 .docs-nav {
   margin: 2em 0;
