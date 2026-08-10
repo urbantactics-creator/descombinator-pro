@@ -1,6 +1,9 @@
-# Descombinator Pro
+<a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
+  <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" style="float: left; margin-right: 15px; max-width: 359px; height: auto;">
+</a>
 
 Separate any song into vocals and instrumental tracks locally — fast, free, private.
+
 No internet required, no file uploads. Studio-quality results in seconds.
 
 ## What is Descombinator Pro?
