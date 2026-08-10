@@ -1,0 +1,28 @@
+/* Logo styling for Descombinator Pro documentation */
+.site-header {
+  position: relative;
+}
+
+.site-title {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.site-title img {
+  max-width: 359px;
+  height: auto;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Ensure the logo is visible on the minimal theme */
+.page-content {
+  clear: both;
+}
+
+/* Fix for float clearing after logo */
+.page-content::before {
+  content: "";
+  display: table;
+  clear: both;
+}
