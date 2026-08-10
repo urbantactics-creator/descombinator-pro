@@ -66,7 +66,6 @@ class TestExportWorkerIntegration:
         # Start the worker and verify the UI remains responsive by waiting
         # for the finished signal with a reasonable timeout.
         with qtbot.waitSignal(worker.signals.finished, timeout=30000):
-            qtbot.addWidget(worker)
             worker.run()
 
         assert error_result is None, f"Export failed: {error_result}"

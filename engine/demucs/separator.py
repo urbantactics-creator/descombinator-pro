@@ -128,7 +128,7 @@ class DemucsSeparator:
                 await model_manager.switch_model(inference_config.model_name)
             finally:
                 heartbeat_task.cancel()
-                with suppress(Exception):
+                with suppress(BaseException):
                     await heartbeat_task
 
             self._pipeline = InferencePipeline(model_manager)

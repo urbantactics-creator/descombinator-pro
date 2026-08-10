@@ -41,7 +41,7 @@ def test_configure_jobs_over_one_uses_single_thread(
 
 
 def test_configure_fallback_cpu_count(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Without MAX_WORKERS, falls back to os.cpu_count()."""
+    """Without MAX_WORKERS and jobs <= 1, reserves one core for the GUI."""
     fake_torch = MagicMock()
     fake_torch.backends.mkldnn = MagicMock()
     monkeypatch.delenv("MAX_WORKERS", raising=False)
@@ -49,7 +49,7 @@ def test_configure_fallback_cpu_count(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(__import__("sys").modules, "torch", fake_torch)
 
     TorchRuntimeOptimizer.configure()
-    assert fake_torch.set_num_threads.call_args_list[0] == ((8,),)
+    assert fake_torch.set_num_threads.call_args_list[0] == ((7,),)
 
 
 def test_configure_enables_mkldnn(monkeypatch: pytest.MonkeyPatch) -> None:
