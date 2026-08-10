@@ -106,3 +106,4 @@ No internet required, no file uploads. Studio-quality results in seconds.</p>
 - [Changelog](changelog.md)
 
 </div>
+<!-- cache-bust: header-css-fix -->
