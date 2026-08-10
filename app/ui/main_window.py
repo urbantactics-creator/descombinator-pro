@@ -63,7 +63,6 @@ class MainWindow(QMainWindow):
         self._separated_stems: dict[str, np.ndarray] = {}
         self._processing_dialog: ProcessingDialog | None = None
         self._export_dialog: ProcessingDialog | None = None
-        self._export_worker: object | None = None
         self._thread_pool = QThreadPool.globalInstance()
 
         self.setWindowTitle("Descombinator Pro")
@@ -322,27 +321,17 @@ class MainWindow(QMainWindow):
             # Show progress dialog
             self._export_dialog = ProcessingDialog(self)
             self._export_dialog.setWindowTitle("Exporting Audio")
-            self._export_dialog.cancel_requested.connect(self._on_export_cancelled)
+            self._export_dialog.cancel_requested.connect(
+                self._main_controller.cancel_export
+            )
             self._export_dialog.show()
 
-            # Create and start export worker
-            def export_progress_callback(percent: int, message: str) -> None:
-                self._export_dialog.update_progress(percent, message)
-
-            self._export_worker = self._main_controller._export_worker
-            self._export_worker.signals.progress.connect(export_progress_callback)
-            self._export_worker.signals.finished.connect(self._on_export_finished)
-            self._export_worker.signals.error.connect(self._on_export_error)
-
-            self._thread_pool.start(self._export_worker)
+            # Delegate export to the controller so the worker runs off the UI thread
+            self._main_controller.handle_export_requested(
+                selected_dir, self._separated_stems
+            )
 
     @Slot()
-    def _on_export_cancelled(self) -> None:
-        """Handle export cancellation."""
-        if self._export_worker:
-            self._export_worker.cancel()
-            self._export_dialog.set_cancelled()
-
     @Slot(dict)
     def _on_export_finished(self, result: dict[str, Path]) -> None:
         """Handle successful export completion."""

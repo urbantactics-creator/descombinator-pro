@@ -4,6 +4,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from engine.demucs.config import DeviceType
 from engine.export.config import ExportFormat
 from engine.inference.config import ModelName
 
@@ -16,6 +17,7 @@ class SettingsModel(BaseModel):
     output_dir: Path = Field(default=Path.home() / "Music" / "Descombinator")
     default_model: ModelName = Field(default=ModelName.HTDEMUCS_FT)
     default_format: ExportFormat = Field(default=ExportFormat.WAV)
+    device: DeviceType = Field(default=DeviceType.CPU)
     theme: str = Field(default="dark")
     reduced_motion: bool = False
     high_contrast: bool = False

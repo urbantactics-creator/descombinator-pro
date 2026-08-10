@@ -146,6 +146,7 @@ module = [
     "tests.unit.app.models.*",
     "tests.integration.test_separator",
     "tests.integration.test_export_pipeline",
+    "tests.integration.test_export_worker",
     "tests.integration.test_full_pipeline",
     "engine.inference.config",
     "engine.export.config",

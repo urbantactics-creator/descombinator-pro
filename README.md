@@ -135,6 +135,15 @@ pytest tests/unit/
 QT_QPA_PLATFORM=offscreen pytest tests/ui/
 ```
 
+### Smoke Test
+
+```bash
+# Manual verification: first run with real network.
+# Expected: separation_progress should advance past 20% within a few minutes
+# while downloading the model for the first time.
+python main.py
+```
+
 ### Code Quality
 
 ```bash

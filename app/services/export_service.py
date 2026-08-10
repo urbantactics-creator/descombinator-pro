@@ -1,5 +1,6 @@
 """Export service for saving separated audio stems."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -20,12 +21,14 @@ class ExportService:
         self,
         stems: dict[str, np.ndarray],
         output_dir: Path,
+        progress_callback: Callable[[int, str], None] | None = None,
     ) -> dict[str, Path]:
         """Export audio stems to files.
 
         Args:
             stems: Dictionary mapping stem names to audio data as numpy arrays
             output_dir: Directory to save exported files
+            progress_callback: Optional callback receiving (percent, message)
 
         Returns:
             Dictionary mapping stem names to output file paths

@@ -36,15 +36,15 @@ class TorchRuntimeOptimizer:
         if jobs > 1:
             torch.set_num_threads(1)
         else:
+            cpu_count = os.cpu_count() or 1
             _workers_env = os.getenv("MAX_WORKERS")
             try:
-                workers = (
-                    int(_workers_env)
-                    if _workers_env is not None
-                    else (os.cpu_count() or 1)
-                )
+                if _workers_env is not None:
+                    workers = max(1, int(_workers_env))
+                else:
+                    workers = max(1, cpu_count - 1)
             except ValueError:
-                workers = os.cpu_count() or 1
+                workers = max(1, cpu_count - 1)
             torch.set_num_threads(workers)
 
         mkldnn = getattr(torch.backends, "mkldnn", None)

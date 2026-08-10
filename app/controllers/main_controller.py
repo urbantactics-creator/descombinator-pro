@@ -15,7 +15,7 @@ from app.models.processing_state import ProcessingState
 from app.models.settings_model import SettingsModel
 from app.services.export_service import ExportService
 from app.services.separation_service import SeparationService
-from engine.demucs.config import ModelName, SeparationConfig
+from engine.demucs.config import DeviceType, ModelName, SeparationConfig
 from engine.demucs.errors import SeparationError
 from engine.export.config import ExportConfig, ExportFormat
 from engine.performance.thermal import ThermalMonitor
@@ -130,6 +130,7 @@ class ExportWorker(QRunnable):
         export_service: ExportService,
         stems: dict[str, Any],
         output_dir: Path,
+        progress_callback: Callable[[int, str], None] | None = None,
     ) -> None:
         """Initialize the export worker.
 
@@ -137,11 +138,13 @@ class ExportWorker(QRunnable):
             export_service: Service to run export.
             stems: Dictionary of separated stems.
             output_dir: Directory to write exported files.
+            progress_callback: Optional callback receiving (percent, message).
         """
         super().__init__()
         self._export_service = export_service
         self._stems = stems
         self._output_dir = output_dir
+        self._progress_callback = progress_callback
         self.signals = ExportWorkerSignals()
 
     def run(self) -> None:
@@ -151,6 +154,7 @@ class ExportWorker(QRunnable):
                 self._export_service.export_stems(
                     self._stems,
                     self._output_dir,
+                    progress_callback=self._progress_callback,
                 )
             )
             self.signals.finished.emit(result)
@@ -209,6 +213,7 @@ class MainController(QObject):
         settings = self._app_state.settings
         return SeparationConfig(
             model_name=ModelName(str(settings.default_model)),
+            device=DeviceType(str(settings.device)),
             segment=settings.segment,
             mixed_precision=settings.mixed_precision,
             pin_memory=settings.pin_memory,
@@ -334,6 +339,7 @@ class MainController(QObject):
             self._export_service,
             stems,
             Path(output_dir),
+            export_progress_callback,
         )
 
         # Connect worker signals
@@ -403,6 +409,12 @@ class MainController(QObject):
         self._app_state.processing_status = ProcessingState.IDLE
         self.state_changed.emit(self._app_state)
         self._current_worker = None
+
+    def cancel_export(self) -> None:
+        """Cancel the ongoing export process."""
+        if self._export_worker:
+            self._export_worker.cancel()
+        self._export_worker = None
 
     def update_settings(self, settings: dict[str, Any]) -> None:
         """Update application settings.

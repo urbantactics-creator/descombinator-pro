@@ -1,6 +1,8 @@
 """Demucs separation engine orchestrator."""
 
+import asyncio
 from collections.abc import Callable
+from contextlib import suppress
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -120,7 +122,15 @@ class DemucsSeparator:
             self._preprocessor = AudioPreprocessor()
             self._postprocessor = AudioPostprocessor()
             model_manager = ModelManager(inference_config)
-            await model_manager.switch_model(inference_config.model_name)
+
+            heartbeat_task = asyncio.create_task(self._model_load_heartbeat())
+            try:
+                await model_manager.switch_model(inference_config.model_name)
+            finally:
+                heartbeat_task.cancel()
+                with suppress(Exception):
+                    await heartbeat_task
+
             self._pipeline = InferencePipeline(model_manager)
             self._report_progress(20)
             logger.info(
@@ -136,6 +146,16 @@ class DemucsSeparator:
             self._error = ModelLoadError(f"Cannot initialize separator: {e}")
             logger.error(f"Separator initialization failed: {e}")
             raise self._error from e
+
+    async def _model_load_heartbeat(self) -> None:
+        """Report periodic progress while a model is being loaded."""
+        import asyncio
+
+        percent = 6
+        while True:
+            await asyncio.sleep(3)
+            percent = min(percent + 1, 19)
+            self._report_progress(percent)
 
     async def separate(
         self,

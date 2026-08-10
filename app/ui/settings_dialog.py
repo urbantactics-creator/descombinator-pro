@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from app.controllers.settings_controller import SettingsController
 from app.models.settings_model import SettingsModel
 from engine.export.config import ExportFormat
-from engine.inference.config import ModelName
+from engine.inference.config import DeviceType, ModelName
 
 
 class SettingsDialog(QDialog):
@@ -56,6 +56,11 @@ class SettingsDialog(QDialog):
         for model in ModelName:
             self._model_combo.addItem(model.value, model)
         sep_form.addRow("Model:", self._model_combo)
+
+        self._device_combo = QComboBox()
+        for device in DeviceType:
+            self._device_combo.addItem(device.value.upper(), device)
+        sep_form.addRow("Device:", self._device_combo)
 
         self._segment_spin = QSpinBox()
         self._segment_spin.setRange(0, 300)
@@ -168,6 +173,10 @@ class SettingsDialog(QDialog):
         if idx >= 0:
             self._model_combo.setCurrentIndex(idx)
 
+        device_idx = self._device_combo.findData(s.device)
+        if device_idx >= 0:
+            self._device_combo.setCurrentIndex(device_idx)
+
         self._segment_spin.setValue(s.segment or 0)
         self._mixed_precision_check.setChecked(s.mixed_precision)
         self._pin_memory_check.setChecked(s.pin_memory)
@@ -205,6 +214,7 @@ class SettingsDialog(QDialog):
         """Save settings and close dialog."""
         try:
             self._settings.default_model = self._model_combo.currentData()
+            self._settings.device = self._device_combo.currentData()
             self._settings.default_format = self._format_combo.currentData()
             self._settings.output_dir = Path(self._output_dir_label.text())
             self._settings.theme = self._theme_combo.currentText()

@@ -5,6 +5,7 @@ Build with:
     pyinstaller descombinator.spec
 """
 
+import sys
 from pathlib import Path
 
 block_cipher = None
@@ -71,6 +72,13 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+if sys.platform == "win32":
+    icon_path = root / "assets/icons/icon.ico"
+elif sys.platform == "darwin":
+    icon_path = root / "assets/icons/icon.icns"
+else:
+    icon_path = root / "assets/icons/icon.png"
+
 exe = EXE(
     pyz,
     a.scripts,
@@ -79,7 +87,7 @@ exe = EXE(
     a.datas,
     [],
     name="descombinator",
-    icon=str(root / "assets/icons/icon.png"),
+    icon=str(icon_path),
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
