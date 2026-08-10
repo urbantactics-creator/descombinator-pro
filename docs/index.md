@@ -1,24 +1,23 @@
 <style>
-.site-header {
-  position: relative;
+/* Hide default theme h1 title */
+.site-header h1 {
+  font-size: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
-.site-title {
-  margin-left: 0;
-  padding-left: 0;
-}
-.site-title img {
-  max-width: 359px;
-  height: auto;
+.site-header h1 a {
   display: block;
-  margin-bottom: 10px;
+  width: 359px;
+  height: 63px;
+  background: url('assets/icons/LOGO-HZ.svg') no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
 }
-.page-content {
+.site-header p {
   clear: both;
-}
-.page-content::before {
-  content: "";
-  display: table;
-  clear: both;
+  margin-top: 1em;
 }
 .docs-nav {
   margin: 2em 0;
@@ -46,12 +45,12 @@
 }
 </style>
 
-<a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
-  <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" class="logo-header">
-</a>
+<p><a href="https://urbantactics-creator.github.io/descombinator-pro/tutorials/feature-walkthrough.html#:~:text=Descombinator%20Pro">
+  <img src="assets/icons/LOGO-HZ.svg" alt="Descombinator Pro" style="max-width: 359px; height: auto; display: block;">
+</a></p>
 
-Separate any song into vocals and instrumental tracks locally — fast, free, private.
-No internet required, no file uploads. Studio-quality results in seconds.
+<p>Separate any song into vocals and instrumental tracks locally — fast, free, private.
+No internet required, no file uploads. Studio-quality results in seconds.</p>
 
 <div class="docs-nav">
 
