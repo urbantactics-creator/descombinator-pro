@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Blog — Developer Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-elevated: #111111;
+      --fg: #00ff41;
+      --fg-dim: #00cc33;
+      --fg-muted: #008822;
+      --fg-ghost: #004411;
+      --accent: #00ff88;
+      --accent-dim: #00cc66;
+      --error: #ff3344;
+      --warning: #ffaa00;
+      --border: #003311;
+      --scanline-opacity: 0.08;
+      --cursor-blink: 1.06s;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+      --font-ui: 'Space Mono', var(--font-mono);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 50% 50%, rgba(0, 255, 65, 0.03) 0%, transparent 70%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: cover, 256px 256px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .terminal {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+        rgba(0, 0, 0, var(--scanline-opacity)) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .scanlines.hidden {
+      opacity: 0;
+    }
+
+    .output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .output::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .output::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .output::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .output-line {
+      margin-bottom: 4px;
+    }
+
+    .output-line:last-child {
+      margin-bottom: 0;
+    }
+
+    .prompt-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .prompt {
+      color: var(--accent);
+      font-weight: 700;
+      font-family: var(--font-ui);
+      letter-spacing: 0.5px;
+      user-select: none;
+    }
+
+    .command-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      caret-color: var(--fg);
+    }
+
+    .command-input::placeholder {
+      color: var(--fg-ghost);
+    }
+
+    .command-input.ghost-mode {
+      color: var(--fg-ghost);
+    }
+
+    .ghost-suggestion {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: none;
+      color: var(--fg-ghost);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre;
+      overflow: hidden;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1.6em;
+      background: var(--fg);
+      animation: blink var(--cursor-blink) steps(1) infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .output .command-echo {
+      color: var(--fg-dim);
+    }
+
+    .output .command-output {
+      color: var(--fg);
+    }
+
+    .output .error {
+      color: var(--error);
+    }
+
+    .output .warning {
+      color: var(--warning);
+    }
+
+    .output .muted {
+      color: var(--fg-muted);
+    }
+
+    .output .accent {
+      color: var(--accent);
+    }
+
+    .output .link {
+      color: var(--accent);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .output .link:hover {
+      color: var(--accent-dim);
+    }
+
+    .output .file-entry {
+      display: flex;
+      gap: 12px;
+      padding: 2px 0;
+    }
+
+    .output .file-entry .name {
+      color: var(--fg);
+    }
+
+    .output .file-entry .name.dir {
+      color: var(--accent);
+    }
+
+    .output .file-entry .meta {
+      color: var(--fg-muted);
+      font-size: 12px;
+    }
+
+    .output .post-content {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-elevated);
+      margin-top: 8px;
+    }
+
+    .output .post-content h1,
+    .output .post-content h2,
+    .output .post-content h3 {
+      color: var(--accent);
+      margin: 16px 0 8px;
+      font-weight: 700;
+      font-family: var(--font-ui);
+    }
+
+    .output .post-content h1 { font-size: 1.4em; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .output .post-content h2 { font-size: 1.2em; }
+    .output .post-content h3 { font-size: 1.1em; }
+
+    .output .post-content p { margin: 8px 0; }
+    .output .post-content code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--accent);
+      font-size: 0.95em;
+    }
+    .output .post-content pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    .output .post-content pre code {
+      background: transparent;
+      padding: 0;
+      color: var(--fg);
+    }
+    .output .post-content blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      margin: 12px 0;
+      color: var(--fg-dim);
+      font-style: italic;
+    }
+    .output .post-content ul, .output .post-content ol {
+      margin: 8px 0;
+      padding-left: 24px;
+    }
+    .output .post-content li { margin: 4px 0; }
+    .output .post-content a { color: var(--accent); text-decoration: underline; }
+    .output .post-content hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    .output .man-page {
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    .output .man-page .section {
+      margin-bottom: 16px;
+    }
+    .output .man-page .section-title {
+      color: var(--accent);
+      font-weight: 700;
+      font-family: var(--font-ui);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .output .man-page .command-desc {
+      display: flex;
+      gap: 16px;
+      margin: 4px 0;
+    }
+    .output .man-page .command-name {
+      color: var(--fg);
+      min-width: 120px;
+    }
+    .output .man-page .command-args {
+      color: var(--fg-dim);
+    }
+    .output .man-page .command-help {
+      color: var(--fg-muted);
+    }
+
+    .output .about-content {
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    .output .about-content .section {
+      margin-bottom: 16px;
+    }
+    .output .about-content .label {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .output .about-content .value {
+      color: var(--fg);
+      margin-left: 8px;
+    }
+
+    .output .mail-composer {
+      padding: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    .output .mail-composer .field {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .output .mail-composer .field-label {
+      color: var(--accent);
+      font-weight: 700;
+      min-width: 80px;
+    }
+    .output .mail-composer .field-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .output .mail-composer .field-input:focus {
+      border-color: var(--accent);
+    }
+    .output .mail-composer textarea.field-input {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .output .mail-composer .send-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 10px 24px;
+      font-family: var(--font-ui);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .output .mail-composer .send-btn:hover {
+      background: var(--accent-dim);
+    }
+
+    .output .tag-filter {
+      display: inline-block;
+      background: var(--border);
+      color: var(--fg-dim);
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    .output .post-header {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .output .post-header .title {
+      color: var(--accent);
+      font-size: 1.3em;
+      font-weight: 700;
+      font-family: var(--font-ui);
+      margin-bottom: 8px;
+    }
+    .output .post-header .meta {
+      color: var(--fg-muted);
+      font-size: 12px;
+    }
+
+    .status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 20px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--fg-muted);
+      font-family: var(--font-ui);
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    .status-bar .item {
+      display: flex;
+      gap: 16px;
+    }
+
+    .sound-toggle {
+      cursor: pointer;
+      user-select: none;
+    }
+    .sound-toggle:hover {
+      color: var(--fg);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      html, body { font-size: 12px; }
+      .output { padding: 12px; }
+      .prompt-line { padding: 10px 12px; }
+      .status-bar { padding: 4px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="scanlines" id="scanlines"></div>
+    <div class="output" id="output" role="log" aria-live="polite"></div>
+    <div class="prompt-line">
+      <span class="prompt" id="prompt">$</span>
+      <input type="text" class="command-input" id="commandInput" autocomplete="off" spellcheck="false" aria-label="Command input">
+      <span class="cursor" id="cursor" aria-hidden="true"></span>
+    </div>
+  </div>
+  <div class="status-bar" aria-hidden="true">
+    <div class="item">
+      <span>TERMINAL BLOG</span>
+      <span id="cwd">~</span>
+      <span id="filterStatus"></span>
+    </div>
+    <div class="item">
+      <span class="sound-toggle" id="soundToggle" title="Toggle keypress sound">🔊 SOUND: ON</span>
+      <span id="timeDisplay"></span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    // ============================================
+    // TERMINAL BLOG - DATA
+    // ============================================
+    const POSTS = [
+      {
+        slug: 'hello-world',
+        title: 'Hello World: First Post',
+        date: '2026-01-15',
+        tags: ['intro', 'meta'],
+        content: `# Hello World
+
+Welcome to my terminal-style developer blog. This is the first post.
+
+## Why a Terminal Blog?
+
+I've always loved the aesthetic of terminal interfaces. There's something satisfying about:
+- Pure text-based interaction
+- Monospaced fonts
+- Green phosphor glow
+- The feeling of \`hacking\` even when just writing docs
+
+## Features
+
+This blog supports:
+- \`ls\` — List all posts and projects
+- \`cat <post>\` — Read a post (markdown rendered)
+- \`cd <tag>\` — Filter by tag
+- \`whoami\` — About me
+- \`mail <addr>\` — Contact form
+- \`help\` — Show this help
+
+## Tech Stack
+
+- Vanilla HTML/CSS/JS (no frameworks)
+- \`marked.js\` for markdown rendering
+- CSS custom properties for theming
+- CRT scanline overlay
+- Web Audio API for keypress sounds
+
+\`\`\`js
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+}
+greet('world');
+\`\`\`
+
+> The terminal is not just a tool. It's a philosophy.
+
+Stay tuned for more posts about development, tools, and terminal aesthetics.`
+      },
+      {
+        slug: 'terminal-aesthetics',
+        title: 'The Art of Terminal Aesthetics',
+        date: '2026-02-20',
+        tags: ['design', 'terminal', 'css'],
+        content: `# The Art of Terminal Aesthetics
+
+Why do developers love terminal aesthetics? Let's explore.
+
+## The Appeal
+
+1. **Constraint breeds creativity** — Limited palette, monospace grid
+2. **Nostalgia** — Reminds us of early computing
+3. **Focus** — No distractions, pure content
+4. **Hacker cred** — Looks impressive to non-devs
+
+## Color Palettes
+
+Classic terminal palettes:
+
+| Name | Background | Foreground | Accent |
+|------|------------|------------|--------|
+| Green Phosphor | #0a0a0a | #00ff41 | #00ff88 |
+| Amber | #1a1000 | #ffb000 | #ffcc44 |
+| White on Black | #000000 | #ffffff | #888888 |
+| Solarized Dark | #002b36 | #839496 | #268bd2 |
+
+## CSS Techniques
+
+\`\`\`css
+:root {
+  --bg: #0a0a0a;
+  --fg: #00ff41;
+  --accent: #00ff88;
+}
+
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+}
+\`\`\`
+
+## Animation
+
+The cursor blink at 1.06s is CRT-accurate. Most modern terminals use 1s or 530ms, but the original VT100 blinked at ~1.06s.
+
+\`\`\`css
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.cursor { animation: blink 1.06s steps(1) infinite; }
+\`\`\`
+
+## Conclusion
+
+Terminal aesthetics aren't just nostalgia—they're a deliberate design choice that prioritizes content over chrome.`
+      },
+      {
+        slug: 'building-cli-tools',
+        title: 'Building Better CLI Tools',
+        date: '2026-03-10',
+        tags: ['cli', 'go', 'rust', 'tools'],
+        content: `# Building Better CLI Tools
+
+Lessons learned from building command-line applications.
+
+## Principles
+
+1. **Exit codes matter** — 0 for success, non-zero for failure
+2. **Stdout for data, stderr for diagnostics**
+3. **Respect \`--help\` and \`-h\`**
+4. **Support \`--version\`**
+5. **Be quiet by default, verbose with \`-v\`**
+
+## Argument Parsing
+
+Use established libraries:
+- Go: \`cobra\`, \`flag\`
+- Rust: \`clap\`
+- Python: \`argparse\`, \`click\`, \`typer\`
+- Node: \`commander\`, \`yargs\`
+
+## Output Formatting
+
+\`\`\`bash
+# Human-readable (default)
+$ mytool list
+NAME        STATUS    AGE
+app         running   2d
+db          running   5d
+
+# Machine-readable
+$ mytool list -o json
+[{"name":"app","status":"running","age":"2d"}]
+
+# Tabular
+$ mytool list -o table
+\`\`\`
+
+## Colors and TTY Detection
+
+\`\`\`go
+import "github.com/mattn/go-isatty"
+
+func useColor() bool {
+  return isatty.IsTerminal(os.Stdout.Fd())
+}
+\`\`\`
+
+Never force colors in pipes or redirects.
+
+## Testing
+
+Test the CLI as a black box:
+\`\`\`bash
+# Integration test
+output=$(mytool create --name test)
+assert_equals "created" "$output"
+\`\`\`
+
+## Distribution
+
+- Single binary (Go, Rust)
+- Homebrew / Scoop / AUR
+- GitHub Releases with checksums
+- Auto-update mechanism
+
+\`\`\`bash
+# Self-update pattern
+mytool update
+\`\`\`
+
+Good CLI tools feel like native system commands.`
+      },
+      {
+        slug: 'dotfiles-management',
+        title: 'Managing Dotfiles with GNU Stow',
+        date: '2026-04-05',
+        tags: ['dotfiles', 'linux', 'productivity'],
+        content: `# Managing Dotfiles with GNU Stow
+
+A practical approach to dotfile management.
+
+## The Problem
+
+Config files scattered across \`$HOME\`:
+\`\`\`
+~/.bashrc
+~/.vimrc
+~/.gitconfig
+~/.config/nvim/init.lua
+~/.config/alacritty/alacritty.yml
+\`\`\`
+
+## The Solution: GNU Stow
+
+\`\`\`bash
+# Install
+sudo apt install stow  # Debian/Ubuntu
+brew install stow      # macOS
+
+# Structure
+dotfiles/
+├── bash/
+│   └── .bashrc
+├── git/
+│   └── .gitconfig
+├── nvim/
+│   └── .config/nvim/
+│       └── init.lua
+└── alacritty/
+    └── .config/alacritty/
+        └── alacritty.yml
+\`\`\`
+
+## Usage
+
+\`\`\`bash
+cd ~/dotfiles
+stow bash git nvim alacritty
+\`\`\`
+
+Stow creates symlinks from \`$HOME\` to your dotfiles directory.
+
+## Advanced: Per-Machine Configs
+
+\`\`\`bash
+dotfiles/
+├── bash/
+│   ├── .bashrc
+│   └── .bashrc.work    # Work-specific
+├── git/
+│   ├── .gitconfig
+│   └── .gitconfig.personal
+\`\`\`
+
+Use a bootstrap script to select the right variant.
+
+## Git Integration
+
+\`\`\`bash
+# In dotfiles repo
+git add .
+git commit -m "Update nvim config"
+git push
+\`\`\`
+
+On new machine:
+\`\`\`bash
+git clone https://github.com/you/dotfiles.git
+cd dotfiles
+./bootstrap.sh
+\`\`\`
+
+## Tips
+
+- Keep secrets out (use \`pass\` or \`1password\` CLI)
+- Document your bootstrap process
+- Test on clean VM regularly
+- Use \`stow -n\` for dry-run
+
+Stow makes dotfiles portable, version-controlled, and symlink-managed.`
+      }
+    ];
+
+    const PROJECTS = [
+      {
+        slug: 'terminal-blog',
+        name: 'terminal-blog',
+        description: 'A terminal-style developer blog with CLI navigation',
+        language: 'JavaScript',
+        stars: 42,
+        tags: ['web', 'terminal', 'blog']
+      },
+      {
+        slug: 'dotfiles',
+        name: 'dotfiles',
+        description: 'My personal dotfiles managed with GNU Stow',
+        language: 'Shell',
+        stars: 128,
+        tags: ['config', 'linux', 'productivity']
+      },
+      {
+        slug: 'cli-toolkit',
+        name: 'cli-toolkit',
+        description: 'Reusable components for building beautiful CLIs',
+        language: 'Go',
+        stars: 356,
+        tags: ['cli', 'go', 'library']
+      },
+      {
+        slug: 'markdown-renderer',
+        name: 'markdown-renderer',
+        description: 'Fast, terminal-friendly markdown renderer',
+        language: 'Rust',
+        stars: 89,
+        tags: ['rust', 'markdown', 'terminal']
+      }
+    ];
+
+    const ABOUT = {
+      name: 'Developer',
+      handle: '@dev',
+      location: 'Earth',
+      bio: 'Terminal enthusiast. Builder of CLI tools. Writer of code that runs in the dark.',
+      skills: ['Go', 'Rust', 'TypeScript', 'Python', 'C', 'Bash', 'Linux', 'Vim', 'Git'],
+      links: [
+        { label: 'GitHub', url: 'https://github.com' },
+        { label: 'Twitter', url: 'https://twitter.com' },
+        { label: 'Mastodon', url: 'https://mastodon.social' },
+        { label: 'Email', url: 'mailto:dev@example.com' }
+      ]
+    };
+
+    // ============================================
+    // TERMINAL BLOG - STATE
+    // ============================================
+    const state = {
+      cwd: '~',
+      currentFilter: null,
+      commandHistory: [],
+      historyIndex: -1,
+      soundEnabled: true,
+      scanlinesEnabled: true,
+      audioContext: null,
+      ghostText: '',
+      isComposingMail: false,
+      mailData: { to: '', subject: '', body: '' },
+      mailField: 'to'
+    };
+
+    // ============================================
+    // DOM ELEMENTS
+    // ============================================
+    const output = document.getElementById('output');
+    const commandInput = document.getElementById('commandInput');
+    const prompt = document.getElementById('prompt');
+    const cursor = document.getElementById('cursor');
+    const scanlines = document.getElementById('scanlines');
+    const soundToggle = document.getElementById('soundToggle');
+    const cwdDisplay = document.getElementById('cwd');
+    const filterStatus = document.getElementById('filterStatus');
+    const timeDisplay = document.getElementById('timeDisplay');
+
+    // ============================================
+    // AUDIO - KEYPRESS SOUNDS
+    // ============================================
+    function initAudio() {
+      try {
+        state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        console.warn('Web Audio API not supported');
+      }
+    }
+
+    function playKeypress() {
+      if (!state.soundEnabled || !state.audioContext) return;
+
+      const ctx = state.audioContext;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800 + Math.random() * 200, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.05);
+
+      gain.gain.setValueAtTime(0.02, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.06);
+    }
+
+    function playEnterSound() {
+      if (!state.soundEnabled || !state.audioContext) return;
+
+      const ctx = state.audioContext;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.03, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.18);
+    }
+
+    function playErrorSound() {
+      if (!state.soundEnabled || !state.audioContext) return;
+
+      const ctx = state.audioContext;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    }
+
+    // ============================================
+    // OUTPUT HELPERS
+    // ============================================
+    function appendOutput(html, className = 'command-output') {
+      const line = document.createElement('div');
+      line.className = `output-line ${className}`;
+      line.innerHTML = html;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function appendError(msg) {
+      appendOutput(`<span class="error">Error: ${escapeHtml(msg)}</span>`, 'error');
+    }
+
+    function appendWarning(msg) {
+      appendOutput(`<span class="warning">${escapeHtml(msg)}</span>`, 'warning');
+    }
+
+    function appendMuted(msg) {
+      appendOutput(`<span class="muted">${escapeHtml(msg)}</span>`, 'muted');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    function updatePrompt() {
+      prompt.textContent = '$';
+      cwdDisplay.textContent = state.cwd;
+      filterStatus.textContent = state.currentFilter ? ` [filter: ${state.currentFilter}]` : '';
+    }
+
+    function updateTime() {
+      const now = new Date();
+      timeDisplay.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+    }
+
+    // ============================================
+    // COMMAND SYSTEM
+    // ============================================
+    const commands = {
+      ls: {
+        args: '[path]',
+        description: 'List posts and projects',
+        execute: (args) => {
+          const filter = state.currentFilter;
+          let posts = POSTS;
+          let projects = PROJECTS;
+
+          if (filter) {
+            posts = posts.filter(p => p.tags.includes(filter));
+            projects = projects.filter(p => p.tags.includes(filter));
+          }
+
+          if (posts.length === 0 && projects.length === 0) {
+            appendMuted(`No entries found${filter ? ` for tag "${filter}"` : ''}`);
+            return;
+          }
+
+          if (posts.length > 0) {
+            appendOutput('<span class="accent">POSTS</span>');
+            posts.forEach(p => {
+              const tags = p.tags.map(t => `<span class="tag-filter">${t}</span>`).join('');
+              appendOutput(`  <span class="file-entry"><span class="name">${p.slug}.md</span><span class="meta">${p.date} ${tags}</span></span>`);
+            });
+          }
+
+          if (projects.length > 0) {
+            appendOutput('<span class="accent">PROJECTS</span>');
+            projects.forEach(p => {
+              const tags = p.tags.map(t => `<span class="tag-filter">${t}</span>`).join('');
+              appendOutput(`  <span class="file-entry"><span class="name dir">${p.name}/</span><span class="meta">${p.language} ⭐${p.stars} ${tags}</span></span>`);
+            });
+          }
+
+          appendMuted(`Total: ${posts.length} post(s), ${projects.length} project(s)`);
+        }
+      },
+      cat: {
+        args: '<post-slug>',
+        description: 'Read a post (markdown rendered)',
+        execute: (args) => {
+          if (!args[0]) {
+            appendError('Usage: cat <post-slug>');
+            return;
+          }
+
+          const slug = args[0].replace('.md', '');
+          const post = POSTS.find(p => p.slug === slug);
+
+          if (!post) {
+            appendError(`Post not found: ${slug}`);
+            appendMuted('Use "ls" to see available posts');
+            return;
+          }
+
+          const html = marked.parse(post.content);
+          appendOutput(`
+            <div class="post-content">
+              <div class="post-header">
+                <div class="title">${escapeHtml(post.title)}</div>
+                <div class="meta">${post.date} · ${post.tags.map(t => `<span class="tag-filter">${t}</span>`).join(' ')}</div>
+              </div>
+              ${html}
+            </div>
+          `);
+        }
+      },
+      cd: {
+        args: '<tag|..>',
+        description: 'Filter by tag (use ".." to clear filter)',
+        execute: (args) => {
+          if (!args[0]) {
+            appendError('Usage: cd <tag|..>');
+            return;
+          }
+
+          if (args[0] === '..') {
+            state.currentFilter = null;
+            state.cwd = '~';
+            appendMuted('Filter cleared');
+          } else {
+            const allTags = [...new Set([...POSTS.flatMap(p => p.tags), ...PROJECTS.flatMap(p => p.tags)])];
+            if (!allTags.includes(args[0])) {
+              appendError(`Unknown tag: ${args[0]}`);
+              appendMuted(`Available tags: ${allTags.join(', ')}`);
+              return;
+            }
+            state.currentFilter = args[0];
+            state.cwd = `~/${args[0]}`;
+            appendMuted(`Filtering by tag: ${args[0]}`);
+          }
+          updatePrompt();
+        }
+      },
+      whoami: {
+        args: '',
+        description: 'Show about page',
+        execute: () => {
+          const links = ABOUT.links.map(l => `<a class="link" href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`).join(' · ');
+          appendOutput(`
+            <div class="about-content">
+              <div class="section">
+                <span class="label">Name:</span> <span class="value">${escapeHtml(ABOUT.name)}</span>
+              </div>
+              <div class="section">
+                <span class="label">Handle:</span> <span class="value">${escapeHtml(ABOUT.handle)}</span>
+              </div>
+              <div class="section">
+                <span class="label">Location:</span> <span class="value">${escapeHtml(ABOUT.location)}</span>
+              </div>
+              <div class="section">
+                <span class="label">Bio:</span> <span class="value">${escapeHtml(ABOUT.bio)}</span>
+              </div>
+              <div class="section">
+                <span class="label">Skills:</span> <span class="value">${ABOUT.skills.join(', ')}</span>
+              </div>
+              <div class="section">
+                <span class="label">Links:</span> <span class="value">${links}</span>
+              </div>
+            </div>
+          `);
+        }
+      },
+      mail: {
+        args: '[address]',
+        description: 'Open contact composer',
+        execute: (args) => {
+          state.isComposingMail = true;
+          state.mailData = { to: args[0] || '', subject: '', body: '' };
+          state.mailField = 'to';
+          renderMailComposer();
+        }
+      },
+      help: {
+        args: '',
+        description: 'Show help (man-page style)',
+        execute: () => {
+          let html = '<div class="man-page">';
+          html += '<div class="section"><div class="section-title">TERMINAL BLOG — COMMANDS</div>';
+
+          Object.entries(commands).forEach(([name, cmd]) => {
+            html += `
+              <div class="command-desc">
+                <span class="command-name">${name}</span>
+                <span class="command-args">${cmd.args}</span>
+                <span class="command-help">${cmd.description}</span>
+              </div>
+            `;
+          });
+
+          html += '</div>';
+          html += '<div class="section"><div class="section-title">KEYBOARD SHORTCUTS</div>';
+          html += `
+            <div class="command-desc"><span class="command-name">Tab</span><span class="command-help">Auto-complete commands and arguments</span></div>
+            <div class="command-desc"><span class="command-name">↑ / ↓</span><span class="command-help">Navigate command history</span></div>
+            <div class="command-desc"><span class="command-name">Ctrl+L</span><span class="command-help">Clear screen</span></div>
+            <div class="command-desc"><span class="command-name">Ctrl+C</span><span class="command-help">Cancel current input</span></div>
+            <div class="command-desc"><span class="command-name">F11</span><span class="command-help">Toggle CRT scanlines</span></div>
+            <div class="command-desc"><span class="command-name">F12</span><span class="command-help">Toggle keypress sound</span></div>
+          `;
+          html += '</div>';
+          html += '<div class="section"><div class="section-title">NAVIGATION</div>';
+          html += `
+            <div class="command-desc"><span class="command-name">ls</span><span class="command-help">List all posts and projects</span></div>
+            <div class="command-desc"><span class="command-name">cat <post></span><span class="command-help">Read a post (markdown rendered)</span></div>
+            <div class="command-desc"><span class="command-name">cd <tag></span><span class="command-help">Filter by tag</span></div>
+            <div class="command-desc"><span class="command-name">cd ..</span><span class="command-help">Clear tag filter</span></div>
+          `;
+          html += '</div>';
+          html += '</div>';
+
+          appendOutput(html);
+        }
+      },
+      clear: {
+        args: '',
+        description: 'Clear the screen',
+        execute: () => {
+          clearOutput();
+        }
+      },
+      pwd: {
+        args: '',
+        description: 'Print working directory',
+        execute: () => {
+          appendOutput(state.cwd);
+        }
+      },
+      tags: {
+        args: '',
+        description: 'List all available tags',
+        execute: () => {
+          const allTags = [...new Set([...POSTS.flatMap(p => p.tags), ...PROJECTS.flatMap(p => p.tags)])].sort();
+          appendOutput('<span class="accent">AVAILABLE TAGS</span>');
+          allTags.forEach(tag => {
+            const postCount = POSTS.filter(p => p.tags.includes(tag)).length;
+            const projCount = PROJECTS.filter(p => p.tags.includes(tag)).length;
+            appendOutput(`  <span class="tag-filter">${tag}</span> <span class="muted">(${postCount} posts, ${projCount} projects)</span>`);
+          });
+        }
+      },
+      date: {
+        args: '',
+        description: 'Show current date and time',
+        execute: () => {
+          const now = new Date();
+          appendOutput(now.toString());
+        }
+      },
+      echo: {
+        args: '<text>',
+        description: 'Echo text back',
+        execute: (args) => {
+          appendOutput(args.join(' '));
+        }
+      }
+    };
+
+    // ============================================
+    // TAB COMPLETION
+    // ============================================
+    function getCompletions(input) {
+      const parts = input.trim().split(/\s+/);
+      const cmd = parts[0].toLowerCase();
+      const arg = parts[1] || '';
+
+      // Command completion
+      if (parts.length === 1 && !input.endsWith(' ')) {
+        return Object.keys(commands).filter(c => c.startsWith(cmd));
+      }
+
+      // Argument completion for specific commands
+      switch (cmd) {
+        case 'cat':
+          return POSTS.map(p => p.slug + '.md').filter(s => s.startsWith(arg));
+        case 'cd':
+          const allTags = [...new Set([...POSTS.flatMap(p => p.tags), ...PROJECTS.flatMap(p => p.tags)])];
+          return ['..', ...allTags].filter(t => t.startsWith(arg));
+        case 'mail':
+          return []; // Email addresses - could add contacts
+        default:
+          return [];
+      }
+    }
+
+    function updateGhostText() {
+      const input = commandInput.value;
+      const completions = getCompletions(input);
+
+      if (completions.length === 1) {
+        const completion = completions[0];
+        const parts = input.trim().split(/\s+/);
+        const prefix = parts.slice(0, -1).join(' ') + (parts.length > 1 ? ' ' : '');
+        state.ghostText = prefix + completion;
+      } else {
+        state.ghostText = '';
+      }
+
+      // Update ghost suggestion display
+      const ghostEl = document.querySelector('.ghost-suggestion');
+      if (ghostEl) ghostEl.remove();
+
+      if (state.ghostText && input) {
+        const ghost = document.createElement('span');
+        ghost.className = 'ghost-suggestion';
+        ghost.textContent = state.ghostText.slice(input.length);
+        commandInput.parentNode.appendChild(ghost);
+        commandInput.classList.add('ghost-mode');
+      } else {
+        commandInput.classList.remove('ghost-mode');
+      }
+    }
+
+    function applyCompletion() {
+      if (state.ghostText) {
+        commandInput.value = state.ghostText;
+        updateGhostText();
+      }
+    }
+
+    // ============================================
+    // MAIL COMPOSER
+    // ============================================
+    function renderMailComposer() {
+      const { to, subject, body } = state.mailData;
+      const fields = [
+        { id: 'to', label: 'To:', value: to, type: 'email', placeholder: 'recipient@example.com' },
+        { id: 'subject', label: 'Subject:', value: subject, type: 'text', placeholder: 'Hello' },
+        { id: 'body', label: 'Body:', value: body, type: 'textarea', placeholder: 'Your message...' }
+      ];
+
+      let html = '<div class="mail-composer">';
+      html += '<div class="section"><div class="section-title">MAIL COMPOSER</div>';
+      html += '<div class="muted">Tab to navigate fields, Enter to send, Escape to cancel</div>';
+
+      fields.forEach(f => {
+        const isActive = f.id === state.mailField;
+        html += `
+          <div class="field">
+            <span class="field-label">${f.label}</span>
+            <input
+              class="field-input ${isActive ? 'active' : ''}"
+              type="${f.type === 'textarea' ? 'text' : f.type}"
+              id="mail-${f.id}"
+              value="${escapeHtml(f.value)}"
+              placeholder="${f.placeholder}"
+              ${f.type === 'textarea' ? '' : ''}
+            >
+          </div>
+        `;
+      });
+
+      html += '<button class="send-btn" id="mailSend">SEND</button>';
+      html += '</div>';
+
+      appendOutput(html);
+
+      // Focus the active field
+      setTimeout(() => {
+        const activeField = document.getElementById(`mail-${state.mailField}`);
+        if (activeField) activeField.focus();
+
+        // Add event listeners
+        document.getElementById('mail-to').addEventListener('input', e => state.mailData.to = e.target.value);
+        document.getElementById('mail-subject').addEventListener('input', e => state.mailData.subject = e.target.value);
+        document.getElementById('mail-body').addEventListener('input', e => state.mailData.body = e.target.value);
+        document.getElementById('mailSend').addEventListener('click', sendMail);
+      }, 0);
+    }
+
+    function sendMail() {
+      const { to, subject, body } = state.mailData;
+
+      if (!to || !subject || !body) {
+        appendError('All fields are required');
+        playErrorSound();
+        return;
+      }
+
+      // Simulate sending
+      appendOutput(`<span class="accent">Sending mail to ${escapeHtml(to)}...</span>`);
+      setTimeout(() => {
+        appendOutput(`<span class="accent">✓ Mail sent successfully</span>`);
+        appendMuted(`Subject: ${escapeHtml(subject)}`);
+        state.isComposingMail = false;
+        state.mailData = { to: '', subject: '', body: '' };
+      }, 800);
+    }
+
+    function handleMailKeydown(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const fields = ['to', 'subject', 'body'];
+        const idx = fields.indexOf(state.mailField);
+        state.mailField = fields[(idx + 1) % fields.length];
+        renderMailComposer();
+      } else if (e.key === 'Escape') {
+        state.isComposingMail = false;
+        state.mailData = { to: '', subject: '', body: '' };
+        appendMuted('Mail composition cancelled');
+      } else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        sendMail();
+      }
+    }
+
+    // ============================================
+    // COMMAND EXECUTION
+    // ============================================
+    function executeCommand(rawInput) {
+      const input = rawInput.trim();
+      if (!input) return;
+
+      // Add to history
+      state.commandHistory.push(input);
+      state.historyIndex = state.commandHistory.length;
+
+      // Echo command
+      appendOutput(`<span class="command-echo">$ ${escapeHtml(input)}</span>`, 'command-echo');
+
+      // Parse
+      const parts = input.split(/\s+/);
+      const cmdName = parts[0].toLowerCase();
+      const args = parts.slice(1);
+
+      const cmd = commands[cmdName];
+
+      if (!cmd) {
+        appendError(`Command not found: ${cmdName}`);
+        appendMuted('Type "help" for available commands');
+        playErrorSound();
+        return;
+      }
+
+      try {
+        cmd.execute(args);
+        playEnterSound();
+      } catch (e) {
+        appendError(`Execution error: ${e.message}`);
+        playErrorSound();
+      }
+    }
+
+    // ============================================
+    // EVENT HANDLERS
+    // ============================================
+    commandInput.addEventListener('input', () => {
+      playKeypress();
+      updateGhostText();
+    });
+
+    commandInput.addEventListener('keydown', (e) => {
+      if (state.isComposingMail) {
+        handleMailKeydown(e);
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        const input = commandInput.value;
+        commandInput.value = '';
+        state.ghostText = '';
+        commandInput.classList.remove('ghost-mode');
+        const ghostEl = document.querySelector('.ghost-suggestion');
+        if (ghostEl) ghostEl.remove();
+        executeCommand(input);
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        applyCompletion();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (state.historyIndex > 0) {
+          state.historyIndex--;
+          commandInput.value = state.commandHistory[state.historyIndex];
+          updateGhostText();
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (state.historyIndex < state.commandHistory.length - 1) {
+          state.historyIndex++;
+          commandInput.value = state.commandHistory[state.historyIndex];
+        } else {
+          state.historyIndex = state.commandHistory.length;
+          commandInput.value = '';
+        }
+        updateGhostText();
+      } else if (e.key === 'Escape') {
+        commandInput.value = '';
+        state.ghostText = '';
+        commandInput.classList.remove('ghost-mode');
+        const ghostEl = document.querySelector('.ghost-suggestion');
+        if (ghostEl) ghostEl.remove();
+      } else if (e.key === 'l' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        clearOutput();
+      } else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        commandInput.value = '';
+        state.ghostText = '';
+        commandInput.classList.remove('ghost-mode');
+        const ghostEl = document.querySelector('.ghost-suggestion');
+        if (ghostEl) ghostEl.remove();
+        appendOutput('<span class="command-echo">^C</span>', 'command-echo');
+      }
+    });
+
+    // Global shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target === commandInput) return;
+
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleScanlines();
+      } else if (e.key === 'F12') {
+        e.preventDefault();
+        toggleSound();
+      }
+    });
+
+    // Focus input on click anywhere
+    document.addEventListener('click', () => {
+      commandInput.focus();
+    });
+
+    // Sound toggle
+    soundToggle.addEventListener('click', toggleSound);
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      soundToggle.textContent = state.soundEnabled ? '🔊 SOUND: ON' : '🔇 SOUND: OFF';
+      soundToggle.style.color = state.soundEnabled ? 'var(--fg)' : 'var(--fg-muted)';
+      if (state.soundEnabled) initAudio();
+    }
+
+    function toggleScanlines() {
+      state.scanlinesEnabled = !state.scanlinesEnabled;
+      scanlines.classList.toggle('hidden', !state.scanlinesEnabled);
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    function init() {
+      initAudio();
+      updatePrompt();
+      updateTime();
+      setInterval(updateTime, 1000);
+
+      // Welcome message
+      appendOutput(`
+        <span class="accent">
+    ╔═══════════════════════════════════════════════╗
+    ║        TERMINAL BLOG v1.0.0                   ║
+    ║        A CLI-style Developer Journal          ║
+    ╚═══════════════════════════════════════════════╝
+        </span>
+      `);
+      appendMuted('Type "help" for commands, "ls" to list posts');
+      appendMuted('Press F11 to toggle CRT scanlines, F12 for sound');
+      appendOutput('');
+
+      // Focus input
+      commandInput.focus();
+    }
+
+    // Start
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
