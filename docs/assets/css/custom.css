@@ -1,15 +1,14 @@
-/* Fixed top navigation - clean black/white style */
+/* Fixed top navigation - logo colors */
 .topnav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  color: #000;
+  background: #1d1d1b;
+  color: #eee868;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   z-index: 1000;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border-bottom: 1px solid #eaeaea;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .topnav ul {
@@ -29,7 +28,7 @@
 .topnav > ul > li > a {
   display: block;
   padding: 1em 1.2em;
-  color: #000;
+  color: #eee868;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95em;
@@ -39,20 +38,20 @@
 }
 
 .topnav > ul > li > a:hover {
-  background: #f5f5f5;
-  color: #000;
+  background: rgba(255,255,255,0.05);
+  color: #eee868;
 }
 
-/* Dropdown - clean style */
+/* Dropdown - logo colors */
 .topnav .dropdown {
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
-  background: #fff;
+  background: #1d1d1b;
   min-width: 220px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border-bottom: 2px solid #000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border-bottom: 2px solid #eee868;
 }
 
 .topnav li:hover .dropdown {
@@ -65,15 +64,15 @@
 
 .topnav .dropdown a {
   padding: 0.8em 1.2em;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   font-size: 0.9em;
-  color: #000;
+  color: #fff;
   font-weight: 500;
 }
 
 .topnav .dropdown a:hover {
-  background: #f5f5f5;
-  color: #000;
+  background: rgba(255,255,255,0.08);
+  color: #eee868;
 }
 
 /* Mobile hamburger */
@@ -81,7 +80,7 @@
   display: none;
   background: none;
   border: none;
-  color: #000;
+  color: #eee868;
   font-weight: 700;
   font-size: 1.5em;
   padding: 0.5em 1em;
@@ -108,12 +107,12 @@ body {
   }
   .topnav > ul > li > a {
     border-right: none;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
   .topnav .dropdown {
     position: static;
     box-shadow: none;
-    border-bottom: 2px solid #000;
-    background: #fafafa;
+    border-bottom: 2px solid #eee868;
+    background: rgba(255,255,255,0.03);
   }
 }
