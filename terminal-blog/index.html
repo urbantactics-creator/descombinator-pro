@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0c0c0c">
+  <title>~/blog — terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a href="#main" class="skip-link">Saltar al contenido</a>
+  <div id="crt-overlay" class="crt-overlay" aria-hidden="true"></div>
+  <div class="terminal">
+    <div class="terminal-header">
+      <span class="terminal-title">guest@blog:~</span>
+      <div class="terminal-controls">
+        <button id="crt-toggle" class="crt-toggle" aria-label="Toggle CRT effects">CRT</button>
+        <button id="sound-toggle" class="sound-toggle" aria-label="Toggle keyboard sounds">🔇</button>
+      </div>
+    </div>
+    <div id="output" class="terminal-output" aria-live="polite" aria-atomic="false"></div>
+    <div class="terminal-input-line">
+      <span class="prompt">guest@blog:~$</span>
+      <input type="text" id="command-input" class="terminal-input" autocomplete="off" spellcheck="false" aria-label="Command input">
+      <span id="ghost-text" class="ghost-text" aria-hidden="true"></span>
+      <span id="cursor" class="cursor" aria-hidden="true">█</span>
+    </div>
+  </div>
+  <script src="js/terminal.js"></script>
+</body>
+</html>
